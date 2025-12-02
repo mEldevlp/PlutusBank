@@ -1,0 +1,11 @@
+{
+  "name": "PlutusBank",
+  "version": "1.0.0",
+  "dependencies": [
+    "openssl",
+    "sqlite3",
+    "nlohmann-json",
+    "spdlog"
+  ],
+  "builtin-baseline": "latest"
+}
