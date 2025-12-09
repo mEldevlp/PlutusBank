@@ -64,12 +64,14 @@ endif()
 # QML файлы
 set(QML_FILES
     qml/Main.qml
+    qml/Auth.qml
+    qml/MainPage.qml
 )
 
 # Ресурсы
 set(QML_RESOURCES
     qml/assets/logo.png
-	qml/assets/fonts/Manrope-Bold.ttf
+    qml/assets/fonts/Manrope-Bold.ttf
 )
 
 # Создание приложения
@@ -124,6 +126,14 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     APP_VERSION="${PROJECT_VERSION}"
 )
 
+# Копирование QML и ресурсов в папку сборки (Debug/Release)
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_CURRENT_SOURCE_DIR}/qml"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/qml"
+    COMMENT "Copying QML files to build directory..."
+)
+
 # Windows deployment
 if(WIN32 AND NOT ANDROID)
     get_target_property(_qmake_executable Qt6::qmake IMPORTED_LOCATION)
@@ -140,43 +150,6 @@ if(WIN32 AND NOT ANDROID)
         )
     endif()
 endif()
-
-# Папка с QML в исходниках
-set(QML_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
-
-# Папка назначения рядом с бинарником (Debug/Release и т.д.)
-set(QML_OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qml")
-
-# Копировать все .qml (и при необходимости .js, .qmltypes и т.п.)
-file(GLOB_RECURSE QML_SOURCE_FILES
-    "${QML_SOURCE_DIR}/*.qml"
-    "${QML_SOURCE_DIR}/*.js"
-    "${QML_SOURCE_DIR}/*.qmltypes"
-)
-
-# Папка с QML в исходниках
-set(QML_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/qml")
-
-# Папка назначения рядом с бинарником (Debug/Release и т.д.)
-set(QML_OUTPUT_DIR "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/qml")
-
-# Копировать все .qml (и при необходимости .js, .qmltypes и т.п.)
-file(GLOB_RECURSE QML_SOURCE_FILES
-    "${QML_SOURCE_DIR}/*.qml"
-    "${QML_SOURCE_DIR}/*.js"
-    "${QML_SOURCE_DIR}/*.qmltypes"
-)
-
-add_custom_target(copy_qml ALL
-    COMMAND "${CMAKE_COMMAND}" -E make_directory "${QML_OUTPUT_DIR}"
-    COMMAND "${CMAKE_COMMAND}" -E copy_if_different
-            ${QML_SOURCE_FILES}
-            "${QML_OUTPUT_DIR}"
-    DEPENDS ${QML_SOURCE_FILES}
-    COMMENT "Copying QML files to ${QML_OUTPUT_DIR}"
-)
-
-add_dependencies(${PROJECT_NAME} copy_qml)
 
 # Финализация
 qt_finalize_target(${PROJECT_NAME})
