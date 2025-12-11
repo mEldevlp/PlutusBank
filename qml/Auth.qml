@@ -7,7 +7,8 @@ Item {
 
     // Сигнал для успешной авторизации
     signal loginSuccess()
-
+	signal openRegister()  // Добавь этот сигнал
+	
     // Загрузка шрифта Manrope
     FontLoader {
         id: manropeFont
@@ -303,7 +304,7 @@ Item {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: console.log("Регистрация")
+                        onClicked: authPage.openRegister()
                     }
                 }
             }

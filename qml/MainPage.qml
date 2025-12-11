@@ -230,7 +230,7 @@ ApplicationWindow {
                     }
                 }
 
-                // Кнопка CTA "Открыть кредитную карту"
+                // Кнопка CTA "Выпустить карту"
                 Rectangle {
                     width: parent.width
                     height: 52
@@ -239,7 +239,7 @@ ApplicationWindow {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "Открыть кредитную карту"
+                        text: "Выпустить карту"
                         font.pixelSize: 16
                         font.bold: true
                         color: "#050B1A"          // Primary Navy
@@ -247,7 +247,7 @@ ApplicationWindow {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: console.log("Открыть кредитную карту")
+                        onClicked: console.log("Выпустить карту")
                     }
                 }
             }

@@ -25,6 +25,23 @@ ApplicationWindow {
             onLoginSuccess: {
                 stackView.push(mainPageComponent)
             }
+            onOpenRegister: {
+                stackView.push(registerComponent)
+            }
+        }
+    }
+
+    // Компонент регистрации
+    Component {
+        id: registerComponent
+        
+        Register {
+            onRegisterSuccess: {
+                stackView.push(authComponent)
+            }
+            onBackToLogin: {
+                stackView.pop()
+            }
         }
     }
 
