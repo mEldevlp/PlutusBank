@@ -105,7 +105,7 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 16
 
-                // === БЛОК ФИО ===
+                // БЛОК ФИО
                 Text {
                     text: "Личные данные"
                     font.pixelSize: 16
@@ -308,7 +308,7 @@ Item {
                 // Отступ между секциями
                 Item { width: 1; height: 8 }
 
-                // === БЛОК ПАСПОРТ ===
+                // БЛОК ПАСПОРТ 
                 Text {
                     text: "Паспортные данные"
                     font.pixelSize: 16
@@ -408,7 +408,7 @@ Item {
                 // Отступ между секциями
                 Item { width: 1; height: 8 }
 
-                // === БЛОК КОНТАКТЫ ===
+                // БЛОК КОНТАКТЫ 
                 Text {
                     text: "Контактные данные"
                     font.pixelSize: 16
@@ -527,7 +527,7 @@ Item {
                 // Отступ между секциями
                 Item { width: 1; height: 8 }
 
-                // === БЛОК БЕЗОПАСНОСТЬ ===
+                // БЛОК БЕЗОПАСНОСТЬ 
                 Text {
                     text: "Безопасность"
                     font.pixelSize: 16
@@ -762,7 +762,7 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    onClicked: console.log("Открыть политику")
+                                    onClicked: console.log("Open a policy")
                                 }
                             }
 
@@ -780,7 +780,7 @@ Item {
 
                                 MouseArea {
                                     anchors.fill: parent
-                                    onClicked: console.log("Открыть соглашение")
+                                    onClicked: console.log("Open an agreement")
                                 }
                             }
                         }
@@ -829,7 +829,7 @@ Item {
                         anchors.fill: parent
                         enabled: registerButton.isFormValid
                         onClicked: {
-                            console.log("Регистрация пользователя...")
+                            console.log("User registration...")
                             
                             // Преобразуем дату в формат YYYY-MM-DD
                             var dateParts = birthDateInput.text.split('.');
@@ -905,11 +905,11 @@ Item {
         target: authController
         
         function onRegistrationSuccess() {
-            console.log("✓ Регистрация успешна!")
+            console.log("✓ Registration is successful!")
         }
         
         function onRegistrationFailed(error) {
-            console.log("✗ Ошибка регистрации:", error)
+            console.log("✗ Registration error:", error)
             // TODO: Показать всплывающее уведомление с ошибкой
         }
     }

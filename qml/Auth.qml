@@ -5,10 +5,14 @@ Item {
     id: authPage
     anchors.fill: parent
 
-    // Сигнал для успешной авторизации
+    // Сигналы
     signal loginSuccess()
-	signal openRegister()  // Добавь этот сигнал
-	
+    signal switchToRegister()
+
+    property string errorMessage: ""
+    property bool showError: false
+    property string cleanPhone: ""
+
     // Загрузка шрифта Manrope
     FontLoader {
         id: manropeFont
@@ -36,7 +40,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
 
             // Отступ сверху
-            Item { width: 1; height: 80 }
+            Item { width: 1; height: 60 }
 
             // Логотип в центре
             Item {
@@ -77,16 +81,95 @@ Item {
                 }
             }
 
-            // Отступ перед формой
+            // Отступ
             Item { width: 1; height: 40 }
 
-            // Форма авторизации
+            Rectangle {
+                width: parent.width - 32
+                height: showError ? 60 : 0
+                anchors.horizontalCenter: parent.horizontalCenter
+                radius: 12
+                color: "#7F1D1D"
+                border.color: "#DC2626"
+                border.width: 1
+                visible: showError
+                opacity: showError ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 200 }
+                }
+                
+                Behavior on height {
+                    NumberAnimation { duration: 200 }
+                }
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+
+                    Text {
+                        text: "⚠️"
+                        font.pixelSize: 24
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 80
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        Text {
+                            text: "Ошибка входа"
+                            font.pixelSize: 14
+                            font.bold: true
+                            color: "#FEE2E2"
+                        }
+
+                        Text {
+                            text: errorMessage
+                            font.pixelSize: 12
+                            color: "#FECACA"
+                            wrapMode: Text.WordWrap
+                            width: parent.width
+                        }
+                    }
+
+                    Rectangle {
+                        width: 32
+                        height: 32
+                        radius: 16
+                        color: "transparent"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "×"
+                            font.pixelSize: 24
+                            color: "#FEE2E2"
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                showError = false
+                                errorMessage = ""
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Отступ после ошибки
+            Item { width: 1; height: showError ? 16 : 0 }
+
+            // Форма входа
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 16
 
-                // Поле номера телефона
+                // Поле телефона
                 Column {
                     width: parent.width
                     spacing: 8
@@ -127,10 +210,72 @@ Item {
                                 color: "#E5E7EB"
                                 verticalAlignment: Text.AlignVCenter
                                 inputMethodHints: Qt.ImhDialableCharactersOnly
-                                maximumLength: 10
-                                
+                    
+                                maximumLength: 15  // "(933) 221-19-01" = 15 символов
+
+                                onTextChanged: {
+                                    // Сбрасываем ошибку
+                                    if (showError) {
+                                        showError = false
+                                        errorMessage = ""
+                                    }
+                        
+                                    // Извлекаем только цифры из введённого текста
+                                    var digits = text.replace(/\D/g, '')
+                        
+                                    // Ограничиваем до 10 цифр
+                                    if (digits.length > 10) {
+                                        digits = digits.substring(0, 10)
+                                    }
+                        
+                                    // Сохраняем "чистый" номер
+                                    cleanPhone = digits
+                        
+                                    // Форматируем номер
+                                    var formatted = formatPhone(digits)
+                        
+                                    // Обновляем текст только если он изменился (избегаем зацикливания)
+                                    if (text !== formatted) {
+                                        var curPos = cursorPosition
+                                        text = formatted
+                            
+                                        // Восстанавливаем позицию курсора в конец
+                                        cursorPosition = formatted.length
+                                    }
+                                }
+                    
+                                function formatPhone(digits) {
+                                    if (digits.length === 0) return ""
+                        
+                                    var formatted = ""
+                        
+                                    // (xxx)
+                                    if (digits.length <= 3) {
+                                        formatted = "(" + digits
+                                    }
+                                    // (xxx) xxx
+                                    else if (digits.length <= 6) {
+                                        formatted = "(" + digits.substring(0, 3) + ") " + digits.substring(3)
+                                    }
+                                    // (xxx) xxx-xx
+                                    else if (digits.length <= 8) {
+                                        formatted = "(" + digits.substring(0, 3) + ") " + 
+                                                   digits.substring(3, 6) + "-" + 
+                                                   digits.substring(6)
+                                    }
+                                    // (xxx) xxx-xx-xx
+                                    else {
+                                        formatted = "(" + digits.substring(0, 3) + ") " + 
+                                                   digits.substring(3, 6) + "-" + 
+                                                   digits.substring(6, 8) + "-" + 
+                                                   digits.substring(8, 10)
+                                    }
+                        
+                                    return formatted
+                                }
+
                                 Text {
-                                    text: "000 000-00-00"
+                                    text: "(900) 123-45-67"
                                     font.pixelSize: 16
                                     color: "#4B5563"
                                     visible: !phoneInput.text && !phoneInput.activeFocus
@@ -175,8 +320,15 @@ Item {
                                 color: "#E5E7EB"
                                 verticalAlignment: Text.AlignVCenter
                                 echoMode: showPassword ? TextInput.Normal : TextInput.Password
-                                
+
                                 property bool showPassword: false
+
+                                onTextChanged: {
+                                    if (showError) {
+                                        showError = false
+                                        errorMessage = ""
+                                    }
+                                }
 
                                 Text {
                                     text: "Введите пароль"
@@ -187,7 +339,6 @@ Item {
                                 }
                             }
 
-                            // Кнопка показать/скрыть пароль
                             Rectangle {
                                 width: 40
                                 height: 40
@@ -210,7 +361,7 @@ Item {
                     }
                 }
 
-                // Кнопка "Забыли пароль?"
+                // Забыли пароль
                 Text {
                     text: "Забыли пароль?"
                     font.pixelSize: 13
@@ -219,70 +370,115 @@ Item {
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: console.log("Восстановление пароля")
+                        onClicked: console.log("Password Recovery")
                     }
                 }
 
+                // Отступ
+                Item { width: 1; height: 8 }
+
                 // Кнопка входа
                 Rectangle {
+                    id: loginButton
                     width: parent.width
                     height: 54
                     radius: 16
-                    color: phoneInput.text.length >= 10 && passwordInput.text.length >= 6 
-                           ? "#27D6C5" : "#1F2937"
+
+                    property bool isFormValid: cleanPhone.length === 10 && passwordInput.text.length >= 8
+                    property bool isLoading: false
                     
+                    color: isFormValid && !isLoading ? "#27D6C5" : "#1F2937"
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 12
+                        visible: loginButton.isLoading
+
+                        Repeater {
+                            model: 3
+                            Rectangle {
+                                width: 8
+                                height: 8
+                                radius: 4
+                                color: "#050B1A"
+                                
+                                SequentialAnimation on opacity {
+                                    running: loginButton.isLoading
+                                    loops: Animation.Infinite
+                                    NumberAnimation { 
+                                        from: 0.3
+                                        to: 1.0
+                                        duration: 500 
+                                        easing.type: Easing.InOutQuad
+                                    }
+                                    NumberAnimation { 
+                                        from: 1.0
+                                        to: 0.3
+                                        duration: 500 
+                                        easing.type: Easing.InOutQuad
+                                    }
+                                    PauseAnimation { duration: index * 150 }
+                                }
+                            }
+                        }
+                    }
+
                     Text {
                         anchors.centerIn: parent
-                        text: "Войти"
+                        text: loginButton.isLoading ? "" : "Войти"
                         font.pixelSize: 16
                         font.bold: true
                         font.family: manropeFont.name
-                        color: phoneInput.text.length >= 10 && passwordInput.text.length >= 6
-                               ? "#050B1A" : "#6B7280"
+                        color: loginButton.isFormValid && !loginButton.isLoading ? "#050B1A" : "#6B7280"
                     }
 
                     MouseArea {
                         anchors.fill: parent
-                        enabled: phoneInput.text.length >= 10 && passwordInput.text.length >= 6
+                        enabled: loginButton.isFormValid && !loginButton.isLoading
                         onClicked: {
-                            console.log("Вход:", phoneInput.text, passwordInput.text)
-                            authPage.loginSuccess()
+                            console.log("Попытка входа...")
+            
+                            loginButton.isLoading = true
+            
+                            var phone = cleanPhone  // Используем "чистый" номер без форматирования
+                            if (!phone.startsWith("+7")) {
+                                phone = "+7" + phone
+                            }
+            
+                            // Вызываем метод авторизации
+                            authController.loginUser(phone, passwordInput.text)
                         }
                     }
                 }
 
-                // Отступ перед разделителем
-                Item { width: 1; height: 24 }
-
                 // Разделитель
                 Row {
-                    width: parent.width
-                    spacing: 12
+                    width: parent.width - 32 
+                    spacing: 12  
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     Rectangle {
-                        width: (parent.width - 60) / 2
+                        width: (parent.width - orText.implicitWidth - parent.spacing * 2) / 2 
                         height: 1
                         color: "#1F2937"
                         anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Text {
+                        id: orText 
                         text: "или"
                         font.pixelSize: 13
                         color: "#6B7280"
+                        anchors.verticalCenter: parent.verticalCenter
                     }
 
                     Rectangle {
-                        width: (parent.width - 60) / 2
+                        width: (parent.width - orText.implicitWidth - parent.spacing * 2) / 2  // ← ИЗМЕНЕНО: точный расчёт
                         height: 1
                         color: "#1F2937"
                         anchors.verticalCenter: parent.verticalCenter
                     }
                 }
-
-                // Отступ перед кнопкой регистрации
-                Item { width: 1; height: 12 }
 
                 // Кнопка регистрации
                 Rectangle {
@@ -290,7 +486,7 @@ Item {
                     height: 54
                     radius: 16
                     color: "transparent"
-                    border.color: "#7C4DFF"
+                    border.color: "#27D6C5"
                     border.width: 2
 
                     Text {
@@ -299,29 +495,59 @@ Item {
                         font.pixelSize: 16
                         font.bold: true
                         font.family: manropeFont.name
-                        color: "#7C4DFF"
+                        color: "#27D6C5"
                     }
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: authPage.openRegister()
+                        onClicked: authPage.switchToRegister()
                     }
                 }
             }
 
-            // Отступ перед копирайтом
-            Item { width: 1; height: 40 }
-
-            // Нижний текст
-            Text {
-                text: "Plutus Crypto Bank © 2026"
-                font.pixelSize: 12
-                color: "#4B5563"
-                anchors.horizontalCenter: parent.horizontalCenter
-            }
-
             // Отступ снизу
             Item { width: 1; height: 40 }
+        }
+    }
+
+    Connections {
+        target: authController
+        
+        function onLoginSuccess() {
+            console.log("✓ Login is successful!")
+            loginButton.isLoading = false
+            showError = false
+            errorMessage = ""
+            
+            // Очищаем поля
+            phoneInput.text = ""
+            passwordInput.text = ""
+            
+            // Отправляем сигнал успешной авторизации
+            authPage.loginSuccess()
+        }
+        
+        function onLoginFailed(error) {
+            console.log("✗ Login error:", error)
+            loginButton.isLoading = false
+            
+            // Показываем сообщение об ошибке
+            errorMessage = error
+            showError = true
+            
+            // Автоматически скрываем через 5 секунд
+            errorTimer.restart()
+        }
+    }
+    
+    Timer {
+        id: errorTimer
+        interval: 5000
+        running: false
+        repeat: false
+        onTriggered: {
+            showError = false
+            errorMessage = ""
         }
     }
 }

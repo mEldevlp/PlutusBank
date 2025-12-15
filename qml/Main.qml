@@ -1,43 +1,38 @@
 import QtQuick
+import QtQuick.Window
 import QtQuick.Controls
 import "."
 
-ApplicationWindow {
-    visible: true
+Window {
+    id: mainWindow
     width: 400
     height: 800
+    visible: true
     title: "PlutusBank"
 
-    color: "#070D1F"
+    property bool isUserLoggedIn: false
 
-    // Стек страниц
-    StackView {
-        id: stackView
-        anchors.fill: parent
-        initialItem: authComponent
-    }
-
-    // Компонент авторизации
     Component {
         id: authComponent
-        
         Auth {
             onLoginSuccess: {
-                stackView.push(mainPageComponent)
+                console.log("Переход на главную страницу")
+                isUserLoggedIn = true
+                stackView.replace(mainPageComponent)
             }
-            onOpenRegister: {
+            onSwitchToRegister: {
                 stackView.push(registerComponent)
             }
         }
     }
 
-    // Компонент регистрации
     Component {
         id: registerComponent
-        
         Register {
             onRegisterSuccess: {
-                stackView.push(authComponent)
+                console.log("Регистрация успешна, вход выполнен")
+                isUserLoggedIn = true
+                stackView.replace(mainPageComponent)
             }
             onBackToLogin: {
                 stackView.pop()
@@ -45,9 +40,35 @@ ApplicationWindow {
         }
     }
 
-    // Компонент главной страницы
     Component {
         id: mainPageComponent
-        MainPage {}
+        MainPage {
+            // ============ ДОБАВЛЕНО: Переход к созданию карты ============
+            onOpenCreateCard: {
+                stackView.push(createCardComponent)
+            }
+            // =============================================================
+        }
+    }
+    
+    // ============ ДОБАВЛЕНО: Компонент создания карты ============
+    Component {
+        id: createCardComponent
+        CreateCardDialog {
+            onBackToMain: {
+                stackView.pop()
+            }
+            onCardCreatedSuccess: {
+                // После создания карты возвращаемся на главную
+                stackView.pop()
+            }
+        }
+    }
+    // =============================================================
+
+    StackView {
+        id: stackView
+        anchors.fill: parent
+        initialItem: isUserLoggedIn ? mainPageComponent : authComponent
     }
 }

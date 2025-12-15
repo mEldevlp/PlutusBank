@@ -1,4 +1,5 @@
 ﻿#include "AuthController.h"
+#include "UserSession.h"
 #include <QDebug>
 #include <QRegularExpression>
 
@@ -19,11 +20,11 @@ bool AuthController::registerUser(
     const QString& phone,
     const QString& password)
 {
-    qDebug() << "Попытка регистрации:" << firstName << lastName << email;
+    qDebug() << u"Попытка регистрации:" << firstName << lastName << email;
 
     // Проверка подключения к БД
     if (!m_db.isConnected()) {
-        qWarning() << "База данных не подключена";
+        qWarning() << u"База данных не подключена";
         emit registrationFailed("База данных недоступна");
         return false;
     }
@@ -75,12 +76,12 @@ bool AuthController::registerUser(
     // Регистрация в БД
     if (m_db.registerUser(firstName, lastName, middleName, dateOfBirth,
         passportSeries, passportNumber, email, formattedPhone, password)) {
-        qDebug() << "✓ Регистрация успешна:" << firstName << lastName;
+        qDebug() << u"✓ Регистрация успешна:" << firstName << lastName;
         emit registrationSuccess();
         return true;
     }
     else {
-        qWarning() << "✗ Ошибка регистрации";
+        qWarning() << u"✗ Ошибка регистрации";
         emit registrationFailed("Пользователь с таким email или телефоном уже существует");
         return false;
     }
@@ -88,7 +89,7 @@ bool AuthController::registerUser(
 
 bool AuthController::loginUser(const QString& phone, const QString& password)
 {
-    qDebug() << "Попытка входа:" << phone;
+    qDebug() << u"Попытка входа:" << phone;
 
     if (!m_db.isConnected()) {
         emit loginFailed("База данных недоступна");
@@ -100,14 +101,28 @@ bool AuthController::loginUser(const QString& phone, const QString& password)
         formattedPhone = "+7" + phone;
     }
 
-    if (m_db.loginUser(formattedPhone, password)) {
-        qDebug() << "✓ Вход успешен:" << phone;
+    int userId = m_db.loginUser(formattedPhone, password);
+
+    if (userId > 0) {
+        qDebug() << u"✓ Вход успешен. User ID:" << userId;
+
+        QVariantMap userData = m_db.getUserData(userId);
+
+        UserSession::instance().setUserData(
+            userId,
+            userData["first_name"].toString(),
+            userData["last_name"].toString(),
+            userData["middle_name"].toString(),
+            userData["email"].toString(),
+            userData["phone"].toString()
+        );
+
         emit loginSuccess();
         return true;
     }
     else {
-        qWarning() << "✗ Ошибка входа";
-        emit loginFailed("Неверный номер телефона или пароль");
+        qWarning() << u"✗ Ошибка входа";
+        emit loginFailed("Введён неверный логин или пароль");
         return false;
     }
 }

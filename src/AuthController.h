@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <QObject>
 #include <QString>
@@ -11,7 +11,6 @@ class AuthController : public QObject
 public:
     explicit AuthController(QObject* parent = nullptr);
 
-    // Регистрация с полными данными
     Q_INVOKABLE bool registerUser(
         const QString& firstName,
         const QString& lastName,

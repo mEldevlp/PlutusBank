@@ -56,12 +56,16 @@ set(SOURCE_FILES
     src/main.cpp
     src/DatabaseManager.cpp
     src/AuthController.cpp
+    src/UserSession.cpp
+	src/CardController.cpp
 )
 
 # Header Files (*.h)
 set(HEADER_FILES
     src/DatabaseManager.h
     src/AuthController.h
+    src/UserSession.h
+    src/CardController.h
 )
 
 # QML Files - UI
@@ -70,6 +74,7 @@ set(QML_UI_FILES
     qml/Auth.qml
     qml/Register.qml
     qml/MainPage.qml
+	qml/CreateCardDialog.qml
 )
 
 # QML Resources - Assets
