@@ -1,23 +1,20 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 import "."
 
 Item {
     id: mainPage
     anchors.fill: parent
 
-    // ============ ДОБАВЛЕНО: Сигнал для открытия создания карты ============
     signal openCreateCard()
-    // =======================================================================
 
-    // ============ ДОБАВЛЕНО: Автообновление данных при появлении страницы ============
     Component.onCompleted: {
         console.log("MainPage загружена")
         userSession.loadCards()
         userSession.refreshBalance()
     }
-    // ==================================================================================
 
     // Загрузка шрифта
     FontLoader {
@@ -34,10 +31,120 @@ Item {
         }
     }
 
+    // ============ Pull-to-Refresh индикатор ============
+    Rectangle {
+        id: refreshIndicator
+        width: 50
+        height: 50
+        radius: 25
+        color: "#27D6C5"
+        anchors.horizontalCenter: parent.horizontalCenter
+    
+        y: Math.max(-70, Math.min(50, -contentFlickable.contentY - 20))
+    
+        opacity: contentFlickable.contentY < -20 ? Math.min(1.0, Math.abs(contentFlickable.contentY) / 80) : 0
+        visible: opacity > 0
+        z: 10
+
+        Behavior on opacity {
+            NumberAnimation { duration: 150 }
+        }
+
+        // Иконка обновления (статичная)
+        Image {
+            id: refreshIcon
+            anchors.centerIn: parent
+            width: 28
+            height: 28
+            source: "assets/update.svg"
+            sourceSize: Qt.size(28, 28)
+            smooth: true
+            visible: !userSession.isRefreshing
+        
+            // Эффект поворота при протягивании
+            rotation: contentFlickable.contentY < -20 ? Math.abs(contentFlickable.contentY) * 2 : 0
+        
+            Behavior on rotation {
+                NumberAnimation { duration: 100 }
+            }
+        }
+    
+        // Индикатор загрузки (вращающаяся иконка)
+        Image {
+            anchors.centerIn: parent
+            width: 28
+            height: 28
+            source: "assets/update.svg"
+            sourceSize: Qt.size(28, 28)
+            smooth: true
+            visible: userSession.isRefreshing
+        
+            RotationAnimation on rotation {
+                running: userSession.isRefreshing
+                from: 0
+                to: 360
+                duration: 1000
+                loops: Animation.Infinite
+            }
+        }
+
+        // Текст подсказки
+        Text {
+            anchors.top: parent.bottom
+            anchors.topMargin: 8
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: contentFlickable.contentY < -80 ? "Отпустите..." : "Потяните вниз"
+            font.pixelSize: 12
+            color: "#27D6C5"
+            opacity: parent.opacity
+        }
+    }
+    // ===================================================
+
     Flickable {
+        id: contentFlickable
         anchors.fill: parent
         contentHeight: contentColumn.height + 40
         clip: true
+    
+        boundsBehavior: Flickable.DragAndOvershootBounds
+    
+        // Обработка pull-to-refresh
+        property real pullThreshold: -80
+        property bool canRefresh: false
+    
+        onContentYChanged: {
+            if (contentY < pullThreshold && !userSession.isRefreshing && atYBeginning) {
+                canRefresh = true
+            } else if (contentY >= pullThreshold) {
+                canRefresh = false
+            }
+        }
+
+        onDraggingChanged: {
+            console.log("dragging:", dragging, "canRefresh:", canRefresh, "contentY:", contentY)
+        
+            if (!dragging && canRefresh && contentY < pullThreshold) {
+                console.log("🔄 Запуск обновления!")
+                triggerRefresh()
+            }
+        }
+    
+        function triggerRefresh() {
+            console.log("=== triggerRefresh() вызван ===")
+        
+            if (typeof userSession.refreshAll === "function") {
+                userSession.refreshAll()
+                console.log("✓ userSession.refreshAll() вызван")
+            } else {
+                console.log("✗ ОШИБКА: userSession.refreshAll не существует!")
+                console.log("Вызываем запасные методы...")
+                userSession.loadCards()
+                userSession.refreshBalance()
+            }
+        
+            canRefresh = false
+        }
 
         Column {
             id: contentColumn
@@ -65,9 +172,7 @@ Item {
                     }
 
                     Text {
-                        // ============ ИЗМЕНЕНО: Используем реальное имя ============
                         text: userSession.shortName  // "Кондрашов Д."
-                        // ===========================================================
                         font.pixelSize: 20
                         font.bold: true
                         font.family: manropeFont.name
@@ -83,9 +188,7 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        // ============ ИЗМЕНЕНО: Первая буква фамилии ============
                         text: userSession.lastName.charAt(0).toUpperCase()
-                        // =======================================================
                         font.pixelSize: 18
                         font.bold: true
                         color: "#050B1A"
@@ -125,9 +228,7 @@ Item {
                             }
 
                             Text {
-                                // ============ ИЗМЕНЕНО: Используем реальный баланс ============
                                 text: userSession.totalBalance.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
-                                // ==============================================================
                                 font.pixelSize: 32
                                 font.bold: true
                                 font.family: manropeFont.name
@@ -194,7 +295,6 @@ Item {
                 }
             }
 
-            // ============ ДОБАВЛЕНО: Условное отображение карт ============
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -272,9 +372,7 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                // ============ ИЗМЕНЕНО ============
                                 openCreateCard()
-                                // ==================================
                             }
                         }
                     }
@@ -291,9 +389,9 @@ Item {
 
                         Rectangle {
                             width: parent.width
-                            height: 90
+                            height: 115  // ← ИЗМЕНЕНО: уменьшено до 110
                             radius: 16
-                            
+        
                             gradient: Gradient {
                                 GradientStop { 
                                     position: 0.0
@@ -312,65 +410,93 @@ Item {
                                 anchors.margins: 16
                                 spacing: 8
 
+                                // ============ ИЗМЕНЕНО: Строка 1 - Тип карты + Логотип справа ============
                                 Row {
                                     width: parent.width
+                                    spacing: 0
 
+                                    // Тип карты + Платёжная система (слева)
                                     Text {
-                                        text: modelData.card_brand.toUpperCase()
+                                        text: (modelData.card_type === "credit" ? "Кредитная" : "Дебетовая")
                                         font.pixelSize: 12
                                         font.bold: true
                                         color: "#FFFFFF"
-                                        opacity: 0.8
+                                        opacity: 0.9
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
 
-                                    Item { width: 1; Layout.fillWidth: true }
+                                    // ============ ИЗМЕНЕНО: Пустое пространство ============
+                                    Item { 
+                                        width: parent.width - parent.children[0].width - logoImage.width
+                                        height: 1
+                                    }
+                                    // =======================================================
 
-                                    Rectangle {
+                                    // ============ ИЗМЕНЕНО: С импортом QtQuick.Shapes ============
+                                    Image {
+                                        id: logoImage
                                         width: 50
-                                        height: 20
-                                        radius: 4
-                                        color: modelData.is_active ? "#10B981" : "#EF4444"
+                                        height: 30
+                                        source: modelData.card_brand === "visa" ? "assets/visa.svg" :
+                                                modelData.card_brand === "mastercard" ? "assets/mastercard.svg" :
+                                                "assets/mir.svg"
+                                        sourceSize: Qt.size(50, 30)  // ← ИЗМЕНЕНО: формат Qt.size()
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        smooth: true
+                                        asynchronous: true  // ← ДОБАВЛЕНО: асинхронная загрузка
+                                    }
+                                    // ==============================================================
+                                }
+                                // =========================================================================
 
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData.is_active ? "Активна" : "Заблок."
-                                            font.pixelSize: 9
-                                            font.bold: true
-                                            color: "#FFFFFF"
-                                        }
+                                // ============ ИЗМЕНЕНО: Строка 2 - Номер и Expired date ============
+                                Row {
+                                    width: parent.width
+                                    spacing: 0
+
+                                    // Маскированный номер (слева)
+                                    Text {
+                                        text: "•••• " + modelData.card_number.slice(-4)
+                                        font.pixelSize: 20
+                                        font.family: "Courier"
+                                        font.bold: true
+                                        color: "#FFFFFF"
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    // Пустое пространство
+                                    Item { 
+                                        width: parent.width - parent.children[0].width - expiryText.width
+                                        height: 1
+                                    }
+
+                                    // Expired date (справа)
+                                    Text {
+                                        id: expiryText
+                                        text: modelData.expiry_date  // "12/30"
+                                        font.pixelSize: 11
+                                        color: "#FFFFFF"
+                                        opacity: 0.8
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                 }
+                                // ===================================================================
 
+                                // ============ ИЗМЕНЕНО: Строка 3 - Только баланс без подписи ============
                                 Text {
-                                    text: modelData.card_number
+                                    text: (modelData.balance !== undefined ? 
+                                           modelData.balance.toLocaleString(Qt.locale("ru_RU"), 'f', 2) : 
+                                           "0.00") + " ₽"
                                     font.pixelSize: 16
-                                    font.family: "Courier"
                                     font.bold: true
                                     color: "#FFFFFF"
                                 }
-
-                                Row {
-                                    width: parent.width
-
-                                    Text {
-                                        text: modelData.card_holder_name
-                                        font.pixelSize: 11
-                                        color: "#FFFFFF"
-                                        opacity: 0.8
-                                    }
-
-                                    Item { width: 1; Layout.fillWidth: true }
-
-                                    Text {
-                                        text: modelData.expiry_date
-                                        font.pixelSize: 11
-                                        color: "#FFFFFF"
-                                        opacity: 0.8
-                                    }
-                                }
+                                // =========================================================================
                             }
                         }
                     }
+
 
                     // Кнопка выпуска ещё одной карты
                     Rectangle {
@@ -399,9 +525,7 @@ Item {
                     }
                 }
             }
-            // ==============================================================
 
-            // Быстрые действия (без изменений)
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter

@@ -179,22 +179,24 @@ QVariantList DatabaseManager::getUserCards(int userId)
 {
     QVariantList cards;
 
-    // Сначала получаем account_id пользователя
-    int accountId = getUserAccountId(userId);
-    if (accountId <= 0) {
-        qDebug() << u"У пользователя нет счета, карты отсутствуют";
-        return cards;
-    }
+    // ============ ИСПРАВЛЕНО: Убрали вызов getUserAccountId() ============
+    // Теперь получаем карты сразу по user_id через JOIN с accounts
+    // ======================================================================
 
-    QSqlQuery query(m_db);
+    QSqlQuery query;
     query.prepare(
-        "SELECT id, card_number, card_holder_name, card_type, card_brand, "
-        "is_active, is_blocked, expiry_date, daily_limit, monthly_limit "
-        "FROM cards "
-        "WHERE account_id = :accountId "
-        "ORDER BY created_at DESC"
+        "SELECT c.id, c.card_number, c.card_holder_name, c.card_type, "
+        "c.card_brand, c.is_active, c.is_blocked, c.expiry_date, "
+        "c.daily_limit, c.monthly_limit, a.balance "
+        "FROM cards c "
+        "INNER JOIN accounts a ON c.account_id = a.id "
+        // ============ ИСПРАВЛЕНО: Фильтр по user_id, а не account_id ============
+        "WHERE a.user_id = :userId "
+        // ========================================================================
+        "ORDER BY c.created_at DESC"
     );
-    query.bindValue(":accountId", accountId);
+
+    query.bindValue(":userId", userId);
 
     if (query.exec()) {
         while (query.next()) {
@@ -209,13 +211,14 @@ QVariantList DatabaseManager::getUserCards(int userId)
             card["expiry_date"] = query.value(7).toDate().toString("MM/yy");
             card["daily_limit"] = query.value(8).toDouble();
             card["monthly_limit"] = query.value(9).toDouble();
+            card["balance"] = query.value(10).toDouble();
 
             cards.append(card);
         }
-        qDebug() << u"✓ Загружено карт:" << cards.size();
+        qDebug() << "✓ Загружено карт:" << cards.size();
     }
     else {
-        qWarning() << u"Ошибка загрузки карт:" << query.lastError().text();
+        qWarning() << "❌ Ошибка загрузки карт:" << query.lastError().text();
     }
 
     return cards;
@@ -223,24 +226,19 @@ QVariantList DatabaseManager::getUserCards(int userId)
 
 double DatabaseManager::getTotalDebitBalance(int userId)
 {
-    // Сначала получаем account_id пользователя
-    int accountId = getUserAccountId(userId);
-    if (accountId <= 0) {
-        qDebug() << u"У пользователя нет счета";
-        return 0.0;
-    }
-
     QSqlQuery query(m_db);
 
-    // Получаем баланс счета (accounts.balance)
-    // В текущей схеме БД баланс хранится в таблице accounts, а не cards
-    query.prepare("SELECT balance FROM accounts WHERE id = :accountId");
-    query.bindValue(":accountId", accountId);
+    query.prepare(
+        "SELECT COALESCE(SUM(balance), 0) "
+        "FROM accounts "
+        "WHERE user_id = :userId AND account_type = 'debit'"
+    );
+    query.bindValue(":userId", userId);
 
     if (query.exec() && query.next()) {
-        double balance = query.value(0).toDouble();
-        qDebug() << u"✓ Баланс счета:" << balance;
-        return balance;
+        double totalBalance = query.value(0).toDouble();
+        qDebug() << u"✓ Общий баланс дебетовых счетов:" << totalBalance;
+        return totalBalance;
     }
 
     qWarning() << u"Ошибка получения баланса:" << query.lastError().text();

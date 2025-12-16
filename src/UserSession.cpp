@@ -11,6 +11,7 @@ UserSession& UserSession::instance()
 UserSession::UserSession()
     : m_userId(0)
     , m_totalBalance(0.0)
+    , m_isRefreshing(false)
 {
 }
 
@@ -110,6 +111,31 @@ void UserSession::refreshBalance()
     m_totalBalance = db.getTotalDebitBalance(m_userId);
     qDebug() << u"Общий баланс по дебетовым картам:" << m_totalBalance;
     emit balanceChanged();
+}
+
+void UserSession::refreshAll()
+{
+    if (m_userId <= 0) {
+        qWarning() << u"Невозможно обновить данные: пользователь не авторизован";
+        return;
+    }
+
+    qDebug() << u"🔄 Начало обновления всех данных...";
+
+    // Устанавливаем флаг загрузки
+    m_isRefreshing = true;
+    emit refreshingChanged();
+
+    // Обновляем все данные
+    loadUserData();
+    loadCards();
+    refreshBalance();
+
+    // Снимаем флаг загрузки
+    m_isRefreshing = false;
+    emit refreshingChanged();
+
+    qDebug() << u"✓ Все данные обновлены";
 }
 
 void UserSession::logout()

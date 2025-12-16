@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <QObject>
 #include <QString>
@@ -12,25 +12,25 @@ class CardController : public QObject
 public:
     explicit CardController(QObject* parent = nullptr);
 
-    // ============ ДОБАВЛЕНО: Методы для создания карты ============
+    // ============ Р”РћР‘РђР’Р›Р•РќРћ: РњРµС‚РѕРґС‹ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РєР°СЂС‚С‹ ============
     Q_INVOKABLE void createCard(
-        const QString& cardType,    // "debit" или "credit"
+        const QString& cardType,    // "debit" РёР»Рё "credit"
         const QString& cardBrand    // "visa", "mastercard", "mir"
     );
 
-    Q_INVOKABLE QString generateCVC();    // Генерация 3-значного CVC
-    Q_INVOKABLE QString generatePIN();    // Генерация 4-значного PIN
+    Q_INVOKABLE QString generateCVC();    // Р“РµРЅРµСЂР°С†РёСЏ 3-Р·РЅР°С‡РЅРѕРіРѕ CVC
+    Q_INVOKABLE QString generatePIN();    // Р“РµРЅРµСЂР°С†РёСЏ 4-Р·РЅР°С‡РЅРѕРіРѕ PIN
     // ==============================================================
 
 signals:
-    // ============ ДОБАВЛЕНО: Сигналы для QML ============
-    void cardCreated(const QVariantMap& cardData);  // Успешное создание
-    void cardCreationFailed(const QString& error);  // Ошибка
-    void creationProgress(const QString& message);  // Прогресс создания
+    // ============ Р”РћР‘РђР’Р›Р•РќРћ: РЎРёРіРЅР°Р»С‹ РґР»СЏ QML ============
+    void cardCreated(const QVariantMap& cardData);  // РЈСЃРїРµС€РЅРѕРµ СЃРѕР·РґР°РЅРёРµ
+    void cardCreationFailed(const QString& error);  // РћС€РёР±РєР°
+    void creationProgress(const QString& message);  // РџСЂРѕРіСЂРµСЃСЃ СЃРѕР·РґР°РЅРёСЏ
     // ====================================================
 
 private:
     DatabaseManager& m_db;
 
-    QString hashData(const QString& data);  // Хеширование CVC/PIN
+    QString hashData(const QString& data);  // РҐРµС€РёСЂРѕРІР°РЅРёРµ CVC/PIN
 };

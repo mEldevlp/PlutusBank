@@ -20,6 +20,7 @@ class UserSession : public QObject
         Q_PROPERTY(double totalBalance READ totalBalance NOTIFY balanceChanged)
         Q_PROPERTY(QVariantList cards READ cards NOTIFY cardsChanged)
         Q_PROPERTY(bool hasCards READ hasCards NOTIFY cardsChanged)
+        Q_PROPERTY(bool isRefreshing READ isRefreshing NOTIFY refreshingChanged)
 
 public:
     static UserSession& instance();
@@ -37,6 +38,7 @@ public:
     double totalBalance() const { return m_totalBalance; }
     QVariantList cards() const { return m_cards; }
     bool hasCards() const { return !m_cards.isEmpty(); }
+    bool isRefreshing() const { return m_isRefreshing; }
 
     // Setters
     void setUserData(int userId, const QString& firstName, const QString& lastName,
@@ -48,12 +50,14 @@ public:
     Q_INVOKABLE void loadCards();         // Загрузить карты
     Q_INVOKABLE void refreshBalance();    // Обновить баланс
     Q_INVOKABLE void logout();            // Выход
+    Q_INVOKABLE void refreshAll();
 
 signals:
     void userChanged();
     void balanceChanged();
     void cardsChanged();
     void loggedOut();
+    void refreshingChanged();
 
 private:
     UserSession();
@@ -69,4 +73,5 @@ private:
     QString m_phone;
     double m_totalBalance;
     QVariantList m_cards;
+    bool m_isRefreshing;
 };
