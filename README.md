@@ -69,6 +69,7 @@
 | ![Screenshot 5](preview/5.jpg) | ![Screenshot 6](preview/6.jpg) |
 | ![Screenshot 7](preview/7.jpg) | ![Screenshot 8](preview/8.jpg) |
 | ![Screenshot 9](preview/9.jpg) | ![Screenshot 10](preview/10.jpg) |
+| ![Screenshot 11](preview/11.jpg) | ![Screenshot 12](preview/12.jpg) |
 
 И многое другое...
 </div>
