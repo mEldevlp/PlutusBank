@@ -72,9 +72,15 @@ cd .\vcpkg\
 	Нажмите, чтобы посмотреть скриншоты выбора пакетов
 	</summary>
 
-	![Скриншот 1](qt1.jpg)
-	![Скриншот 2](qt2.jpg)
-	![Скриншот 3](qt3.jpg)
+<div align="center">
+
+| | |
+|:---:|:---:|
+| ![Screenshot 1](qt1.jpg) | ![Screenshot 2](qt2.jpg) |
+| ![Screenshot 3](qt3.jpg) | |
+
+</div>
+	
 </details>
 
 ---
