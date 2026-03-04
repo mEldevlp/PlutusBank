@@ -3,7 +3,7 @@ import QtQuick.Controls
 
 Item {
     id: registerPage
-    anchors.fill: parent
+    //anchors.fill: parent
 
     // Сигналы
     signal registerSuccess()
@@ -50,11 +50,11 @@ Item {
                     radius: 10
                     color: "#0F172A"
 
-                    Text {
+                    Image {
                         anchors.centerIn: parent
-                        text: "←"
-                        font.pixelSize: 24
-                        color: "#E5E7EB"
+                        width: 24; height: 24
+                        source: "assets/arrow-left.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
 
                     MouseArea {
@@ -588,10 +588,13 @@ Item {
                                 color: "transparent"
                                 anchors.verticalCenter: parent.verticalCenter
 
-                                Text {
+                                Image {
                                     anchors.centerIn: parent
-                                    text: passwordInput.showPassword ? "👁️" : "👁️‍🗨️"
-                                    font.pixelSize: 20
+                                    width: 24; height: 24
+                                    source: passwordInput.showPassword
+                                            ? "assets/eye.svg"
+                                            : "assets/eye-slash.svg"
+                                    sourceSize: Qt.size(24, 24)
                                 }
 
                                 MouseArea {
@@ -682,10 +685,13 @@ Item {
                                 color: "transparent"
                                 anchors.verticalCenter: parent.verticalCenter
 
-                                Text {
+                                Image {
                                     anchors.centerIn: parent
-                                    text: confirmPasswordInput.showConfirmPassword ? "👁️" : "👁️‍🗨️"
-                                    font.pixelSize: 20
+                                    width: 24; height: 24
+                                    source: passwordInput.showPassword
+                                            ? "assets/eye.svg"
+                                            : "assets/eye-slash.svg"
+                                    sourceSize: Qt.size(24, 24)
                                 }
 
                                 MouseArea {
@@ -724,12 +730,11 @@ Item {
 
                         property bool checked: false
 
-                        Text {
+                        Image {
                             anchors.centerIn: parent
-                            text: "✓"
-                            font.pixelSize: 16
-                            font.bold: true
-                            color: "#050B1A"
+                            width: 16; height: 16
+                            source: "assets/check-mark.svg"
+                            sourceSize: Qt.size(16, 16)
                             visible: termsCheckbox.checked
                         }
 

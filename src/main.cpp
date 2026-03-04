@@ -7,14 +7,16 @@
 #include "AuthController.h"
 #include "UserSession.h"
 #include "CardController.h"
+#include "TransferController.h"
+#include "HistoryController.h"
 
 #ifdef Q_OS_WIN
-    #include <windows.h>
+#include <windows.h>
 #endif
 
 #ifdef Q_OS_WIN
-    // Обработчик сообщений Qt для корректного вывода кириллицы в Windows консоль
-    void windowsMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
+// Обработчик сообщений Qt для корректного вывода кириллицы в Windows консоль
+void windowsMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString& msg);
 #endif
 
 int main(int argc, char* argv[])
@@ -28,7 +30,7 @@ int main(int argc, char* argv[])
 
     // Подключение к базе данных
     DatabaseManager& db = DatabaseManager::instance();
-    if (!db.connect()) 
+    if (!db.connect())
     {
         qCritical() << u"Не удалось подключиться к базе данных!";
         return -1;
@@ -38,12 +40,16 @@ int main(int argc, char* argv[])
     AuthController authController;
     UserSession& userSession = UserSession::instance();
     CardController cardController;
+    HistoryController historyController;
+    TransferController transferController;
 
     QQmlApplicationEngine engine;
 
     engine.rootContext()->setContextProperty("authController", &authController);
     engine.rootContext()->setContextProperty("userSession", &userSession);
     engine.rootContext()->setContextProperty("cardController", &cardController);
+    engine.rootContext()->setContextProperty("historyController", &historyController);
+    engine.rootContext()->setContextProperty("transferController", &transferController);
 
     const QUrl url = QUrl::fromLocalFile(
         QDir(QCoreApplication::applicationDirPath())

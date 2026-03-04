@@ -1,28 +1,28 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Shapes
 import "."
 
 Item {
-    id: mainPage
-    anchors.fill: parent
+    id: root
 
     signal openCreateCard()
+    signal openTransfer()
+    signal openHistory()
+    signal openCardDetail(var cardData)
+    signal openTopUp()
 
     Component.onCompleted: {
-        console.log("MainPage загружена")
         userSession.loadCards()
         userSession.refreshBalance()
     }
 
-    // Загрузка шрифта
     FontLoader {
         id: manropeFont
         source: "assets/fonts/Manrope-Bold.ttf"
     }
 
-    // Градиентный фон
+    // --- Фон ---
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -31,139 +31,80 @@ Item {
         }
     }
 
-    // ============ Pull-to-Refresh индикатор ============
+    // --- Pull-to-refresh ---
     Rectangle {
-        id: refreshIndicator
-        width: 50
-        height: 50
-        radius: 25
+        id: pullIndicator
+        width: 46; height: 46; radius: 23
         color: "#27D6C5"
         anchors.horizontalCenter: parent.horizontalCenter
-    
-        y: Math.max(-70, Math.min(50, -contentFlickable.contentY - 20))
-    
-        opacity: contentFlickable.contentY < -20 ? Math.min(1.0, Math.abs(contentFlickable.contentY) / 80) : 0
+        y: Math.max(-60, Math.min(40, -flick.contentY - 16))
+        opacity: flick.contentY < -16 ? Math.min(1, Math.abs(flick.contentY) / 70) : 0
         visible: opacity > 0
         z: 10
 
-        Behavior on opacity {
-            NumberAnimation { duration: 150 }
+        Image {
+            anchors.centerIn: parent
+            width: 24; height: 24
+            source: "assets/update.svg"
+            sourceSize: Qt.size(24, 24)
+            visible: !userSession.isRefreshing
+            rotation: flick.contentY < -16 ? Math.abs(flick.contentY) * 2.5 : 0
         }
 
-        // Иконка обновления (статичная)
-        Image {
-            id: refreshIcon
-            anchors.centerIn: parent
-            width: 28
-            height: 28
-            source: "assets/update.svg"
-            sourceSize: Qt.size(28, 28)
-            smooth: true
-            visible: !userSession.isRefreshing
-        
-            // Эффект поворота при протягивании
-            rotation: contentFlickable.contentY < -20 ? Math.abs(contentFlickable.contentY) * 2 : 0
-        
-            Behavior on rotation {
-                NumberAnimation { duration: 100 }
-            }
-        }
-    
-        // Индикатор загрузки (вращающаяся иконка)
         Image {
             anchors.centerIn: parent
-            width: 28
-            height: 28
+            width: 24; height: 24
             source: "assets/update.svg"
-            sourceSize: Qt.size(28, 28)
-            smooth: true
+            sourceSize: Qt.size(24, 24)
             visible: userSession.isRefreshing
-        
             RotationAnimation on rotation {
                 running: userSession.isRefreshing
-                from: 0
-                to: 360
-                duration: 1000
+                from: 0; to: 360; duration: 800
                 loops: Animation.Infinite
             }
         }
-
-        // Текст подсказки
-        Text {
-            anchors.top: parent.bottom
-            anchors.topMargin: 8
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: contentFlickable.contentY < -80 ? "Отпустите..." : "Потяните вниз"
-            font.pixelSize: 12
-            color: "#27D6C5"
-            opacity: parent.opacity
-        }
     }
-    // ===================================================
 
     Flickable {
-        id: contentFlickable
+        id: flick
         anchors.fill: parent
-        contentHeight: contentColumn.height + 40
+        contentHeight: mainCol.height + 32
         clip: true
-    
         boundsBehavior: Flickable.DragAndOvershootBounds
-    
-        // Обработка pull-to-refresh
-        property real pullThreshold: -80
-        property bool canRefresh: false
-    
+
+        property bool readyToRefresh: false
+
         onContentYChanged: {
-            if (contentY < pullThreshold && !userSession.isRefreshing && atYBeginning) {
-                canRefresh = true
-            } else if (contentY >= pullThreshold) {
-                canRefresh = false
-            }
+            if (contentY < -70 && !userSession.isRefreshing && atYBeginning)
+                readyToRefresh = true
+            else if (contentY >= -70)
+                readyToRefresh = false
         }
 
         onDraggingChanged: {
-            console.log("dragging:", dragging, "canRefresh:", canRefresh, "contentY:", contentY)
-        
-            if (!dragging && canRefresh && contentY < pullThreshold) {
-                console.log("🔄 Запуск обновления!")
-                triggerRefresh()
-            }
-        }
-    
-        function triggerRefresh() {
-            console.log("=== triggerRefresh() вызван ===")
-        
-            if (typeof userSession.refreshAll === "function") {
+            if (!dragging && readyToRefresh) {
                 userSession.refreshAll()
-                console.log("✓ userSession.refreshAll() вызван")
-            } else {
-                console.log("✗ ОШИБКА: userSession.refreshAll не существует!")
-                console.log("Вызываем запасные методы...")
-                userSession.loadCards()
-                userSession.refreshBalance()
+                readyToRefresh = false
             }
-        
-            canRefresh = false
         }
 
         Column {
-            id: contentColumn
+            id: mainCol
             width: parent.width
-            spacing: 24
-            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 28
+            topPadding: 24
+            bottomPadding: 24
 
-            // Отступ сверху
-            Item { width: 1; height: 20 }
-
-            // Шапка с приветствием
-            Row {
+            // ========== ПРИВЕТСТВИЕ ==========
+            Item {
                 width: parent.width - 32
+                height: 52
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 16
 
                 Column {
-                    width: parent.width - 60
-                    spacing: 4
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
 
                     Text {
                         text: "Добро пожаловать,"
@@ -172,178 +113,153 @@ Item {
                     }
 
                     Text {
-                        text: userSession.shortName  // "Кондрашов Д."
-                        font.pixelSize: 20
-                        font.bold: true
-                        font.family: manropeFont.name
+                        text: userSession.shortName
+                        font { pixelSize: 22; bold: true; family: manropeFont.name }
                         color: "#F7F7FB"
                     }
                 }
 
                 Rectangle {
-                    width: 44
-                    height: 44
-                    radius: 22
+                    width: 44; height: 44; radius: 22
                     color: "#27D6C5"
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
 
                     Text {
                         anchors.centerIn: parent
-                        text: userSession.lastName.charAt(0).toUpperCase()
-                        font.pixelSize: 18
-                        font.bold: true
+                        text: userSession.lastName.length > 0
+                              ? userSession.lastName.charAt(0).toUpperCase()
+                              : ""
+                        font { pixelSize: 18; bold: true }
                         color: "#050B1A"
                     }
                 }
             }
 
-            // Карта баланса
+            // ========== ОБЩИЙ БАЛАНС ==========
             Rectangle {
                 width: parent.width - 32
-                height: 180
+                height: 140
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 20
-                
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#1E40AF" }
-                    GradientStop { position: 1.0; color: "#3B82F6" }
+                    GradientStop { position: 0.0; color: "#374151" }
+                    GradientStop { position: 1.0; color: "#111827" }
                 }
 
+                // Левая часть: заголовок + сумма
                 Column {
-                    anchors.fill: parent
-                    anchors.margins: 24
+                    anchors {
+                        left: parent.left
+                        leftMargin: 24
+                        verticalCenter: parent.verticalCenter
+                    }
+                    spacing: 6
+
+                    Text {
+                        text: "Общий баланс"
+                        font.pixelSize: 14
+                        color: "#9CA3AF"
+                        opacity: 0.7
+                    }
+
+                    Text {
+                        text: userSession.totalBalance.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                        font { pixelSize: 28; bold: true; family: manropeFont.name }
+                        color: "#FFFFFF"
+                    }
+                }
+
+                // Правая часть: доход / расход
+                Column {
+                    anchors {
+                        right: parent.right
+                        rightMargin: 24
+                        verticalCenter: parent.verticalCenter
+                    }
                     spacing: 12
 
-                    Row {
-                        width: parent.width
-                        
-                        Column {
-                            width: parent.width - 40
-                            spacing: 8
-
-                            Text {
-                                text: "Общий баланс"
-                                font.pixelSize: 14
-                                color: "#DBEAFE"
-                                opacity: 0.8
-                            }
-
-                            Text {
-                                text: userSession.totalBalance.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
-                                font.pixelSize: 32
-                                font.bold: true
-                                font.family: manropeFont.name
-                                color: "#FFFFFF"
-                            }
-                        }
+                    Column {
+                        anchors.right: parent.right
+                        spacing: 2
 
                         Text {
-                            text: "💰"
-                            font.pixelSize: 32
-                            anchors.verticalCenter: parent.verticalCenter
+                            text: "Доход"
+                            font.pixelSize: 11
+                            color: "#9CA3AF"
+                            opacity: 0.7
+                            anchors.right: parent.right
+                        }
+                        Text {
+                            text: "+" + userSession.dailyIncome.toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                            font { pixelSize: 14; bold: true }
+                            color: "#10B981"
+                            anchors.right: parent.right
                         }
                     }
 
-                    Item { width: 1; height: 1 }
+                    Column {
+                        anchors.right: parent.right
+                        spacing: 2
 
-                    Row {
-                        width: parent.width
-                        spacing: 16
-
-                        Column {
-                            spacing: 4
-
-                            Text {
-                                text: "Доход"
-                                font.pixelSize: 11
-                                color: "#DBEAFE"
-                                opacity: 0.7
-                            }
-
-                            Text {
-                                text: "+0 ₽"
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: "#10B981"
-                            }
+                        Text {
+                            text: "Расход"
+                            font.pixelSize: 11
+                            color: "#9CA3AF"
+                            opacity: 0.7
+                            anchors.right: parent.right
                         }
-
-                        Rectangle {
-                            width: 1
-                            height: 30
-                            color: "#DBEAFE"
-                            opacity: 0.3
-                        }
-
-                        Column {
-                            spacing: 4
-
-                            Text {
-                                text: "Расход"
-                                font.pixelSize: 11
-                                color: "#DBEAFE"
-                                opacity: 0.7
-                            }
-
-                            Text {
-                                text: "-0 ₽"
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: "#EF4444"
-                            }
+                        Text {
+                            text: "-" + userSession.dailyExpense.toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                            font { pixelSize: 14; bold: true }
+                            color: "#EF4444"
+                            anchors.right: parent.right
                         }
                     }
                 }
             }
 
+            // ========== МОИ КАРТЫ ==========
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 16
+                spacing: 14
 
-                // Заголовок секции
-                Row {
-                    width: parent.width
-                    
-                    Text {
-                        text: "Мои карты"
-                        font.pixelSize: 18
-                        font.bold: true
-                        font.family: manropeFont.name
-                        color: "#F7F7FB"
-                    }
+                Text {
+                    text: "Мои карты"
+                    font { pixelSize: 18; bold: true; family: manropeFont.name }
+                    color: "#F7F7FB"
                 }
 
-                // Если карт нет - показываем только кнопку
+                // --- Пустое состояние ---
                 Column {
                     width: parent.width
-                    spacing: 16
-                    visible: !userSession.hasCards  // Карт нет
+                    spacing: 14
+                    visible: !userSession.hasCards
 
                     Rectangle {
                         width: parent.width
-                        height: 140
+                        height: 130
                         radius: 16
-                        color: "#1F2937"
+                        color: "#111827"
                         border.color: "#374151"
-                        border.width: 2
+                        border.width: 1
 
                         Column {
                             anchors.centerIn: parent
-                            spacing: 12
+                            spacing: 10
 
                             Text {
                                 text: "📇"
-                                font.pixelSize: 48
+                                font.pixelSize: 44
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
-
                             Text {
                                 text: "У вас пока нет карт"
                                 font.pixelSize: 14
                                 color: "#9CA3AF"
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
-
                             Text {
                                 text: "Выпустите свою первую карту"
                                 font.pixelSize: 12
@@ -353,189 +269,229 @@ Item {
                         }
                     }
 
-                    // Кнопка выпуска карты
                     Rectangle {
                         width: parent.width
-                        height: 54
+                        height: 52
                         radius: 16
-                        color: "#27D6C5"
+                        color: "#374151"
 
                         Text {
                             anchors.centerIn: parent
                             text: "Выпустить карту"
-                            font.pixelSize: 16
-                            font.bold: true
-                            font.family: manropeFont.name
-                            color: "#050B1A"
+                            font { pixelSize: 15; bold: true; family: manropeFont.name }
+                            color: "#E5E7EB"
                         }
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                openCreateCard()
-                            }
+                            onClicked: root.openCreateCard()
                         }
                     }
                 }
 
-                // Если карты есть - показываем список
+                // --- Список карт ---
                 Column {
                     width: parent.width
                     spacing: 12
-                    visible: userSession.hasCards  // Карты есть!
+                    visible: userSession.hasCards
 
                     Repeater {
                         model: userSession.cards
 
-                        Rectangle {
+                        delegate: Item {
+                            id: cardDelegate
                             width: parent.width
-                            height: 115  // ← ИЗМЕНЕНО: уменьшено до 110
-                            radius: 16
-        
-                            gradient: Gradient {
-                                GradientStop { 
-                                    position: 0.0
-                                    color: modelData.card_brand === "visa" ? "#1E3A8A" : 
-                                           modelData.card_brand === "mastercard" ? "#7C3AED" : "#059669"
-                                }
-                                GradientStop { 
-                                    position: 1.0
-                                    color: modelData.card_brand === "visa" ? "#3B82F6" : 
-                                           modelData.card_brand === "mastercard" ? "#A78BFA" : "#10B981"
-                                }
+                            height: 110
+
+                            required property var modelData
+                            required property int index
+
+                            readonly property bool isFrozen: !(modelData.is_active ?? true) && !(modelData.is_blocked ?? false)
+                            readonly property bool isBlocked: modelData.is_blocked ?? false
+
+                            // Градиенты по бренду
+                            readonly property color gradStart: {
+                                var b = modelData.card_brand ?? ""
+                                if (b === "visa")       return "#111827" // Очень темный сине-серый (почти черный)
+                                if (b === "mastercard") return "#2E1065" // Глубокий темный баклажан
+                                return "#064E3B" // Темно-хвойный зеленый
+                            }
+                            readonly property color gradEnd: {
+                                var b = modelData.card_brand ?? ""
+                                if (b === "visa")       return "#1E3A8A" // Приглушенный темно-синий
+                                if (b === "mastercard") return "#5B21B6" // Приглушенный фиолетовый
+                                return "#059669" // Приглушенный изумрудный
                             }
 
-                            Column {
+                            Rectangle {
+                                id: cardBg
                                 anchors.fill: parent
-                                anchors.margins: 16
-                                spacing: 8
-
-                                // ============ ИЗМЕНЕНО: Строка 1 - Тип карты + Логотип справа ============
-                                Row {
-                                    width: parent.width
-                                    spacing: 0
-
-                                    // Тип карты + Платёжная система (слева)
-                                    Text {
-                                        text: (modelData.card_type === "credit" ? "Кредитная" : "Дебетовая")
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        color: "#FFFFFF"
-                                        opacity: 0.9
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-
-                                    // ============ ИЗМЕНЕНО: Пустое пространство ============
-                                    Item { 
-                                        width: parent.width - parent.children[0].width - logoImage.width
-                                        height: 1
-                                    }
-                                    // =======================================================
-
-                                    // ============ ИЗМЕНЕНО: С импортом QtQuick.Shapes ============
-                                    Image {
-                                        id: logoImage
-                                        width: 50
-                                        height: 30
-                                        source: modelData.card_brand === "visa" ? "assets/visa.svg" :
-                                                modelData.card_brand === "mastercard" ? "assets/mastercard.svg" :
-                                                "assets/mir.svg"
-                                        sourceSize: Qt.size(50, 30)  // ← ИЗМЕНЕНО: формат Qt.size()
-                                        fillMode: Image.PreserveAspectFit
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        smooth: true
-                                        asynchronous: true  // ← ДОБАВЛЕНО: асинхронная загрузка
-                                    }
-                                    // ==============================================================
+                                radius: 16
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: cardDelegate.gradStart }
+                                    GradientStop { position: 1.0; color: cardDelegate.gradEnd }
                                 }
-                                // =========================================================================
 
-                                // ============ ИЗМЕНЕНО: Строка 2 - Номер и Expired date ============
-                                Row {
-                                    width: parent.width
-                                    spacing: 0
+                                // Затемнение при блокировке/заморозке
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: parent.radius
+                                    color: "#000000"
+                                    opacity: cardDelegate.isBlocked ? 0.55
+                                           : cardDelegate.isFrozen  ? 0.4
+                                           : 0
+                                }
 
-                                    // Маскированный номер (слева)
-                                    Text {
-                                        text: "•••• " + modelData.card_number.slice(-4)
-                                        font.pixelSize: 20
-                                        font.family: "Courier"
-                                        font.bold: true
-                                        color: "#FFFFFF"
-                                        anchors.verticalCenter: parent.verticalCenter
+                                Column {
+                                    anchors.fill: parent
+                                    anchors.margins: 16
+                                    spacing: 6
+
+                                    // Тип + логотип
+                                    Item {
+                                        width: parent.width
+                                        height: 28
+
+                                        Text {
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: cardDelegate.modelData.card_type === "credit"
+                                                  ? "Кредитная" : "Дебетовая"
+                                            font { pixelSize: 12; bold: true }
+                                            color: "#D1D5DB"
+                                        }
+
+                                        Image {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            width: 48; height: 28
+                                            fillMode: Image.PreserveAspectFit
+                                            source: {
+                                                var b = cardDelegate.modelData.card_brand ?? ""
+                                                if (b === "visa")       return "assets/visa.svg"
+                                                if (b === "mastercard") return "assets/mastercard.svg"
+                                                return "assets/mir.svg"
+                                            }
+                                            sourceSize: Qt.size(48, 28)
+                                            asynchronous: true
+                                        }
                                     }
 
-                                    // Пустое пространство
-                                    Item { 
-                                        width: parent.width - parent.children[0].width - expiryText.width
-                                        height: 1
+                                    // Номер + срок
+                                    Item {
+                                        width: parent.width
+                                        height: 24
+
+                                        Text {
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: "•••• " + (cardDelegate.modelData.card_number ?? "").slice(-4)
+                                            font { pixelSize: 20; family: "Courier"; bold: true }
+                                            color: "#9CA3AF"
+                                        }
+
+                                        Text {
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            text: cardDelegate.modelData.expiry_date ?? ""
+                                            font.pixelSize: 11
+                                            color: "#9CA3AF"
+                                            opacity: 0.8
+                                        }
                                     }
 
-                                    // Expired date (справа)
-                                    Text {
-                                        id: expiryText
-                                        text: modelData.expiry_date  // "12/30"
-                                        font.pixelSize: 11
-                                        color: "#FFFFFF"
-                                        opacity: 0.8
-                                        anchors.verticalCenter: parent.verticalCenter
+                                    // Баланс + статус
+                                    Row {
+                                        spacing: 8
+
+                                        Text {
+                                            text: {
+                                                var bal = cardDelegate.modelData.balance ?? 0
+                                                return bal.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                            }
+                                            font { pixelSize: 16; bold: true }
+                                            color: "#FFFFFF"
+                                        }
+
+                                        // Бейдж статуса
+                                                                                // Бейдж статуса
+                                        Rectangle {
+                                            visible: cardDelegate.isBlocked || cardDelegate.isFrozen
+                                            width: badgeRow.width + 16
+                                            height: 24
+                                            radius: 12
+                                            // Полупрозрачный черный фон для любого цвета карты
+                                            color: "#80000000" 
+                                            // Тонкая рамка в цвет статуса
+                                            border.color: cardDelegate.isBlocked ? "#EF4444" : "#3B82F6"
+                                            border.width: 1
+                                            anchors.verticalCenter: parent.children[0].verticalCenter
+
+                                            Row {
+                                                id: badgeRow
+                                                anchors.centerIn: parent
+                                                spacing: 6
+
+                                                Image {
+                                                    width: 14; height: 14
+                                                    source: cardDelegate.isBlocked
+                                                            ? "assets/lock.svg"
+                                                            : "assets/snowflake.svg"
+                                                    sourceSize: Qt.size(14, 14)
+                                                }
+
+                                                Text {
+                                                    text: cardDelegate.isBlocked ? "Заблокирована" : "Заморожена"
+                                                    font { pixelSize: 10; bold: true }
+                                                    // Яркие цвета текста для контраста на темном полупрозрачном фоне
+                                                    color: cardDelegate.isBlocked ? "#FCA5A5" : "#93C5FD" 
+                                                }
+                                            }
+                                        }
                                     }
                                 }
-                                // ===================================================================
 
-                                // ============ ИЗМЕНЕНО: Строка 3 - Только баланс без подписи ============
-                                Text {
-                                    text: (modelData.balance !== undefined ? 
-                                           modelData.balance.toLocaleString(Qt.locale("ru_RU"), 'f', 2) : 
-                                           "0.00") + " ₽"
-                                    font.pixelSize: 16
-                                    font.bold: true
-                                    color: "#FFFFFF"
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: root.openCardDetail(cardDelegate.modelData)
                                 }
-                                // =========================================================================
                             }
                         }
                     }
 
-
-                    // Кнопка выпуска ещё одной карты
+                    // Кнопка «Выпустить ещё карту»
                     Rectangle {
                         width: parent.width
-                        height: 54
+                        height: 52
                         radius: 16
                         color: "transparent"
-                        border.color: "#27D6C5"
-                        border.width: 2
+                        border.color: "#4B5563" // Приглушенный серый контур
+                        border.width: 1 // Уменьшаем толщину до 1px
 
                         Text {
                             anchors.centerIn: parent
                             text: "+ Выпустить ещё карту"
-                            font.pixelSize: 14
-                            font.bold: true
-                            font.family: manropeFont.name
-                            color: "#27D6C5"
+                            font { pixelSize: 14; bold: true; family: manropeFont.name }
+                            color: "#9CA3AF" // Серый текст
                         }
 
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: {
-                                openCreateCard()
-                            }
+                            onClicked: root.openCreateCard()
                         }
                     }
                 }
             }
 
+            // ========== БЫСТРЫЕ ДЕЙСТВИЯ ==========
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 16
+                spacing: 14
 
                 Text {
                     text: "Быстрые действия"
-                    font.pixelSize: 18
-                    font.bold: true
-                    font.family: manropeFont.name
+                    font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
 
@@ -545,9 +501,10 @@ Item {
                     columnSpacing: 12
                     rowSpacing: 12
 
+                    // -- Перевод --
                     Rectangle {
                         width: (parent.width - 12) / 2
-                        height: 100
+                        height: 90
                         radius: 16
                         color: "#1F2937"
 
@@ -555,9 +512,10 @@ Item {
                             anchors.centerIn: parent
                             spacing: 8
 
-                            Text {
-                                text: "💸"
-                                font.pixelSize: 32
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/transfer.svg"
+                                sourceSize: Qt.size(28, 28)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
 
@@ -568,26 +526,27 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }
-
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: console.log("Перевод")
+                            onClicked: root.openTransfer()
                         }
                     }
 
+                    // -- Пополнить --
                     Rectangle {
                         width: (parent.width - 12) / 2
-                        height: 100
+                        height: 90
                         radius: 16
                         color: "#1F2937"
 
                         Column {
                             anchors.centerIn: parent
                             spacing: 8
-
-                            Text {
-                                text: "📱"
-                                font.pixelSize: 32
+                            
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/money-recive.svg"
+                                sourceSize: Qt.size(28, 28)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
 
@@ -598,16 +557,16 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }
-
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: console.log("Пополнение")
+                            onClicked: root.openTopUp()
                         }
                     }
 
+                    // -- История --
                     Rectangle {
                         width: (parent.width - 12) / 2
-                        height: 100
+                        height: 90
                         radius: 16
                         color: "#1F2937"
 
@@ -615,9 +574,10 @@ Item {
                             anchors.centerIn: parent
                             spacing: 8
 
-                            Text {
-                                text: "📊"
-                                font.pixelSize: 32
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/history.svg"
+                                sourceSize: Qt.size(28, 28)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
 
@@ -628,16 +588,16 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }
-
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: console.log("История операций")
+                            onClicked: root.openHistory()
                         }
                     }
 
+                    // -- Настройки --
                     Rectangle {
                         width: (parent.width - 12) / 2
-                        height: 100
+                        height: 90
                         radius: 16
                         color: "#1F2937"
 
@@ -645,9 +605,10 @@ Item {
                             anchors.centerIn: parent
                             spacing: 8
 
-                            Text {
-                                text: "⚙️"
-                                font.pixelSize: 32
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/settings.svg"
+                                sourceSize: Qt.size(28, 28)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
 
@@ -658,7 +619,6 @@ Item {
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }
-
                         MouseArea {
                             anchors.fill: parent
                             onClicked: console.log("Настройки")
@@ -666,9 +626,6 @@ Item {
                     }
                 }
             }
-
-            // Отступ снизу
-            Item { width: 1; height: 20 }
         }
     }
 }

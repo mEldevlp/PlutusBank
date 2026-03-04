@@ -18,6 +18,8 @@ class UserSession : public QObject
         Q_PROPERTY(QString shortName READ shortName NOTIFY userChanged)  // "Кондрашов Д."
         Q_PROPERTY(bool isLoggedIn READ isLoggedIn NOTIFY userChanged)
         Q_PROPERTY(double totalBalance READ totalBalance NOTIFY balanceChanged)
+        Q_PROPERTY(double dailyIncome READ dailyIncome NOTIFY balanceChanged)
+        Q_PROPERTY(double dailyExpense READ dailyExpense NOTIFY balanceChanged)
         Q_PROPERTY(QVariantList cards READ cards NOTIFY cardsChanged)
         Q_PROPERTY(bool hasCards READ hasCards NOTIFY cardsChanged)
         Q_PROPERTY(bool isRefreshing READ isRefreshing NOTIFY refreshingChanged)
@@ -36,6 +38,8 @@ public:
     QString shortName() const;  // "Кондрашов Д."
     bool isLoggedIn() const { return m_userId > 0; }
     double totalBalance() const { return m_totalBalance; }
+    double dailyIncome() const { return m_dailyIncome; }
+    double dailyExpense() const { return m_dailyExpense; }
     QVariantList cards() const { return m_cards; }
     bool hasCards() const { return !m_cards.isEmpty(); }
     bool isRefreshing() const { return m_isRefreshing; }
@@ -72,6 +76,8 @@ private:
     QString m_email;
     QString m_phone;
     double m_totalBalance;
+    double m_dailyIncome;
+    double m_dailyExpense;
     QVariantList m_cards;
     bool m_isRefreshing;
 };

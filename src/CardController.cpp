@@ -4,21 +4,24 @@
 #include <QRandomGenerator>
 #include <QDateTime>
 #include <QDebug>
+#include <QGuiApplication>
+#include <QClipboard>
 
 CardController::CardController(QObject* parent)
     : QObject(parent)
     , m_db(DatabaseManager::instance())
-{}
+{
+}
 
 QString CardController::generateCVC()
 {
-    int cvc = QRandomGenerator::global()->bounded(100, 1000);  // 100-999
+    int cvc = QRandomGenerator::global()->bounded(100, 1000);
     return QString::number(cvc);
 }
 
 QString CardController::generatePIN()
 {
-    int pin = QRandomGenerator::global()->bounded(1000, 10000);  // 1000-9999
+    int pin = QRandomGenerator::global()->bounded(1000, 10000);
     return QString::number(pin);
 }
 
@@ -42,7 +45,6 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
         return;
     }
 
-    // Шаг 1: Создаём новый счёт
     emit creationProgress("Создание нового счёта...");
 
     int accountId = m_db.createAccount(userId, cardType);
@@ -51,9 +53,6 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
         return;
     }
 
-    qDebug() << u"✓ Счёт создан. Account ID:" << accountId;
-
-    // Шаг 2: Генерируем данные карты
     emit creationProgress("Генерация номера карты...");
 
     QString cardNumber = m_db.generateCardNumber(cardBrand);
@@ -62,22 +61,14 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
         return;
     }
 
-    qDebug() << u"✓ Номер карты сгенерирован:" << cardNumber;
-
-    // Генерируем CVC и PIN
     QString cvc = generateCVC();
     QString pin = generatePIN();
 
-    qDebug() << u"✓ CVC:" << cvc << u"PIN:" << pin;
-
-    // Шаг 3: Вычисляем дату истечения (+5 лет)
     QDate expiryDate = QDate::currentDate().addYears(5);
 
-    // Шаг 4: Формируем имя держателя карты (латиницей)
     QString cardHolderName = session.lastName().toUpper() + " " +
         session.firstName().toUpper();
 
-    // Шаг 5: Создаём карту в БД
     emit creationProgress("Сохранение карты...");
 
     bool success = m_db.createCard(
@@ -96,21 +87,109 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
         return;
     }
 
-    qDebug() << u"✓ Карта создана успешно!";
-
-    // Шаг 6: Обновляем данные пользователя
     session.loadCards();
     session.refreshBalance();
 
-    // Шаг 7: Возвращаем данные карты в QML
     QVariantMap cardData;
     cardData["cardNumber"] = cardNumber;
     cardData["cardHolder"] = cardHolderName;
     cardData["expiryDate"] = expiryDate.toString("MM/yy");
-    cardData["cvc"] = cvc;  // НЕ хешированный для показа пользователю
-    cardData["pin"] = pin;  // НЕ хешированный для показа пользователю
+    cardData["cvc"] = cvc;
+    cardData["pin"] = pin;
     cardData["cardType"] = cardType;
     cardData["cardBrand"] = cardBrand;
 
     emit cardCreated(cardData);
+}
+
+void CardController::blockCard(int cardId)
+{
+    if (m_db.blockCard(cardId)) {
+        UserSession::instance().loadCards();
+        emit cardBlocked();
+    }
+    else {
+        emit cardBlockFailed("Не удалось заблокировать карту");
+    }
+}
+
+void CardController::freezeCard(int cardId)
+{
+    if (m_db.freezeCard(cardId)) {
+        // После toggle читаем актуальное состояние
+        auto details = m_db.getCardFullDetails(cardId);
+        bool isActive = details.value("is_active").toBool();
+        UserSession::instance().loadCards();
+        emit cardFrozen(!isActive);  // isFrozen = !is_active
+    }
+    else {
+        emit cardFreezeFailed("Не удалось заморозить карту");
+    }
+}
+
+QVariantMap CardController::getCardDetails(int cardId)
+{
+    return m_db.getCardFullDetails(cardId);
+}
+
+void CardController::loadCardTransactions(int accountId)
+{
+    m_isLoading = true;
+    emit loadingChanged();
+
+    m_cardTransactions = m_db.getCardTransactions(accountId, 50, 0);
+
+    m_isLoading = false;
+    emit loadingChanged();
+    emit cardTransactionsChanged();
+}
+
+void CardController::copyToClipboard(const QString& text)
+{
+    QClipboard* clipboard = QGuiApplication::clipboard();
+    if (clipboard)
+        clipboard->setText(text);
+}
+
+bool CardController::topUpAccounts(const QVariantList& accountIds, double amount)
+{
+    if (accountIds.isEmpty()) {
+        emit topUpFailed("Не выбрано ни одной карты");
+        return false;
+    }
+    if (amount <= 0) {
+        emit topUpFailed("Сумма должна быть больше нуля");
+        return false;
+    }
+
+    int successCount = 0;
+    int frozenCount = 0;
+    for (const QVariant& v : accountIds) {
+        int accId = v.toInt();
+
+        // Проверка заморозки/блокировки
+        if (m_db.isAccountFrozenOrBlocked(accId)) {
+            ++frozenCount;
+            continue;
+        }
+
+        if (m_db.topUpAccount(accId, amount)) {
+            ++successCount;
+        }
+    }
+
+    if (successCount == 0) {
+        if (frozenCount > 0) {
+            emit topUpFailed("Выбранные карты заморожены или заблокированы");
+        }
+        else {
+            emit topUpFailed("Не удалось пополнить ни одну карту");
+        }
+        return false;
+    }
+
+    UserSession::instance().loadCards();
+    UserSession::instance().refreshBalance();
+    emit topUpSuccess(amount * successCount, successCount);
+    return true;
 }

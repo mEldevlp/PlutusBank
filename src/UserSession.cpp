@@ -11,6 +11,8 @@ UserSession& UserSession::instance()
 UserSession::UserSession()
     : m_userId(0)
     , m_totalBalance(0.0)
+    , m_dailyIncome(0.0)
+    , m_dailyExpense(0.0)
     , m_isRefreshing(false)
 {
 }
@@ -109,7 +111,11 @@ void UserSession::refreshBalance()
 
     DatabaseManager& db = DatabaseManager::instance();
     m_totalBalance = db.getTotalDebitBalance(m_userId);
-    qDebug() << u"Общий баланс по дебетовым картам:" << m_totalBalance;
+    m_dailyIncome = db.getDailyIncome(m_userId);
+    m_dailyExpense = db.getDailyExpense(m_userId);
+    qDebug() << u"Общий баланс:" << m_totalBalance
+        << u"Доход за сутки:" << m_dailyIncome
+        << u"Расход за сутки:" << m_dailyExpense;
     emit balanceChanged();
 }
 
@@ -147,6 +153,8 @@ void UserSession::logout()
     m_email.clear();
     m_phone.clear();
     m_totalBalance = 0.0;
+    m_dailyIncome = 0.0;
+    m_dailyExpense = 0.0;
     m_cards.clear();
 
     emit userChanged();

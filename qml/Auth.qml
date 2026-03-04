@@ -3,7 +3,7 @@ import QtQuick.Controls
 
 Item {
     id: authPage
-    anchors.fill: parent
+    //anchors.fill: parent
 
     // Сигналы
     signal loginSuccess()
@@ -108,10 +108,11 @@ Item {
                     anchors.margins: 12
                     spacing: 12
 
-                    Text {
-                        text: "⚠️"
-                        font.pixelSize: 24
+                    Image {
                         anchors.verticalCenter: parent.verticalCenter
+                        width: 24; height: 24
+                        source: "assets/warning.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
 
                     Column {
@@ -142,11 +143,11 @@ Item {
                         color: "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
-                        Text {
+                        Image {
                             anchors.centerIn: parent
-                            text: "×"
-                            font.pixelSize: 24
-                            color: "#FEE2E2"
+                            width: 20; height: 20
+                            source: "assets/cross.svg"
+                            sourceSize: Qt.size(20, 20)
                         }
 
                         MouseArea {
@@ -346,10 +347,13 @@ Item {
                                 color: "transparent"
                                 anchors.verticalCenter: parent.verticalCenter
 
-                                Text {
+                                Image {
                                     anchors.centerIn: parent
-                                    text: passwordInput.showPassword ? "👁️" : "👁️‍🗨️"
-                                    font.pixelSize: 20
+                                    width: 24; height: 24
+                                    source: passwordInput.showPassword
+                                            ? "assets/eye.svg"
+                                            : "assets/eye-slash.svg"
+                                    sourceSize: Qt.size(24, 24)
                                 }
 
                                 MouseArea {

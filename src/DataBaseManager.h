@@ -43,6 +43,13 @@ public:
     QVariantList getUserAccounts(int userId);
     double getAccountBalance(int accountId);
 
+    // Доходы/расходы за сутки
+    double getDailyIncome(int userId);
+    double getDailyExpense(int userId);
+
+    // История транзакций
+    QVariantList getTransactionHistory(int userId, int limit = 50, int offset = 0);
+
     int createAccount(int userId, const QString& accountType);  // Создать счёт
     QString generateCardNumber(const QString& brand);           // Генерировать номер
     bool createCard(
@@ -55,6 +62,25 @@ public:
         const QString& cardType,
         const QString& cardBrand
     );
+
+    // Переводы
+    bool transferBetweenAccounts(int fromAccountId, int toAccountId, double amount);
+    bool transferToUser(int fromAccountId, const QString& recipientPhone, double amount);
+    int findAccountByPhone(const QString& phone, const QString& accountType = "debit");
+    QString getAccountOwnerName(int accountId);
+    QVariantList getUserDebitAccounts(int userId);  // Только дебетовые для переводов
+
+    // Операции с картами
+    bool blockCard(int cardId);
+    bool freezeCard(int cardId);
+    bool unfreezeCard(int cardId);
+    QVariantMap getCardFullDetails(int cardId);
+    QVariantList getCardTransactions(int accountId, int limit = 50, int offset = 0);
+
+    bool isAccountFrozenOrBlocked(int accountId);
+
+    // Пополнение
+    bool topUpAccount(int accountId, double amount);
 
 signals:
     void connected();

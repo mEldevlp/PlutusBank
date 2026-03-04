@@ -58,6 +58,8 @@ set(SOURCE_FILES
     src/AuthController.cpp
     src/UserSession.cpp
 	src/CardController.cpp
+    src/TransferController.cpp
+	src/HistoryController.cpp
 )
 
 # Header Files (*.h)
@@ -66,6 +68,8 @@ set(HEADER_FILES
     src/AuthController.h
     src/UserSession.h
     src/CardController.h
+    src/TransferController.h
+	src/HistoryController.h
 )
 
 # QML Files - UI
@@ -75,6 +79,10 @@ set(QML_UI_FILES
     qml/Register.qml
     qml/MainPage.qml
 	qml/CreateCardDialog.qml
+	qml/TransferPage.qml
+	qml/HistoryPage.qml
+	qml/CardDetailPage.qml
+	qml/TopUpPage.qml
 )
 
 # QML Resources - Assets

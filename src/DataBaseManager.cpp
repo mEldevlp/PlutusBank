@@ -179,20 +179,15 @@ QVariantList DatabaseManager::getUserCards(int userId)
 {
     QVariantList cards;
 
-    // ============ ИСПРАВЛЕНО: Убрали вызов getUserAccountId() ============
-    // Теперь получаем карты сразу по user_id через JOIN с accounts
-    // ======================================================================
-
     QSqlQuery query;
     query.prepare(
         "SELECT c.id, c.card_number, c.card_holder_name, c.card_type, "
         "c.card_brand, c.is_active, c.is_blocked, c.expiry_date, "
-        "c.daily_limit, c.monthly_limit, a.balance "
+        "c.daily_limit, c.monthly_limit, a.balance, "
+        "a.id AS account_id, a.account_number "
         "FROM cards c "
         "INNER JOIN accounts a ON c.account_id = a.id "
-        // ============ ИСПРАВЛЕНО: Фильтр по user_id, а не account_id ============
         "WHERE a.user_id = :userId "
-        // ========================================================================
         "ORDER BY c.created_at DESC"
     );
 
@@ -212,6 +207,8 @@ QVariantList DatabaseManager::getUserCards(int userId)
             card["daily_limit"] = query.value(8).toDouble();
             card["monthly_limit"] = query.value(9).toDouble();
             card["balance"] = query.value(10).toDouble();
+            card["account_id"] = query.value(11).toInt();
+            card["account_number"] = query.value(12).toString();
 
             cards.append(card);
         }
@@ -277,6 +274,149 @@ double DatabaseManager::getAccountBalance(int accountId)
     }
 
     return 0.0;
+}
+
+double DatabaseManager::getDailyIncome(int userId)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT COALESCE(SUM(t.amount), 0) "
+        "FROM transactions t "
+        "INNER JOIN accounts a ON t.to_account_id = a.id "
+        "WHERE a.user_id = :userId "
+        "  AND t.status = 'completed' "
+        "  AND t.created_at >= CURRENT_DATE "
+        "  AND (t.from_account_id IS NULL "
+        "       OR t.from_account_id NOT IN (SELECT id FROM accounts WHERE user_id = :userId2))"
+    );
+    query.bindValue(":userId", userId);
+    query.bindValue(":userId2", userId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toDouble();
+    }
+
+    qWarning() << u"Ошибка получения дохода за сутки:" << query.lastError().text();
+    return 0.0;
+}
+
+double DatabaseManager::getDailyExpense(int userId)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT COALESCE(SUM(t.amount), 0) "
+        "FROM transactions t "
+        "INNER JOIN accounts a ON t.from_account_id = a.id "
+        "WHERE a.user_id = :userId "
+        "  AND t.status = 'completed' "
+        "  AND t.created_at >= CURRENT_DATE "
+        "  AND (t.to_account_id IS NULL "
+        "       OR t.to_account_id NOT IN (SELECT id FROM accounts WHERE user_id = :userId2))"
+    );
+    query.bindValue(":userId", userId);
+    query.bindValue(":userId2", userId);
+
+    if (query.exec() && query.next()) {
+        return query.value(0).toDouble();
+    }
+
+    qWarning() << u"Ошибка получения расхода за сутки:" << query.lastError().text();
+    return 0.0;
+}
+
+QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int offset)
+{
+    QVariantList history;
+    QSqlQuery query(m_db);
+
+    // Получаем все транзакции, где пользователь — отправитель или получатель
+    query.prepare(
+        "SELECT t.id, t.amount, t.transaction_type, t.description, t.status, t.created_at, "
+        "       t.from_account_id, t.to_account_id, "
+        "       fa.account_number AS from_account, "
+        "       ta.account_number AS to_account, "
+        "       fu.last_name || ' ' || LEFT(fu.first_name, 1) || '.' AS from_name, "
+        "       tu.last_name || ' ' || LEFT(tu.first_name, 1) || '.' AS to_name, "
+        "       fc.card_number AS from_card, "
+        "       tc.card_number AS to_card "
+        "FROM transactions t "
+        "LEFT JOIN accounts fa ON t.from_account_id = fa.id "
+        "LEFT JOIN accounts ta ON t.to_account_id = ta.id "
+        "LEFT JOIN users fu ON fa.user_id = fu.id "
+        "LEFT JOIN users tu ON ta.user_id = tu.id "
+        "LEFT JOIN cards fc ON fc.account_id = fa.id "
+        "LEFT JOIN cards tc ON tc.account_id = ta.id "
+        "WHERE fa.user_id = :userId1 OR ta.user_id = :userId2 "
+        "ORDER BY t.created_at DESC "
+        "LIMIT :limit OFFSET :offset"
+    );
+
+    query.bindValue(":userId1", userId);
+    query.bindValue(":userId2", userId);
+    query.bindValue(":limit", limit);
+    query.bindValue(":offset", offset);
+
+    if (query.exec()) {
+        while (query.next()) {
+            QVariantMap item;
+            item["id"] = query.value(0).toInt();
+            item["amount"] = query.value(1).toDouble();
+            item["transaction_type"] = query.value(2).toString();
+            item["description"] = query.value(3).toString();
+            item["status"] = query.value(4).toString();
+            item["created_at"] = query.value(5).toDateTime().toString("dd.MM.yyyy HH:mm");
+            item["date_group"] = query.value(5).toDateTime().toString("dd.MM.yyyy");
+
+            int fromAccountId = query.value(6).toInt();
+            int toAccountId = query.value(7).toInt();
+
+            // Определяем направление относительно текущего пользователя
+            // Проверяем, является ли from_account нашим
+            QSqlQuery checkFrom(m_db);
+            checkFrom.prepare("SELECT user_id FROM accounts WHERE id = :id");
+            checkFrom.bindValue(":id", fromAccountId);
+            bool isOutgoing = false;
+            if (checkFrom.exec() && checkFrom.next()) {
+                isOutgoing = (checkFrom.value(0).toInt() == userId);
+            }
+
+            // Проверяем, является ли to_account тоже нашим (внутренний перевод)
+            QSqlQuery checkTo(m_db);
+            checkTo.prepare("SELECT user_id FROM accounts WHERE id = :id");
+            checkTo.bindValue(":id", toAccountId);
+            bool isIncoming = false;
+            if (checkTo.exec() && checkTo.next()) {
+                isIncoming = (checkTo.value(0).toInt() == userId);
+            }
+
+            if (isOutgoing && isIncoming) {
+                item["direction"] = "self";   // перевод между своими счетами
+            }
+            else if (isOutgoing) {
+                item["direction"] = "out";
+            }
+            else {
+                item["direction"] = "in";
+            }
+
+            item["from_name"] = query.value(10).toString();
+            item["to_name"] = query.value(11).toString();
+
+            // Последние 4 цифры карт
+            QString fromCard = query.value(12).toString();
+            QString toCard = query.value(13).toString();
+            item["from_card_last4"] = fromCard.isEmpty() ? "" : fromCard.right(4);
+            item["to_card_last4"] = toCard.isEmpty() ? "" : toCard.right(4);
+
+            history.append(item);
+        }
+        qDebug() << u"✓ Загружено транзакций:" << history.size();
+    }
+    else {
+        qWarning() << u"Ошибка загрузки истории:" << query.lastError().text();
+    }
+
+    return history;
 }
 
 int DatabaseManager::createAccount(int userId, const QString& accountType)
@@ -375,5 +515,400 @@ bool DatabaseManager::createCard(
     }
 
     qDebug() << u"✓ Карта создана в БД";
+    return true;
+}
+
+bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId, double amount)
+{
+    if (fromAccountId == toAccountId)
+    {
+        emit error("Нельзя переводить на тот же счёт");
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+
+    // Начинаем транзакцию
+    m_db.transaction();
+
+    // Проверяем баланс отправителя
+    query.prepare("SELECT balance FROM accounts WHERE id = :id FOR UPDATE");
+    query.bindValue(":id", fromAccountId);
+
+    if (!query.exec() || !query.next()) {
+        m_db.rollback();
+        emit error("Счёт отправителя не найден");
+        return false;
+    }
+
+    double balance = query.value(0).toDouble();
+    if (balance < amount)
+    {
+        m_db.rollback();
+        emit error("Недостаточно средств");
+        return false;
+    }
+
+    // Проверяем существование счёта получателя
+    query.prepare("SELECT id FROM accounts WHERE id = :id FOR UPDATE");
+    query.bindValue(":id", toAccountId);
+
+    if (!query.exec() || !query.next())
+    {
+        m_db.rollback();
+        emit error("Счёт получателя не найден");
+        return false;
+    }
+
+    // Списание
+    query.prepare("UPDATE accounts SET balance = balance - :amount WHERE id = :id");
+    query.bindValue(":amount", amount);
+    query.bindValue(":id", fromAccountId);
+
+    if (!query.exec())
+    {
+        m_db.rollback();
+        qWarning() << u"Ошибка списания:" << query.lastError().text();
+        return false;
+    }
+
+    // Зачисление
+    query.prepare("UPDATE accounts SET balance = balance + :amount WHERE id = :id");
+    query.bindValue(":amount", amount);
+    query.bindValue(":id", toAccountId);
+
+    if (!query.exec())
+    {
+        m_db.rollback();
+        qWarning() << u"Ошибка зачисления:" << query.lastError().text();
+        return false;
+    }
+
+    // Определяем тип перевода
+    QSqlQuery typeQuery(m_db);
+    typeQuery.prepare(
+        "SELECT (SELECT user_id FROM accounts WHERE id = :from) = "
+        "(SELECT user_id FROM accounts WHERE id = :to)"
+    );
+    typeQuery.bindValue(":from", fromAccountId);
+    typeQuery.bindValue(":to", toAccountId);
+    typeQuery.exec();
+    typeQuery.next();
+    bool isInternal = typeQuery.value(0).toBool();
+
+    // Запись транзакции
+    query.prepare(
+        "INSERT INTO transactions (from_account_id, to_account_id, amount, transaction_type, status) "
+        "VALUES (:from, :to, :amount, :type, 'completed')"
+    );
+    query.bindValue(":from", fromAccountId);
+    query.bindValue(":to", toAccountId);
+    query.bindValue(":amount", amount);
+    query.bindValue(":type", isInternal ? "internal" : "external");
+
+    if (!query.exec())
+    {
+        m_db.rollback();
+        qWarning() << u"Ошибка записи транзакции:" << query.lastError().text();
+        return false;
+    }
+
+    if (!m_db.commit())
+    {
+        m_db.rollback();
+        qWarning() << u"Ошибка коммита:" << m_db.lastError().text();
+        return false;
+    }
+
+    qDebug() << u"✓ Перевод выполнен:" << amount << u"со счёта" << fromAccountId << u"на счёт" << toAccountId;
+    return true;
+}
+
+int DatabaseManager::findAccountByPhone(const QString& phone, const QString& accountType)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT a.id FROM accounts a "
+        "INNER JOIN users u ON a.user_id = u.id "
+        "WHERE u.phone = :phone AND a.account_type = :type "
+        "ORDER BY a.created_at ASC LIMIT 1"
+    );
+    query.bindValue(":phone", phone);
+    query.bindValue(":type", accountType);
+
+    if (query.exec() && query.next())
+    {
+        return query.value(0).toInt();
+    }
+    return -1;
+}
+
+bool DatabaseManager::transferToUser(int fromAccountId, const QString& recipientPhone, double amount)
+{
+    int toAccountId = findAccountByPhone(recipientPhone, "debit");
+    if (toAccountId <= 0)
+    {
+        emit error("Получатель с таким номером не найден или у него нет дебетового счёта");
+        return false;
+    }
+
+    // Проверяем, что не переводим самому себе на тот же счёт
+    return transferBetweenAccounts(fromAccountId, toAccountId, amount);
+}
+
+QString DatabaseManager::getAccountOwnerName(int accountId)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT u.last_name || ' ' || u.first_name "
+        "FROM users u INNER JOIN accounts a ON a.user_id = u.id "
+        "WHERE a.id = :id"
+    );
+    query.bindValue(":id", accountId);
+
+    if (query.exec() && query.next())
+    {
+        return query.value(0).toString();
+    }
+
+    return "";
+}
+
+QVariantList DatabaseManager::getUserDebitAccounts(int userId)
+{
+    QVariantList accounts;
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT a.id, a.account_number, a.balance, a.account_type, "
+        "c.card_number, c.card_brand, c.is_active, c.is_blocked "
+        "FROM accounts a "
+        "LEFT JOIN cards c ON c.account_id = a.id "
+        "WHERE a.user_id = :userId "
+        "ORDER BY a.account_type, a.created_at"
+    );
+    query.bindValue(":userId", userId);
+
+    if (query.exec())
+    {
+        while (query.next())
+        {
+            QVariantMap acc;
+            acc["id"] = query.value(0).toInt();
+            acc["account_number"] = query.value(1).toString();
+            acc["balance"] = query.value(2).toDouble();
+            acc["account_type"] = query.value(3).toString();
+            acc["card_number"] = query.value(4).toString();
+            acc["card_brand"] = query.value(5).toString();
+            acc["is_active"] = query.value(6).toBool();
+            acc["is_blocked"] = query.value(7).toBool();
+            accounts.append(acc);
+        }
+    }
+
+    return accounts;
+}
+
+bool DatabaseManager::blockCard(int cardId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE cards SET is_blocked = true, is_active = false WHERE id = :id");
+    query.bindValue(":id", cardId);
+
+    if (!query.exec()) {
+        qWarning() << u"Ошибка блокировки карты:" << query.lastError().text();
+        return false;
+    }
+    qDebug() << u"✓ Карта заблокирована. ID:" << cardId;
+    return true;
+}
+
+bool DatabaseManager::freezeCard(int cardId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE cards SET is_active = NOT is_active WHERE id = :id RETURNING is_active");
+    query.bindValue(":id", cardId);
+
+    if (!query.exec() || !query.next()) {
+        qWarning() << u"Ошибка заморозки карты:" << query.lastError().text();
+        return false;
+    }
+    bool newState = query.value(0).toBool();
+    qDebug() << u"✓ Карта" << (newState ? "разморожена" : "заморожена") << "ID:" << cardId;
+    return true;
+}
+
+bool DatabaseManager::unfreezeCard(int cardId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE cards SET is_active = true WHERE id = :id");
+    query.bindValue(":id", cardId);
+
+    if (!query.exec()) {
+        qWarning() << u"Ошибка разморозки карты:" << query.lastError().text();
+        return false;
+    }
+    return true;
+}
+
+QVariantMap DatabaseManager::getCardFullDetails(int cardId)
+{
+    QVariantMap details;
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT c.id, c.card_number, c.card_holder_name, c.card_type, "
+        "c.card_brand, c.is_active, c.is_blocked, c.expiry_date, "
+        "c.daily_limit, c.monthly_limit, a.balance, a.id AS account_id, "
+        "a.account_number "
+        "FROM cards c "
+        "INNER JOIN accounts a ON c.account_id = a.id "
+        "WHERE c.id = :cardId"
+    );
+    query.bindValue(":cardId", cardId);
+
+    if (query.exec() && query.next()) {
+        details["id"] = query.value(0).toInt();
+        details["card_number"] = query.value(1).toString();
+        details["card_holder_name"] = query.value(2).toString();
+        details["card_type"] = query.value(3).toString();
+        details["card_brand"] = query.value(4).toString();
+        details["is_active"] = query.value(5).toBool();
+        details["is_blocked"] = query.value(6).toBool();
+        details["expiry_date"] = query.value(7).toDate().toString("MM/yy");
+        details["daily_limit"] = query.value(8).toDouble();
+        details["monthly_limit"] = query.value(9).toDouble();
+        details["balance"] = query.value(10).toDouble();
+        details["account_id"] = query.value(11).toInt();
+        details["account_number"] = query.value(12).toString();
+    }
+    return details;
+}
+
+QVariantList DatabaseManager::getCardTransactions(int accountId, int limit, int offset)
+{
+    QVariantList history;
+    QSqlQuery query(m_db);
+
+    query.prepare(
+        "SELECT t.id, t.amount, t.transaction_type, t.description, t.status, t.created_at, "
+        "       t.from_account_id, t.to_account_id, "
+        "       fu.last_name || ' ' || LEFT(fu.first_name, 1) || '.' AS from_name, "
+        "       tu.last_name || ' ' || LEFT(tu.first_name, 1) || '.' AS to_name, "
+        "       fc.card_number AS from_card, "
+        "       tc.card_number AS to_card "
+        "FROM transactions t "
+        "LEFT JOIN accounts fa ON t.from_account_id = fa.id "
+        "LEFT JOIN accounts ta ON t.to_account_id = ta.id "
+        "LEFT JOIN users fu ON fa.user_id = fu.id "
+        "LEFT JOIN users tu ON ta.user_id = tu.id "
+        "LEFT JOIN cards fc ON fc.account_id = fa.id "
+        "LEFT JOIN cards tc ON tc.account_id = ta.id "
+        "WHERE t.from_account_id = :accId1 OR t.to_account_id = :accId2 "
+        "ORDER BY t.created_at DESC "
+        "LIMIT :limit OFFSET :offset"
+    );
+
+    query.bindValue(":accId1", accountId);
+    query.bindValue(":accId2", accountId);
+    query.bindValue(":limit", limit);
+    query.bindValue(":offset", offset);
+
+    if (query.exec()) {
+        while (query.next()) {
+            QVariantMap item;
+            item["id"] = query.value(0).toInt();
+            item["amount"] = query.value(1).toDouble();
+            item["transaction_type"] = query.value(2).toString();
+            item["description"] = query.value(3).toString();
+            item["status"] = query.value(4).toString();
+            item["created_at"] = query.value(5).toDateTime().toString("dd.MM.yyyy HH:mm");
+            item["date_group"] = query.value(5).toDateTime().toString("dd.MM.yyyy");
+
+            int fromAccId = query.value(6).toInt();
+            bool isOutgoing = (fromAccId == accountId);
+
+            item["direction"] = isOutgoing ? "out" : "in";
+            item["from_name"] = query.value(8).toString();
+            item["to_name"] = query.value(9).toString();
+
+            QString fromCard = query.value(10).toString();
+            QString toCard = query.value(11).toString();
+            item["from_card_last4"] = fromCard.isEmpty() ? "" : fromCard.right(4);
+            item["to_card_last4"] = toCard.isEmpty() ? "" : toCard.right(4);
+
+            history.append(item);
+        }
+    }
+    return history;
+}
+
+bool DatabaseManager::isAccountFrozenOrBlocked(int accountId)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "SELECT c.is_active, c.is_blocked FROM cards c "
+        "WHERE c.account_id = :accountId LIMIT 1"
+    );
+    query.bindValue(":accountId", accountId);
+
+    if (query.exec() && query.next()) {
+        bool isActive = query.value(0).toBool();
+        bool isBlocked = query.value(1).toBool();
+        return isBlocked || !isActive;
+    }
+    return false;
+}
+
+bool DatabaseManager::topUpAccount(int accountId, double amount)
+{
+    if (amount <= 0) {
+        emit error("Сумма должна быть больше нуля");
+        return false;
+    }
+
+    QSqlQuery query(m_db);
+    m_db.transaction();
+
+    // Проверяем существование счёта
+    query.prepare("SELECT id FROM accounts WHERE id = :id FOR UPDATE");
+    query.bindValue(":id", accountId);
+
+    if (!query.exec() || !query.next()) {
+        m_db.rollback();
+        emit error("Счёт не найден");
+        return false;
+    }
+
+    // Зачисление
+    query.prepare("UPDATE accounts SET balance = balance + :amount WHERE id = :id");
+    query.bindValue(":amount", amount);
+    query.bindValue(":id", accountId);
+
+    if (!query.exec()) {
+        m_db.rollback();
+        qWarning() << u"Ошибка зачисления:" << query.lastError().text();
+        return false;
+    }
+
+    // Запись транзакции (from_account_id = NULL — "из воздуха")
+    query.prepare(
+        "INSERT INTO transactions (from_account_id, to_account_id, amount, transaction_type, description, status) "
+        "VALUES (NULL, :to, :amount, 'external', :desc, 'completed')"
+    );
+    query.bindValue(":to", accountId);
+    query.bindValue(":amount", amount);
+    query.bindValue(":desc", QString(u"Пополнение счёта"));
+
+    if (!query.exec()) {
+        m_db.rollback();
+        qWarning() << u"Ошибка записи транзакции:" << query.lastError().text();
+        return false;
+    }
+
+    if (!m_db.commit()) {
+        m_db.rollback();
+        return false;
+    }
+
+    qDebug() << u"✓ Пополнение:" << amount << u"на счёт" << accountId;
     return true;
 }
