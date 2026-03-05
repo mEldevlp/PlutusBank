@@ -11,6 +11,7 @@ Item {
     signal openHistory()
     signal openCardDetail(var cardData)
     signal openTopUp()
+    signal openSettings()
 
     Component.onCompleted: {
         userSession.loadCards()
@@ -621,7 +622,7 @@ Item {
                         }
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: console.log("Настройки")
+                            onClicked: root.openSettings()
                         }
                     }
                 }

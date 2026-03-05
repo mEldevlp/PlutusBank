@@ -82,6 +82,9 @@ public:
     // Пополнение
     bool topUpAccount(int accountId, double amount);
 
+    bool setPrimaryAccount(int userId, int accountId);
+    int  getPrimaryAccountId(int userId);
+
 signals:
     void connected();
     void disconnected();

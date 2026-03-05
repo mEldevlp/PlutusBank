@@ -518,7 +518,7 @@ Item {
         target: authController
         
         function onLoginSuccess() {
-            console.log("✓ Login is successful!")
+            console.log("Login is successful!")
             loginButton.isLoading = false
             showError = false
             errorMessage = ""
@@ -532,7 +532,7 @@ Item {
         }
         
         function onLoginFailed(error) {
-            console.log("✗ Login error:", error)
+            console.log("Login error:", error)
             loginButton.isLoading = false
             
             // Показываем сообщение об ошибке

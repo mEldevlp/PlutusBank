@@ -910,11 +910,11 @@ Item {
         target: authController
         
         function onRegistrationSuccess() {
-            console.log("✓ Registration is successful!")
+            console.log("Registration is successful!")
         }
         
         function onRegistrationFailed(error) {
-            console.log("✗ Registration error:", error)
+            console.log("Registration error:", error)
             // TODO: Показать всплывающее уведомление с ошибкой
         }
     }

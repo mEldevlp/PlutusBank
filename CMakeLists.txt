@@ -20,28 +20,28 @@ endif()
 
 # Для Android
 if(ANDROID)
-    if(NOT DEFINED QT_HOST_PATH)
-        message(FATAL_ERROR "QT_HOST_PATH must be set for Android builds")
-    endif()
-    if(NOT DEFINED ANDROID_SDK_ROOT)
-        message(FATAL_ERROR "ANDROID_SDK_ROOT must be set for Android builds")
-    endif()
-    message(STATUS "Android SDK: ${ANDROID_SDK_ROOT}")
-    message(STATUS "Android NDK: ${ANDROID_NDK}")
+	if(NOT DEFINED QT_HOST_PATH)
+		message(FATAL_ERROR "QT_HOST_PATH must be set for Android builds")
+	endif()
+	if(NOT DEFINED ANDROID_SDK_ROOT)
+		message(FATAL_ERROR "ANDROID_SDK_ROOT must be set for Android builds")
+	endif()
+	message(STATUS "Android SDK: ${ANDROID_SDK_ROOT}")
+	message(STATUS "Android NDK: ${ANDROID_NDK}")
 endif()
 
 # Поиск Qt6
 find_package(Qt6 REQUIRED COMPONENTS
-    Core
-    Gui
-    Widgets
-    Network
-    Sql
-    Quick
-    QuickControls2
+	Core
+	Gui
+	Widgets
+	Network
+	Sql
+	Quick
+	QuickControls2
 )
 
-# OpenSSL - опционально
+# OpenSSL
 if(NOT ANDROID)
     find_package(OpenSSL)
     if(OpenSSL_FOUND)
@@ -51,44 +51,45 @@ if(NOT ANDROID)
     endif()
 endif()
 
-# Source Files (*.cpp)
+# Source Files
 set(SOURCE_FILES
-    src/main.cpp
-    src/DatabaseManager.cpp
-    src/AuthController.cpp
-    src/UserSession.cpp
+	src/main.cpp
+	src/DatabaseManager.cpp
+	src/AuthController.cpp
+	src/UserSession.cpp
 	src/CardController.cpp
-    src/TransferController.cpp
+	src/TransferController.cpp
 	src/HistoryController.cpp
 )
 
-# Header Files (*.h)
+# Header Files
 set(HEADER_FILES
-    src/DatabaseManager.h
-    src/AuthController.h
-    src/UserSession.h
-    src/CardController.h
-    src/TransferController.h
+	src/DatabaseManager.h
+	src/AuthController.h
+	src/UserSession.h
+	src/CardController.h
+	src/TransferController.h
 	src/HistoryController.h
 )
 
 # QML Files - UI
 set(QML_UI_FILES
-    qml/Main.qml
-    qml/Auth.qml
-    qml/Register.qml
-    qml/MainPage.qml
+	qml/Main.qml
+	qml/Auth.qml
+	qml/Register.qml
+	qml/MainPage.qml
 	qml/CreateCardDialog.qml
 	qml/TransferPage.qml
 	qml/HistoryPage.qml
 	qml/CardDetailPage.qml
 	qml/TopUpPage.qml
+	qml/SettingsPage.qml
 )
 
 # QML Resources - Assets
 set(QML_ASSET_FILES
-    qml/assets/logo.png
-    qml/assets/fonts/Manrope-Bold.ttf
+	qml/assets/logo.png
+	qml/assets/fonts/Manrope-Bold.ttf
 )
 
 # Объединяем все исходники
@@ -240,7 +241,7 @@ function(_organize_targets)
     set_folder(ALL_BUILD "CMakePredefinedTargets")
     set_folder(ZERO_CHECK "CMakePredefinedTargets")
     
-    # Qt автогенерация → Generated
+    # Qt автогенерация - Generated
     set_folder(${PROJECT_NAME}_autogen "Generated")
     set_folder(${PROJECT_NAME}_automoc_json_extraction "Generated")
     set_folder(${PROJECT_NAME}_qmltyperegistration "Generated")
@@ -248,7 +249,7 @@ function(_organize_targets)
     set_folder(${PROJECT_NAME}_copy_qml "Generated")
     set_folder(${PROJECT_NAME}_copy_res "Generated")
     
-    # QML Lint → Generated/QMLLint
+    # QML Lint - Generated/QMLLint
     set_folder(${PROJECT_NAME}_qmllint "Generated/QMLLint")
     set_folder(${PROJECT_NAME}_qmllint_json "Generated/QMLLint")
     set_folder(${PROJECT_NAME}_qmllint_module "Generated/QMLLint")
@@ -256,7 +257,7 @@ function(_organize_targets)
     set_folder(all_qmllint_json "Generated/QMLLint")
     set_folder(all_qmllint_module "Generated/QMLLint")
     
-    # AOT → Generated/AOT
+    # AOT - Generated/AOT
     set_folder(module_${PROJECT_NAME}_aotstats_target "Generated/AOT")
     set_folder(all_aotstats "Generated/AOT")
     

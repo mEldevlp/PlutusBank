@@ -325,9 +325,9 @@ Item {
                 // Модель данных
                 ListModel {
                     id: brandsModel
-                    ListElement { key: "visa";       label: "Visa";       desc: "Принимается по всему миру";       accent: "#3B82F6"; icon: "assets/visa.png" }
-                    ListElement { key: "mastercard"; label: "Mastercard"; desc: "Надёжность и безопасность";        accent: "#EF4444"; icon: "assets/mastercard.png" }
-                    ListElement { key: "mir";        label: "МИР";       desc: "Российская платёжная система";     accent: "#10B981"; icon: "assets/mir.png" }
+                    ListElement { key: "visa";       label: "Visa";       desc: "Принимается по всему миру";       accent: "#3B82F6"; icon: "assets/visa.svg" }
+                    ListElement { key: "mastercard"; label: "Mastercard"; desc: "Надёжность и безопасность";        accent: "#EF4444"; icon: "assets/mastercard.svg" }
+                    ListElement { key: "mir";        label: "МИР";       desc: "Российская платёжная система";     accent: "#10B981"; icon: "assets/mir.svg" }
                 }
 
                 Repeater {
@@ -862,17 +862,17 @@ Item {
         target: cardController
 
         function onCardCreated(cardData) {
-            console.log("✓ Карта создана:", JSON.stringify(cardData))
+            console.log("Карта создана:", JSON.stringify(cardData))
             root.cardResult = cardData
             root.step = 4
         }
 
         function onCardCreationFailed(error) {
-            console.error("✗ Ошибка:", error)
+            console.error("Ошибка:", error)
         }
 
         function onCreationProgress(message) {
-            console.log("⏳", message)
+            console.log("wait..", message)
         }
     }
 }

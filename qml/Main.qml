@@ -9,7 +9,7 @@ Window {
     height: 800
     visible: true
     title: "PlutusBank"
-
+    color: "#1a1a2e"
     property bool isUserLoggedIn: false
 
     Component {
@@ -57,6 +57,9 @@ Window {
             }
             onOpenTopUp: {
                 stackView.push(topUpComponent)
+            }
+            onOpenSettings: {
+                stackView.push(settingsComponent)
             }
         }
     }
@@ -120,24 +123,36 @@ Window {
         }
     }
 
+    // ============ Настройки ============
+    Component {
+        id: settingsComponent
+        SettingsPage {
+            onBackToMain: {
+                stackView.pop()
+            }
+            onLoggedOut: {
+                isUserLoggedIn = false
+                stackView.replace(null, authComponent)
+            }
+        }
+    }
+
     StackView {
         id: stackView
         anchors.fill: parent
         initialItem: isUserLoggedIn ? mainPageComponent : authComponent
+
+        background: Rectangle {
+            color: "#1a1a2e"
+        }
 
         // ── Глобальные анимации push / pop / replace ──
         pushEnter: Transition {
             ParallelAnimation {
                 NumberAnimation {
                     property: "x"
-                    from: stackView.width * 0.3
+                    from: stackView.width
                     to: 0
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 0; to: 1
                     duration: 300
                     easing.type: Easing.OutCubic
                 }
@@ -145,56 +160,32 @@ Window {
         }
 
         pushExit: Transition {
-            ParallelAnimation {
-                NumberAnimation {
-                    property: "x"
-                    from: 0
-                    to: -stackView.width * 0.3
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 1; to: 0
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
+            NumberAnimation {
+                property: "x"
+                from: 0
+                to: -stackView.width * 0.3
+                duration: 300
+                easing.type: Easing.OutCubic
             }
         }
 
         popEnter: Transition {
-            ParallelAnimation {
-                NumberAnimation {
-                    property: "x"
-                    from: -stackView.width * 0.3
-                    to: 0
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 0; to: 1
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
+            NumberAnimation {
+                property: "x"
+                from: -stackView.width * 0.3
+                to: 0
+                duration: 300
+                easing.type: Easing.OutCubic
             }
         }
 
         popExit: Transition {
-            ParallelAnimation {
-                NumberAnimation {
-                    property: "x"
-                    from: 0
-                    to: stackView.width * 0.3
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
-                NumberAnimation {
-                    property: "opacity"
-                    from: 1; to: 0
-                    duration: 300
-                    easing.type: Easing.OutCubic
-                }
+            NumberAnimation {
+                property: "x"
+                from: 0
+                to: stackView.width
+                duration: 300
+                easing.type: Easing.OutCubic
             }
         }
 

@@ -15,7 +15,7 @@ class UserSession : public QObject
         Q_PROPERTY(QString email READ email NOTIFY userChanged)
         Q_PROPERTY(QString phone READ phone NOTIFY userChanged)
         Q_PROPERTY(QString fullName READ fullName NOTIFY userChanged)
-        Q_PROPERTY(QString shortName READ shortName NOTIFY userChanged)  // "Кондрашов Д."
+        Q_PROPERTY(QString shortName READ shortName NOTIFY userChanged)
         Q_PROPERTY(bool isLoggedIn READ isLoggedIn NOTIFY userChanged)
         Q_PROPERTY(double totalBalance READ totalBalance NOTIFY balanceChanged)
         Q_PROPERTY(double dailyIncome READ dailyIncome NOTIFY balanceChanged)
@@ -23,6 +23,12 @@ class UserSession : public QObject
         Q_PROPERTY(QVariantList cards READ cards NOTIFY cardsChanged)
         Q_PROPERTY(bool hasCards READ hasCards NOTIFY cardsChanged)
         Q_PROPERTY(bool isRefreshing READ isRefreshing NOTIFY refreshingChanged)
+        Q_PROPERTY(QString passportSeries READ passportSeries NOTIFY userChanged)
+        Q_PROPERTY(QString passportNumber READ passportNumber NOTIFY userChanged)
+        Q_PROPERTY(QString dateOfBirth    READ dateOfBirth    NOTIFY userChanged)
+        Q_PROPERTY(QString address        READ address        NOTIFY userChanged)
+        Q_PROPERTY(int primaryAccountId   READ primaryAccountId NOTIFY primaryAccountChanged)
+
 
 public:
     static UserSession& instance();
@@ -35,7 +41,7 @@ public:
     QString email() const { return m_email; }
     QString phone() const { return m_phone; }
     QString fullName() const;
-    QString shortName() const;  // "Кондрашов Д."
+    QString shortName() const;
     bool isLoggedIn() const { return m_userId > 0; }
     double totalBalance() const { return m_totalBalance; }
     double dailyIncome() const { return m_dailyIncome; }
@@ -43,6 +49,11 @@ public:
     QVariantList cards() const { return m_cards; }
     bool hasCards() const { return !m_cards.isEmpty(); }
     bool isRefreshing() const { return m_isRefreshing; }
+    QString passportSeries() const { return m_passportSeries; }
+    QString passportNumber() const { return m_passportNumber; }
+    QString dateOfBirth()    const { return m_dateOfBirth; }
+    QString address()        const { return m_address; }
+    int primaryAccountId()   const { return m_primaryAccountId; }
 
     // Setters
     void setUserData(int userId, const QString& firstName, const QString& lastName,
@@ -55,6 +66,8 @@ public:
     Q_INVOKABLE void refreshBalance();    // Обновить баланс
     Q_INVOKABLE void logout();            // Выход
     Q_INVOKABLE void refreshAll();
+    Q_INVOKABLE void setPrimaryAccount(int accountId);
+    Q_INVOKABLE QVariantList getDebitCards();
 
 signals:
     void userChanged();
@@ -62,6 +75,7 @@ signals:
     void cardsChanged();
     void loggedOut();
     void refreshingChanged();
+    void primaryAccountChanged();
 
 private:
     UserSession();
@@ -79,5 +93,10 @@ private:
     double m_dailyIncome;
     double m_dailyExpense;
     QVariantList m_cards;
-    bool m_isRefreshing;
+    bool    m_isRefreshing;
+    QString m_passportSeries;
+    QString m_passportNumber;
+    QString m_dateOfBirth;
+    QString m_address;
+    int     m_primaryAccountId = -1;
 };

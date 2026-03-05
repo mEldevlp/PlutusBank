@@ -27,7 +27,8 @@ QString UserSession::fullName() const
 
 QString UserSession::shortName() const
 {
-    if (m_firstName.isEmpty() || m_lastName.isEmpty()) {
+    if (m_firstName.isEmpty() || m_lastName.isEmpty()) 
+    {
         return "Пользователь";
     }
 
@@ -46,7 +47,7 @@ void UserSession::setUserData(int userId, const QString& firstName, const QStrin
     m_email = email;
     m_phone = phone;
 
-    qDebug() << u"✓ Данные пользователя установлены:" << shortName();
+    qDebug() << u"Данные пользователя установлены:" << shortName();
     emit userChanged();
 
     // Загружаем карты и баланс
@@ -57,41 +58,50 @@ void UserSession::setUserData(int userId, const QString& firstName, const QStrin
 void UserSession::setCards(const QVariantList& cards)
 {
     m_cards = cards;
-    qDebug() << u"✓ Карты загружены:" << m_cards.size();
+    qDebug() << u"Карты загружены:" << m_cards.size();
     emit cardsChanged();
 }
 
 void UserSession::setTotalBalance(double balance)
 {
     m_totalBalance = balance;
-    qDebug() << u"✓ Баланс обновлён:" << m_totalBalance;
+    qDebug() << u"Баланс обновлён:" << m_totalBalance;
     emit balanceChanged();
 }
 
 void UserSession::loadUserData()
 {
-    if (m_userId <= 0) {
-        qWarning() << u"Невозможно загрузить данные: пользователь не авторизован";
-        return;
-    }
+    if (m_userId <= 0) return;
 
-    DatabaseManager& db = DatabaseManager::instance();
-
-    // Загружаем данные пользователя
-    auto userData = db.getUserData(m_userId);
-    if (!userData.isEmpty()) {
+    auto userData = DatabaseManager::instance().getUserData(m_userId);
+    if (!userData.isEmpty()) 
+    {
         m_firstName = userData["first_name"].toString();
         m_lastName = userData["last_name"].toString();
         m_middleName = userData["middle_name"].toString();
         m_email = userData["email"].toString();
         m_phone = userData["phone"].toString();
+        m_passportSeries = userData["passport_series"].toString();
+        m_passportNumber = userData["passport_number"].toString();
+        m_dateOfBirth = userData["date_of_birth"].toString();
+        m_address = userData["address"].toString();
+
+        int newPrimary = userData["primary_account_id"].toInt();
+
+        if (newPrimary != m_primaryAccountId) 
+        {
+            m_primaryAccountId = newPrimary;
+            emit primaryAccountChanged();
+        }
+
         emit userChanged();
     }
 }
 
 void UserSession::loadCards()
 {
-    if (m_userId <= 0) {
+    if (m_userId <= 0) 
+    {
         qWarning() << u"Невозможно загрузить карты: пользователь не авторизован";
         return;
     }
@@ -104,7 +114,8 @@ void UserSession::loadCards()
 
 void UserSession::refreshBalance()
 {
-    if (m_userId <= 0) {
+    if (m_userId <= 0) 
+    {
         qWarning() << u"Невозможно обновить баланс: пользователь не авторизован";
         return;
     }
@@ -121,12 +132,13 @@ void UserSession::refreshBalance()
 
 void UserSession::refreshAll()
 {
-    if (m_userId <= 0) {
+    if (m_userId <= 0) 
+    {
         qWarning() << u"Невозможно обновить данные: пользователь не авторизован";
         return;
     }
 
-    qDebug() << u"🔄 Начало обновления всех данных...";
+    qDebug() << u"Начало обновления всех данных...";
 
     // Устанавливаем флаг загрузки
     m_isRefreshing = true;
@@ -141,7 +153,7 @@ void UserSession::refreshAll()
     m_isRefreshing = false;
     emit refreshingChanged();
 
-    qDebug() << u"✓ Все данные обновлены";
+    qDebug() << u"Все данные обновлены";
 }
 
 void UserSession::logout()
@@ -156,11 +168,38 @@ void UserSession::logout()
     m_dailyIncome = 0.0;
     m_dailyExpense = 0.0;
     m_cards.clear();
+    m_passportSeries.clear();
+    m_passportNumber.clear();
+    m_dateOfBirth.clear();
+    m_address.clear();
+    m_primaryAccountId = -1;
 
     emit userChanged();
     emit balanceChanged();
     emit cardsChanged();
     emit loggedOut();
 
-    qDebug() << u"✓ Пользователь вышел из системы";
+    qDebug() << u"Пользователь вышел из системы";
+}
+
+void UserSession::setPrimaryAccount(int accountId)
+{
+    if (m_userId <= 0) return;
+
+    if (DatabaseManager::instance().setPrimaryAccount(m_userId, accountId)) {
+        m_primaryAccountId = accountId;
+        emit primaryAccountChanged();
+        qDebug() << u"Основной счёт изменён на:" << accountId;
+    }
+}
+
+QVariantList UserSession::getDebitCards()
+{
+    QVariantList debit;
+    for (const auto& v : m_cards) {
+        auto card = v.toMap();
+        if (card["card_type"].toString() == "debit")
+            debit.append(card);
+    }
+    return debit;
 }

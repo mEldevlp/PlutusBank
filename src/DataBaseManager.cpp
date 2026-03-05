@@ -23,20 +23,21 @@ bool DatabaseManager::connect()
 {
     m_db = QSqlDatabase::addDatabase("QPSQL");
     m_db.setHostName("127.0.0.1");
-    m_db.setPort(5432);
+    m_db.setPort(5433);
     m_db.setDatabaseName("plutusbank");
     m_db.setUserName("postgres");
     m_db.setPassword("root");
 
     qDebug() << u"Попытка подключения к PostgreSQL...";
 
-    if (!m_db.open()) {
+    if (!m_db.open()) 
+    {
         qWarning() << u"Ошибка подключения к БД:" << m_db.lastError().text();
         emit error("Не удалось подключиться к базе данных");
         return false;
     }
 
-    qDebug() << u"✓ Успешное подключение к PostgreSQL";
+    qDebug() << u"Успешное подключение к PostgreSQL";
     m_connected = true;
     emit connected();
     return true;
@@ -44,7 +45,8 @@ bool DatabaseManager::connect()
 
 void DatabaseManager::disconnect()
 {
-    if (m_connected) {
+    if (m_connected) 
+    {
         m_db.close();
         m_connected = false;
         qDebug() << u"Отключено от PostgreSQL";
@@ -102,13 +104,14 @@ bool DatabaseManager::registerUser(
     query.bindValue(":phone", phone);
     query.bindValue(":password", hashPassword(password));
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         qWarning() << u"Ошибка регистрации:" << query.lastError().text();
         emit error("Ошибка регистрации пользователя");
         return false;
     }
 
-    qDebug() << u"✓ Пользователь зарегистрирован:" << firstName << lastName << email;
+    qDebug() << u"Пользователь зарегистрирован:" << firstName << lastName << email;
     return true;
 }
 
@@ -118,7 +121,8 @@ int DatabaseManager::loginUser(const QString& phone, const QString& password)
     query.prepare("SELECT id, password_hash FROM users WHERE phone = :phone");
     query.bindValue(":phone", phone);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         emit error("Неверный номер телефона или пароль");
         return -1;  // -1 означает ошибку
     }
@@ -126,12 +130,13 @@ int DatabaseManager::loginUser(const QString& phone, const QString& password)
     int userId = query.value(0).toInt();
     QString storedHash = query.value(1).toString();
 
-    if (!verifyPassword(password, storedHash)) {
+    if (!verifyPassword(password, storedHash)) 
+    {
         emit error("Неверный номер телефона или пароль");
         return -1;
     }
 
-    qDebug() << u"✓ Успешный вход. User ID:" << userId;
+    qDebug() << u"Успешный вход. User ID:" << userId;
     return userId;
 }
 
@@ -141,21 +146,28 @@ QVariantMap DatabaseManager::getUserData(int userId)
     QSqlQuery query(m_db);
 
     query.prepare(
-        "SELECT first_name, last_name, middle_name, email, phone "
+        "SELECT first_name, last_name, middle_name, email, phone, "
+        "passport_series, passport_number, date_of_birth, "
+        "COALESCE(address, ''), COALESCE(primary_account_id, -1) "
         "FROM users WHERE id = :userId"
     );
     query.bindValue(":userId", userId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         userData["first_name"] = query.value(0).toString();
         userData["last_name"] = query.value(1).toString();
         userData["middle_name"] = query.value(2).toString();
         userData["email"] = query.value(3).toString();
         userData["phone"] = query.value(4).toString();
-
-        qDebug() << u"✓ Данные пользователя загружены:" << userData["last_name"].toString();
+        userData["passport_series"] = query.value(5).toString();
+        userData["passport_number"] = query.value(6).toString();
+        userData["date_of_birth"] = query.value(7).toDate().toString("dd.MM.yyyy");
+        userData["address"] = query.value(8).toString();
+        userData["primary_account_id"] = query.value(9).toInt();
     }
-    else {
+    else 
+    {
         qWarning() << u"Ошибка загрузки данных пользователя:" << query.lastError().text();
     }
 
@@ -168,7 +180,8 @@ int DatabaseManager::getUserAccountId(int userId)
     query.prepare("SELECT id FROM accounts WHERE user_id = :userId LIMIT 1");
     query.bindValue(":userId", userId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         return query.value(0).toInt();
     }
 
@@ -193,8 +206,10 @@ QVariantList DatabaseManager::getUserCards(int userId)
 
     query.bindValue(":userId", userId);
 
-    if (query.exec()) {
-        while (query.next()) {
+    if (query.exec()) 
+    {
+        while (query.next()) 
+        {
             QVariantMap card;
             card["id"] = query.value(0).toInt();
             card["card_number"] = query.value(1).toString();
@@ -212,10 +227,11 @@ QVariantList DatabaseManager::getUserCards(int userId)
 
             cards.append(card);
         }
-        qDebug() << "✓ Загружено карт:" << cards.size();
+        qDebug() << "Загружено карт:" << cards.size();
     }
-    else {
-        qWarning() << "❌ Ошибка загрузки карт:" << query.lastError().text();
+    else 
+    {
+        qWarning() << "Ошибка загрузки карт:" << query.lastError().text();
     }
 
     return cards;
@@ -232,9 +248,10 @@ double DatabaseManager::getTotalDebitBalance(int userId)
     );
     query.bindValue(":userId", userId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         double totalBalance = query.value(0).toDouble();
-        qDebug() << u"✓ Общий баланс дебетовых счетов:" << totalBalance;
+        qDebug() << u"Общий баланс дебетовых счетов:" << totalBalance;
         return totalBalance;
     }
 
@@ -292,7 +309,8 @@ double DatabaseManager::getDailyIncome(int userId)
     query.bindValue(":userId", userId);
     query.bindValue(":userId2", userId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         return query.value(0).toDouble();
     }
 
@@ -316,7 +334,8 @@ double DatabaseManager::getDailyExpense(int userId)
     query.bindValue(":userId", userId);
     query.bindValue(":userId2", userId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         return query.value(0).toDouble();
     }
 
@@ -329,7 +348,7 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
     QVariantList history;
     QSqlQuery query(m_db);
 
-    // Получаем все транзакции, где пользователь — отправитель или получатель
+    // Получаем все транзакции, где пользователь отправитель или получатель
     query.prepare(
         "SELECT t.id, t.amount, t.transaction_type, t.description, t.status, t.created_at, "
         "       t.from_account_id, t.to_account_id, "
@@ -356,8 +375,10 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
     query.bindValue(":limit", limit);
     query.bindValue(":offset", offset);
 
-    if (query.exec()) {
-        while (query.next()) {
+    if (query.exec()) 
+    {
+        while (query.next()) 
+        {
             QVariantMap item;
             item["id"] = query.value(0).toInt();
             item["amount"] = query.value(1).toDouble();
@@ -376,7 +397,9 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
             checkFrom.prepare("SELECT user_id FROM accounts WHERE id = :id");
             checkFrom.bindValue(":id", fromAccountId);
             bool isOutgoing = false;
-            if (checkFrom.exec() && checkFrom.next()) {
+
+            if (checkFrom.exec() && checkFrom.next()) 
+            {
                 isOutgoing = (checkFrom.value(0).toInt() == userId);
             }
 
@@ -385,17 +408,22 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
             checkTo.prepare("SELECT user_id FROM accounts WHERE id = :id");
             checkTo.bindValue(":id", toAccountId);
             bool isIncoming = false;
-            if (checkTo.exec() && checkTo.next()) {
+
+            if (checkTo.exec() && checkTo.next()) 
+            {
                 isIncoming = (checkTo.value(0).toInt() == userId);
             }
 
-            if (isOutgoing && isIncoming) {
+            if (isOutgoing && isIncoming) 
+            {
                 item["direction"] = "self";   // перевод между своими счетами
             }
-            else if (isOutgoing) {
+            else if (isOutgoing) 
+            {
                 item["direction"] = "out";
             }
-            else {
+            else 
+            {
                 item["direction"] = "in";
             }
 
@@ -410,9 +438,10 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
 
             history.append(item);
         }
-        qDebug() << u"✓ Загружено транзакций:" << history.size();
+        qDebug() << u"Загружено транзакций:" << history.size();
     }
-    else {
+    else 
+    {
         qWarning() << u"Ошибка загрузки истории:" << query.lastError().text();
     }
 
@@ -425,14 +454,16 @@ int DatabaseManager::createAccount(int userId, const QString& accountType)
 
     // Генерируем номер счёта (20 цифр)
     QString accountNumber = "40817810";  // Префикс для физлиц РФ
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 12; i++) 
+    {
         accountNumber += QString::number(QRandomGenerator::global()->bounded(10));
     }
 
     // Определяем начальный баланс
     double initialBalance = 0.0;
-    if (accountType == "credit") {
-        initialBalance = 50000.0;  // Кредитный лимит
+    if (accountType == "credit") 
+    {
+        initialBalance = 50000.0;  // Кредитный лимит (потом уберу хардкод)
     }
 
     query.prepare(
@@ -446,13 +477,14 @@ int DatabaseManager::createAccount(int userId, const QString& accountType)
     query.bindValue(":balance", initialBalance);
     query.bindValue(":accountType", accountType);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         qWarning() << u"Ошибка создания счёта:" << query.lastError().text();
         return -1;
     }
 
     int accountId = query.value(0).toInt();
-    qDebug() << u"✓ Счёт создан:" << accountNumber << "ID:" << accountId;
+    qDebug() << u"Счёт создан:" << accountNumber << "ID:" << accountId;
 
     return accountId;
 }
@@ -465,13 +497,14 @@ QString DatabaseManager::generateCardNumber(const QString& brand)
     query.prepare("SELECT generate_valid_card_number(:brand)");
     query.bindValue(":brand", brand);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         qWarning() << u"Ошибка генерации номера карты:" << query.lastError().text();
         return QString();
     }
 
     QString cardNumber = query.value(0).toString();
-    qDebug() << u"✓ Сгенерирован номер карты:" << cardNumber;
+    qDebug() << u"Сгенерирован номер карты:" << cardNumber;
 
     return cardNumber;
 }
@@ -509,12 +542,13 @@ bool DatabaseManager::createCard(
     query.bindValue(":cardType", cardType);
     query.bindValue(":cardBrand", cardBrand);
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         qWarning() << u"Ошибка создания карты:" << query.lastError().text();
         return false;
     }
 
-    qDebug() << u"✓ Карта создана в БД";
+    qDebug() << u"Карта создана в БД";
     return true;
 }
 
@@ -535,7 +569,8 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     query.prepare("SELECT balance FROM accounts WHERE id = :id FOR UPDATE");
     query.bindValue(":id", fromAccountId);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         m_db.rollback();
         emit error("Счёт отправителя не найден");
         return false;
@@ -620,13 +655,29 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
         return false;
     }
 
-    qDebug() << u"✓ Перевод выполнен:" << amount << u"со счёта" << fromAccountId << u"на счёт" << toAccountId;
+    qDebug() << u"Перевод выполнен:" << amount << u"со счёта" << fromAccountId << u"на счёт" << toAccountId;
     return true;
 }
 
 int DatabaseManager::findAccountByPhone(const QString& phone, const QString& accountType)
 {
     QSqlQuery query(m_db);
+
+    // Сначала пробуем primary_account_id
+    query.prepare(
+        "SELECT u.primary_account_id FROM users u "
+        "WHERE u.phone = :phone AND u.primary_account_id IS NOT NULL"
+    );
+    query.bindValue(":phone", phone);
+
+    if (query.exec() && query.next()) 
+    {
+        int primaryId = query.value(0).toInt();
+        if (primaryId > 0)
+            return primaryId;
+    }
+
+    // Фолбэк: первый дебетовый счёт
     query.prepare(
         "SELECT a.id FROM accounts a "
         "INNER JOIN users u ON a.user_id = u.id "
@@ -637,9 +688,8 @@ int DatabaseManager::findAccountByPhone(const QString& phone, const QString& acc
     query.bindValue(":type", accountType);
 
     if (query.exec() && query.next())
-    {
         return query.value(0).toInt();
-    }
+
     return -1;
 }
 
@@ -714,11 +764,13 @@ bool DatabaseManager::blockCard(int cardId)
     query.prepare("UPDATE cards SET is_blocked = true, is_active = false WHERE id = :id");
     query.bindValue(":id", cardId);
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         qWarning() << u"Ошибка блокировки карты:" << query.lastError().text();
         return false;
     }
-    qDebug() << u"✓ Карта заблокирована. ID:" << cardId;
+
+    qDebug() << u"Карта заблокирована. ID:" << cardId;
     return true;
 }
 
@@ -728,12 +780,14 @@ bool DatabaseManager::freezeCard(int cardId)
     query.prepare("UPDATE cards SET is_active = NOT is_active WHERE id = :id RETURNING is_active");
     query.bindValue(":id", cardId);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         qWarning() << u"Ошибка заморозки карты:" << query.lastError().text();
         return false;
     }
+
     bool newState = query.value(0).toBool();
-    qDebug() << u"✓ Карта" << (newState ? "разморожена" : "заморожена") << "ID:" << cardId;
+    qDebug() << u"Карта" << (newState ? "разморожена" : "заморожена") << "ID:" << cardId;
     return true;
 }
 
@@ -743,10 +797,12 @@ bool DatabaseManager::unfreezeCard(int cardId)
     query.prepare("UPDATE cards SET is_active = true WHERE id = :id");
     query.bindValue(":id", cardId);
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         qWarning() << u"Ошибка разморозки карты:" << query.lastError().text();
         return false;
     }
+
     return true;
 }
 
@@ -812,8 +868,10 @@ QVariantList DatabaseManager::getCardTransactions(int accountId, int limit, int 
     query.bindValue(":limit", limit);
     query.bindValue(":offset", offset);
 
-    if (query.exec()) {
-        while (query.next()) {
+    if (query.exec()) 
+    {
+        while (query.next()) 
+        {
             QVariantMap item;
             item["id"] = query.value(0).toInt();
             item["amount"] = query.value(1).toDouble();
@@ -850,7 +908,8 @@ bool DatabaseManager::isAccountFrozenOrBlocked(int accountId)
     );
     query.bindValue(":accountId", accountId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next()) 
+    {
         bool isActive = query.value(0).toBool();
         bool isBlocked = query.value(1).toBool();
         return isBlocked || !isActive;
@@ -860,7 +919,8 @@ bool DatabaseManager::isAccountFrozenOrBlocked(int accountId)
 
 bool DatabaseManager::topUpAccount(int accountId, double amount)
 {
-    if (amount <= 0) {
+    if (amount <= 0) 
+    {
         emit error("Сумма должна быть больше нуля");
         return false;
     }
@@ -872,7 +932,8 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     query.prepare("SELECT id FROM accounts WHERE id = :id FOR UPDATE");
     query.bindValue(":id", accountId);
 
-    if (!query.exec() || !query.next()) {
+    if (!query.exec() || !query.next()) 
+    {
         m_db.rollback();
         emit error("Счёт не найден");
         return false;
@@ -883,13 +944,14 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     query.bindValue(":amount", amount);
     query.bindValue(":id", accountId);
 
-    if (!query.exec()) {
+    if (!query.exec()) 
+    {
         m_db.rollback();
         qWarning() << u"Ошибка зачисления:" << query.lastError().text();
         return false;
     }
 
-    // Запись транзакции (from_account_id = NULL — "из воздуха")
+    // Запись транзакции (деньги из воздуха)
     query.prepare(
         "INSERT INTO transactions (from_account_id, to_account_id, amount, transaction_type, description, status) "
         "VALUES (NULL, :to, :amount, 'external', :desc, 'completed')"
@@ -898,17 +960,51 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     query.bindValue(":amount", amount);
     query.bindValue(":desc", QString(u"Пополнение счёта"));
 
-    if (!query.exec()) {
+    if (!query.exec())
+    {
         m_db.rollback();
         qWarning() << u"Ошибка записи транзакции:" << query.lastError().text();
         return false;
     }
 
-    if (!m_db.commit()) {
+    if (!m_db.commit())
+    {
         m_db.rollback();
         return false;
     }
 
-    qDebug() << u"✓ Пополнение:" << amount << u"на счёт" << accountId;
+    qDebug() << u"Пополнение:" << amount << u"на счёт" << accountId;
     return true;
+}
+
+// установить основной счёт
+bool DatabaseManager::setPrimaryAccount(int userId, int accountId)
+{
+    QSqlQuery query(m_db);
+    query.prepare(
+        "UPDATE users SET primary_account_id = :accountId WHERE id = :userId"
+    );
+    query.bindValue(":accountId", accountId);
+    query.bindValue(":userId", userId);
+
+    if (!query.exec()) 
+    {
+        qWarning() << u"Ошибка установки основного счёта:" << query.lastError().text();
+        emit error("Не удалось назначить основной счёт");
+        return false;
+    }
+    return true;
+}
+
+// получить id основного счёта
+int DatabaseManager::getPrimaryAccountId(int userId)
+{
+    QSqlQuery query(m_db);
+    query.prepare("SELECT primary_account_id FROM users WHERE id = :userId");
+    query.bindValue(":userId", userId);
+
+    if (query.exec() && query.next() && !query.value(0).isNull())
+        return query.value(0).toInt();
+
+    return -1;
 }
