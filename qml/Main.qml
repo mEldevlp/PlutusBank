@@ -5,8 +5,8 @@ import "."
 
 Window {
     id: mainWindow
-    width: 400
-    height: 800
+    width: 350
+    height: 600
     visible: true
     title: "PlutusBank"
     color: "#1a1a2e"
@@ -60,6 +60,9 @@ Window {
             }
             onOpenSettings: {
                 stackView.push(settingsComponent)
+            }
+            onOpenLoan: {
+                stackView.push(loanCatalogComponent)
             }
         }
     }
@@ -133,6 +136,75 @@ Window {
             onLoggedOut: {
                 isUserLoggedIn = false
                 stackView.replace(null, authComponent)
+            }
+        }
+    }
+
+    // ============ Каталог кредитов ============
+    Component {
+        id: loanCatalogComponent
+        LoanCatalogPage {
+            onBackToMain: {
+                stackView.pop()
+            }
+            onOpenCalculator: function(product) {
+                stackView.push(loanCalculatorComponent, { "product": product })
+            }
+            onOpenMyLoans: {
+                stackView.push(myLoansComponent)
+            }
+            onOpenLoanHistory: {
+                stackView.push(loanHistoryComponent)
+            }
+        }
+    }
+
+    // ============ История кредитов ============
+    Component {
+        id: loanHistoryComponent
+        LoanHistoryPage {
+            onBackToCatalog: {
+                stackView.pop()
+            }
+            onOpenSchedule: function(loanData) {
+                stackView.push(loanScheduleComponent, { "loanData": loanData })
+            }
+        }
+    }
+
+    // ============ Калькулятор кредита ============
+    Component {
+        id: loanCalculatorComponent
+        LoanCalculatorPage {
+            onBackToCatalog: {
+                stackView.pop()
+            }
+            onGoToMyLoans: {
+                stackView.pop()
+                stackView.push(myLoansComponent)
+            }
+        }
+    }
+
+    // ============ Мои кредиты ============
+    Component {
+        id: myLoansComponent
+        MyLoansPage {
+            onBackToCatalog: {
+                stackView.pop()
+            }
+            onOpenSchedule: function(loanData) {
+                stackView.push(loanScheduleComponent, { "loanData": loanData })
+            }
+        }
+    }
+
+    // ============ График платежей ============
+    Component {
+        id: loanScheduleComponent
+        LoanSchedulePage {
+            onBackToLoans: {
+                stackView.pop()
             }
         }
     }

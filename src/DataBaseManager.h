@@ -20,6 +20,8 @@ public:
     void disconnect();
     bool isConnected() const;
 
+    QSqlDatabase& database() { return m_db; }
+
     // Регистрация с полными данными
     bool registerUser(
         const QString& firstName,

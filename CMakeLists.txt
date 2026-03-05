@@ -60,6 +60,7 @@ set(SOURCE_FILES
 	src/CardController.cpp
 	src/TransferController.cpp
 	src/HistoryController.cpp
+	src/LoanController.cpp
 )
 
 # Header Files
@@ -70,6 +71,7 @@ set(HEADER_FILES
 	src/CardController.h
 	src/TransferController.h
 	src/HistoryController.h
+	src/LoanController.h
 )
 
 # QML Files - UI
@@ -84,6 +86,11 @@ set(QML_UI_FILES
 	qml/CardDetailPage.qml
 	qml/TopUpPage.qml
 	qml/SettingsPage.qml
+	qml/LoanCatalogPage.qml
+	qml/LoanCalculatorPage.qml
+	qml/MyLoansPage.qml
+	qml/LoanSchedulePage.qml
+	qml/LoanHistoryPage.qml
 )
 
 # QML Resources - Assets

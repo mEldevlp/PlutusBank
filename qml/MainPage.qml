@@ -12,6 +12,7 @@ Item {
     signal openCardDetail(var cardData)
     signal openTopUp()
     signal openSettings()
+    signal openLoan()
 
     Component.onCompleted: {
         userSession.loadCards()
@@ -623,6 +624,36 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: root.openSettings()
+                        }
+                    }
+
+                    // -- Кредит --
+                    Rectangle {
+                        width: (parent.width - 12) / 2
+                        height: 90
+                        radius: 16
+                        color: "#1F2937"
+
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 8
+
+                            Text {
+                                text: "💳"
+                                font.pixelSize: 28
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+
+                            Text {
+                                text: "Кредит"
+                                font.pixelSize: 13
+                                color: "#E5E7EB"
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: root.openLoan()
                         }
                     }
                 }

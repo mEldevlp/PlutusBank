@@ -2,6 +2,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QDir>
+#include <QQuickStyle>
 
 #include "DatabaseManager.h"
 #include "AuthController.h"
@@ -9,6 +10,7 @@
 #include "CardController.h"
 #include "TransferController.h"
 #include "HistoryController.h"
+#include "LoanController.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -25,7 +27,7 @@ int main(int argc, char* argv[])
     // Устанавливаем обработчик сообщений
     qInstallMessageHandler(windowsMessageHandler);
 #endif
-
+    QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
 
     // Подключение к базе данных
@@ -42,6 +44,7 @@ int main(int argc, char* argv[])
     CardController cardController;
     HistoryController historyController;
     TransferController transferController;
+    LoanController loanController;
 
     QQmlApplicationEngine engine;
 
@@ -50,6 +53,7 @@ int main(int argc, char* argv[])
     engine.rootContext()->setContextProperty("cardController", &cardController);
     engine.rootContext()->setContextProperty("historyController", &historyController);
     engine.rootContext()->setContextProperty("transferController", &transferController);
+    engine.rootContext()->setContextProperty("loanController", &loanController);
 
     const QUrl url = QUrl::fromLocalFile(
         QDir(QCoreApplication::applicationDirPath())

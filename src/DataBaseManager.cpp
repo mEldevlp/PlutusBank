@@ -733,7 +733,7 @@ QVariantList DatabaseManager::getUserDebitAccounts(int userId)
         "c.card_number, c.card_brand, c.is_active, c.is_blocked "
         "FROM accounts a "
         "LEFT JOIN cards c ON c.account_id = a.id "
-        "WHERE a.user_id = :userId "
+        "WHERE a.user_id = :userId AND a.account_type = 'debit' "
         "ORDER BY a.account_type, a.created_at"
     );
     query.bindValue(":userId", userId);
