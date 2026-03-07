@@ -6,17 +6,17 @@ import "."
 Item {
     id: root
 
-    // ── Сигналы ──
+    // Сигналы
     signal backToMain()
     signal cardCreatedSuccess()
 
-    // ── Состояние мастера ──
+    // Состояние мастера
     property int    step: 1            // 1‑4
     property string cardType: ""       // "debit" | "credit"
     property string paySystem: ""      // "visa" | "mastercard" | "mir"
     property var    cardResult: ({})    // данные созданной карты
 
-    // ── Вычисляемые вспомогательные свойства ──
+    // Вычисляемые вспомогательные свойства
     readonly property string cardTypeLabel:
         cardType === "debit" ? "Дебетовая" : "Кредитная"
 
@@ -38,7 +38,7 @@ Item {
         step === 3 ? "Подтверждение"      :
                      "Карта создана!"
 
-    // ── Цвета платёжных систем ──
+    // Цвета платёжных систем
     function brandAccent(brand) {
         if (brand === "visa")       return "#3B82F6";
         if (brand === "mastercard") return "#EF4444";
@@ -47,20 +47,20 @@ Item {
     }
 
     function brandGradientStart(brand) {
-        if (brand === "visa")       return "#1E3A8A";
-        if (brand === "mastercard") return "#991B1B";
-        if (brand === "mir")        return "#065F46";
-        return "#1F2937";
+        if (brand === "visa")       return Theme.grVisaPosStart;
+        if (brand === "mastercard") return Theme.grMSPosStart;
+        if (brand === "mir")        return Theme.grMirPosStart;
+        return Theme.grBlockPosStart;
     }
 
     function brandGradientEnd(brand) {
-        if (brand === "visa")       return "#60A5FA";
-        if (brand === "mastercard") return "#F87171";
-        if (brand === "mir")        return "#34D399";
-        return "#374151";
+        if (brand === "visa")       return Theme.grVisaPosEnd;
+        if (brand === "mastercard") return Theme.grMSPosEnd;
+        if (brand === "mir")        return Theme.grMirPosStart;
+        return Theme.grBlockPosEnd;
     }
 
-    // ── Фон ──
+    // Фон
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -69,9 +69,7 @@ Item {
         }
     }
 
-    // ══════════════════════════════════════════
     //  Прокручиваемая область
-    // ══════════════════════════════════════════
     Flickable {
         id: flick
         anchors.fill: parent
@@ -87,15 +85,14 @@ Item {
 
             Item { Layout.preferredHeight: 16 }  // верхний отступ
 
-            // ── Заголовок + кнопка назад ──
+            // Заголовок + кнопка назад
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 14
 
-                // Круглая кнопка «←» — только на 1‑м шаге
-                Rectangle {
-                    width: 42; height: 42; radius: 21
-                    color: backBtnArea.pressed ? "#374151" : "#1F2937"
+                // Круглая кнопка «<-» — только на 1‑м шаге
+                Item {
+                    width: 42; height: 42;
                     visible: step === 1
 
                     Image {
@@ -130,7 +127,7 @@ Item {
                 }
             }
 
-            // ── Индикатор шагов ──
+            // Индикатор шагов
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 6
@@ -141,15 +138,13 @@ Item {
                         Layout.fillWidth: true
                         height: 3
                         radius: 2
-                        color: (index + 1) <= root.step ? "#2DD4BF" : "#1F2937"
+                        color: (index + 1) <= root.step ? Theme.accent: Theme.card
                         Behavior on color { ColorAnimation { duration: 250 } }
                     }
                 }
             }
 
-            // ══════════════════════════════════════
             //  ШАГ 1 — Тип карты
-            // ══════════════════════════════════════
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 14
@@ -163,44 +158,44 @@ Item {
                     wrapMode: Text.WordWrap
                 }
 
-                // — Дебетовая —
+                // Дебетовая
                 Rectangle {
                     id: debitCard
                     Layout.fillWidth: true
                     Layout.preferredHeight: 130
                     radius: 18
 
-                    property bool hovered: debitHover.hovered
                     property bool selected: root.cardType === "debit"
 
-                    color: selected ? "#172554"
-                         : hovered  ? "#1E293B"
-                                    : "#111827"
-                    border.width: selected ? 2 : 1
-                    border.color: selected ? "#3B82F6"
-                               : hovered  ? "#2563EB"
-                                          : "#1F2937"
-
-                    Behavior on color        { ColorAnimation { duration: 180 } }
-                    Behavior on border.color { ColorAnimation { duration: 180 } }
-
-                    // Свечение при hover
-                    Rectangle {
-                        anchors.fill: parent; radius: parent.radius
-                        color: "#3B82F6"
-                        opacity: debitCard.hovered && !debitCard.selected ? 0.06 : 0
-                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: debitCard.selected ? Qt.lighter(Theme.grBlockPosStart, 1.25)
+                                                     : Theme.grBlockPosStart
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                        }
+                        GradientStop {
+                            position: 1.0
+                            color: debitCard.selected ? Qt.lighter(Theme.grBlockPosEnd, 1.25)
+                                                     : Theme.grBlockPosEnd
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                        }
                     }
+
+                    border.width: selected ? 2 : 1
+                    border.color: selected ? Theme.accent : Theme.card
+                    Behavior on border.color { ColorAnimation { duration: 180 } }
 
                     ColumnLayout {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        Text {
-                            text: "💳"
-                            font.pixelSize: 40
+                        Image {
+                            source: "assets/debit-preview.svg"
+                            sourceSize: Qt.size(40, 40)
                             Layout.alignment: Qt.AlignHCenter
                         }
+
                         Text {
                             text: "Дебетовая карта"
                             font.pixelSize: 17
@@ -211,54 +206,53 @@ Item {
                         Text {
                             text: "Обслуживание 99 ₽ / мес."
                             font.pixelSize: 12
-                            color: debitCard.selected ? "#93C5FD" : "#6B7280"
+                            color: debitCard.selected ? Theme.accent : "#6B7280"
                             Layout.alignment: Qt.AlignHCenter
                             Behavior on color { ColorAnimation { duration: 200 } }
                         }
                     }
 
-                    HoverHandler { id: debitHover }
-                    TapHandler   { onTapped: root.cardType = "debit" }
+                    TapHandler { onTapped: root.cardType = "debit" }
                 }
 
-                // — Кредитная —
+                // Кредитная
                 Rectangle {
                     id: creditCard
                     Layout.fillWidth: true
                     Layout.preferredHeight: 130
                     radius: 18
 
-                    property bool hovered: creditHover.hovered
                     property bool selected: root.cardType === "credit"
 
-                    color: selected ? "#3B0764"
-                         : hovered  ? "#1E1B2E"
-                                    : "#111827"
-                    border.width: selected ? 2 : 1
-                    border.color: selected ? "#A78BFA"
-                               : hovered  ? "#7C3AED"
-                                          : "#1F2937"
-
-                    Behavior on color        { ColorAnimation { duration: 180 } }
-                    Behavior on border.color { ColorAnimation { duration: 180 } }
-
-                    // Свечение при hover
-                    Rectangle {
-                        anchors.fill: parent; radius: parent.radius
-                        color: "#A78BFA"
-                        opacity: creditCard.hovered && !creditCard.selected ? 0.06 : 0
-                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                    gradient: Gradient {
+                        GradientStop {
+                            position: 0.0
+                            color: creditCard.selected ? Qt.lighter(Theme.grBlockPosStart, 1.25)
+                                                      : Theme.grBlockPosStart
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                        }
+                        GradientStop {
+                            position: 1.0
+                            color: creditCard.selected ? Qt.lighter(Theme.grBlockPosEnd, 1.25)
+                                                      : Theme.grBlockPosEnd
+                            Behavior on color { ColorAnimation { duration: 180 } }
+                        }
                     }
+
+                    border.width: selected ? 2 : 1
+                    border.color: selected ? Theme.purpleLight : "#1F2937"
+                    Behavior on border.color { ColorAnimation { duration: 180 } }
 
                     ColumnLayout {
                         anchors.centerIn: parent
                         spacing: 8
 
-                        Text {
-                            text: "💎"
-                            font.pixelSize: 40
+                        Image {
+                            source: "assets/credit-preview.svg"
+                            sourceSize: Qt.size(40, 40)
                             Layout.alignment: Qt.AlignHCenter
                         }
+
                         Text {
                             text: "Кредитная карта"
                             font.pixelSize: 17
@@ -275,8 +269,7 @@ Item {
                         }
                     }
 
-                    HoverHandler { id: creditHover }
-                    TapHandler   { onTapped: root.cardType = "credit" }
+                    TapHandler { onTapped: root.cardType = "credit" }
                 }
 
                 // Кнопка «Далее»
@@ -285,7 +278,7 @@ Item {
                     Layout.preferredHeight: 52
                     radius: 14
                     color: root.cardType !== ""
-                           ? (step1NextArea.pressed ? "#14B8A6" : "#2DD4BF")
+                           ? (step1NextArea.pressed ? Theme.accent: Theme.accent)
                            : "#1F2937"
                     Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -305,9 +298,7 @@ Item {
                 }
             }
 
-            // ══════════════════════════════════════
             //  ШАГ 2 — Платёжная система
-            // ══════════════════════════════════════
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 12
@@ -465,9 +456,7 @@ Item {
                 }
             }
 
-            // ══════════════════════════════════════
             //  ШАГ 3 — Подтверждение
-            // ══════════════════════════════════════
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 16
@@ -479,12 +468,12 @@ Item {
                     Layout.fillWidth: true; wrapMode: Text.WordWrap
                 }
 
-                // ── Превью банковской карты ──
+                // Превью банковской карты
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 200
                     radius: 20
-                    clip: true
+                    layer.enabled: true
 
                     gradient: Gradient {
                         orientation: Gradient.Horizontal
@@ -492,30 +481,19 @@ Item {
                         GradientStop { position: 1.0; color: brandGradientEnd(root.paySystem) }
                     }
 
-                    // Декоративные круги
-                    Rectangle {
-                        x: parent.width - 80; y: -30
-                        width: 160; height: 160; radius: 80
-                        color: "#FFFFFF"; opacity: 0.04
-                    }
-                    Rectangle {
-                        x: parent.width - 130; y: 80
-                        width: 120; height: 120; radius: 60
-                        color: "#FFFFFF"; opacity: 0.03
-                    }
-
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 22
                         spacing: 0
 
-                        // Платёжная система — верхний левый угол
-                        Text {
-                            text: root.paySystemLabel
-                            font.pixelSize: 15
-                            font.weight: Font.Bold
-                            color: "#FFFFFF"
-                            opacity: 0.85
+                        // Логотип платёжной системы — верхний левый угол
+                        Image {
+                            source: root.paySystem === "visa"       ? "assets/visa.svg" :
+                                    root.paySystem === "mastercard" ? "assets/mastercard.svg" :
+                                                                      "assets/mir.svg"
+                            sourceSize.height: 24
+                            fillMode: Image.PreserveAspectFit
+                            opacity: 0.9
                         }
 
                         Item { Layout.fillHeight: true }
@@ -581,7 +559,7 @@ Item {
                         // Строка‑разделитель: повторяемый компонент
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Тип карты";        font.pixelSize: 13; color: "#6B7280" }
+                            Text { text: "Тип карты";        font.pixelSize: 13; color: Theme.textMuted}
                             Item { Layout.fillWidth: true }
                             Text { text: root.cardTypeLabel;  font.pixelSize: 13; font.weight: Font.Bold; color: "#E5E7EB" }
                         }
@@ -590,7 +568,7 @@ Item {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Платёжная система"; font.pixelSize: 13; color: "#6B7280" }
+                            Text { text: "Платёжная система"; font.pixelSize: 13; color: Theme.textMuted}
                             Item { Layout.fillWidth: true }
                             Text { text: root.paySystemLabel; font.pixelSize: 13; font.weight: Font.Bold; color: "#E5E7EB" }
                         }
@@ -599,7 +577,7 @@ Item {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Срок действия";     font.pixelSize: 13; color: "#6B7280" }
+                            Text { text: "Срок действия";     font.pixelSize: 13; color: Theme.textMuted}
                             Item { Layout.fillWidth: true }
                             Text { text: "5 лет (" + root.expiryPreview + ")"; font.pixelSize: 13; font.weight: Font.Bold; color: "#E5E7EB" }
                         }
@@ -608,7 +586,7 @@ Item {
 
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Обслуживание";      font.pixelSize: 13; color: "#6B7280" }
+                            Text { text: "Обслуживание";      font.pixelSize: 13; color: Theme.textMuted}
                             Item { Layout.fillWidth: true }
                             Text {
                                 text: root.cardType === "debit" ? "99 ₽ / мес." : "0 ₽"
@@ -651,9 +629,7 @@ Item {
                 }
             }
 
-            // ══════════════════════════════════════
             //  ШАГ 4 — Успешное создание
-            // ══════════════════════════════════════
             ColumnLayout {
                 Layout.fillWidth: true
                 spacing: 14
@@ -668,13 +644,13 @@ Item {
 
                     Text {
                         anchors.centerIn: parent
-                        text: "🎉  Карта успешно выпущена!"
+                        text: "Карта успешно выпущена!"
                         font.pixelSize: 15; font.weight: Font.Bold
                         color: "#4ADE80"
                     }
                 }
 
-                // ── Блок данных ──
+                // Блок данных
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 10
@@ -682,13 +658,17 @@ Item {
                     // Номер карты
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 68; radius: 12; color: "#111827"
-                        border.color: "#1F2937"; border.width: 1
+                        Layout.preferredHeight: 68; radius: 12;
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         ColumnLayout {
                             anchors { fill: parent; margins: 12 }
                             spacing: 4
-                            Text { text: "Номер карты"; font.pixelSize: 11; color: "#6B7280" }
+                            Text { text: "Номер карты"; font.pixelSize: 11; color: Theme.textMuted}
                             RowLayout {
                                 Text {
                                     text: root.cardResult.cardNumber || "•••• •••• •••• ••••"
@@ -696,11 +676,61 @@ Item {
                                     color: "#F3F4F6"
                                 }
                                 Item { Layout.fillWidth: true }
-                                Image {
-                                    width: 18; height: 18
-                                    source: "assets/copy.svg"
-                                    sourceSize: Qt.size(18, 18)
-                                    TapHandler { onTapped: console.log("Copy number:", root.cardResult.cardNumber) }
+                                Item {
+                                    Layout.preferredWidth: 18
+                                    Layout.preferredHeight: 18
+
+                                    Image {
+                                        id: copyNumIcon
+                                        anchors.fill: parent
+                                        source: "assets/copy.svg"
+                                        sourceSize: Qt.size(18, 18)
+                                        opacity: copyNumArea.pressed ? 0.5 : 1.0
+
+                                        MouseArea {
+                                            id: copyNumArea
+                                            anchors.fill: parent
+                                            anchors.margins: -6
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                cardController.copyToClipboard(root.cardResult.cardNumber || "")
+                                                copyNumToast.show()
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        id: copyNumToast
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.top
+                                        anchors.bottomMargin: 4
+                                        width: copyNumToastLabel.width + 16
+                                        height: 24; radius: 8
+                                        color: Theme.green
+                                        opacity: 0
+                                        visible: opacity > 0
+
+                                        Text {
+                                            id: copyNumToastLabel
+                                            anchors.centerIn: parent
+                                            text: "Скопировано"
+                                            font.pixelSize: 11
+                                            color: "#FFFFFF"
+                                        }
+
+                                        function show() {
+                                            opacity = 1
+                                            copyNumTimer.restart()
+                                        }
+
+                                        Timer {
+                                            id: copyNumTimer
+                                            interval: 1200
+                                            onTriggered: copyNumToast.opacity = 0
+                                        }
+
+                                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                                    }
                                 }
                             }
                         }
@@ -709,13 +739,17 @@ Item {
                     // Держатель
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 68; radius: 12; color: "#111827"
-                        border.color: "#1F2937"; border.width: 1
+                        Layout.preferredHeight: 68; radius: 12;
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         ColumnLayout {
                             anchors { fill: parent; margins: 12 }
                             spacing: 4
-                            Text { text: "Держатель карты"; font.pixelSize: 11; color: "#6B7280" }
+                            Text { text: "Держатель карты"; font.pixelSize: 11; color: Theme.textMuted}
                             Text {
                                 text: root.cardResult.cardHolder || ""
                                 font.pixelSize: 15; font.weight: Font.Bold; color: "#F3F4F6"
@@ -730,13 +764,17 @@ Item {
 
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 68; radius: 12; color: "#111827"
-                            border.color: "#1F2937"; border.width: 1
+                            Layout.preferredHeight: 68; radius: 12;
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                                GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                            }
+                            border.color: Theme.card
 
                             ColumnLayout {
                                 anchors { fill: parent; margins: 12 }
                                 spacing: 4
-                                Text { text: "Срок действия"; font.pixelSize: 11; color: "#6B7280" }
+                                Text { text: "Срок действия"; font.pixelSize: 11; color: Theme.textMuted}
                                 Text {
                                     text: root.cardResult.expiryDate || ""
                                     font.pixelSize: 15; font.weight: Font.Bold; color: "#F3F4F6"
@@ -746,24 +784,78 @@ Item {
 
                         Rectangle {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 68; radius: 12; color: "#111827"
-                            border.color: "#1F2937"; border.width: 1
+                            Layout.preferredHeight: 68; radius: 12; 
+                            gradient: Gradient {
+                                GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                                GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                            }
+                            border.color: Theme.card
 
                             ColumnLayout {
                                 anchors { fill: parent; margins: 12 }
                                 spacing: 4
-                                Text { text: "CVC-код"; font.pixelSize: 11; color: "#6B7280" }
+                                Text { text: "CVC-код"; font.pixelSize: 11; color: Theme.textMuted}
                                 RowLayout {
                                     Text {
                                         text: root.cardResult.cvc || "***"
                                         font.pixelSize: 17; font.weight: Font.Bold; color: "#F3F4F6"
                                     }
                                     
-                                    Image {
-                                        width: 18; height: 18
-                                        source: "assets/copy.svg"
-                                        sourceSize: Qt.size(18, 18)
-                                        TapHandler { onTapped: console.log("Copy CVC:", root.cardResult.cvc) }
+                                    Item {
+                                        Layout.preferredWidth: 18
+                                        Layout.preferredHeight: 18
+
+                                        Image {
+                                            id: copyCvcIcon
+                                            anchors.fill: parent
+                                            source: "assets/copy.svg"
+                                            sourceSize: Qt.size(18, 18)
+                                            opacity: copyCvcArea.pressed ? 0.5 : 1.0
+
+                                            MouseArea {
+                                                id: copyCvcArea
+                                                anchors.fill: parent
+                                                anchors.margins: -6
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    cardController.copyToClipboard(root.cardResult.cvc || "")
+                                                    copyCvcToast.show()
+                                                }
+                                            }
+                                        }
+
+                                        Rectangle {
+                                            id: copyCvcToast
+                                            anchors.right: parent.right
+                                            anchors.bottom: parent.top
+                                            anchors.bottomMargin: 4
+                                            width: copyCvcToastLabel.width + 16
+                                            height: 24; radius: 8
+                                            color: Theme.green
+                                            opacity: 0
+                                            visible: opacity > 0
+
+                                            Text {
+                                                id: copyCvcToastLabel
+                                                anchors.centerIn: parent
+                                                text: "Скопировано"
+                                                font.pixelSize: 11
+                                                color: "#FFFFFF"
+                                            }
+
+                                            function show() {
+                                                opacity = 1
+                                                copyCvcTimer.restart()
+                                            }
+
+                                            Timer {
+                                                id: copyCvcTimer
+                                                interval: 1200
+                                                onTriggered: copyCvcToast.opacity = 0
+                                            }
+
+                                            Behavior on opacity { NumberAnimation { duration: 200 } }
+                                        }
                                     }
                                 }
                             }
@@ -774,24 +866,77 @@ Item {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 76; radius: 12
-                        color: "#4C1D95"
-                        border.color: "#7C3AED"; border.width: 1
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         ColumnLayout {
                             anchors { fill: parent; margins: 12 }
                             spacing: 4
-                            Text { text: "PIN-код  (запишите в надёжном месте!)"; font.pixelSize: 11; font.weight: Font.Bold; color: "#DDD6FE" }
+                            Text { text: "PIN-код  (запишите в надёжном месте!)"; font.pixelSize: 11; font.weight: Font.Bold; color: Theme.textMuted }
                             RowLayout {
                                 Text {
                                     text: root.cardResult.pin || "****"
                                     font.pixelSize: 22; font.weight: Font.Bold; color: "#FFFFFF"
                                 }
                                
-                                Image {
-                                    width: 18; height: 18
-                                    source: "assets/copy.svg"
-                                    sourceSize: Qt.size(18, 18)
-                                    TapHandler { onTapped: console.log("Copy number:", root.cardResult.pin) }
+                                Item {
+                                    Layout.preferredWidth: 18
+                                    Layout.preferredHeight: 18
+
+                                    Image {
+                                        id: copyPinIcon
+                                        anchors.fill: parent
+                                        source: "assets/copy.svg"
+                                        sourceSize: Qt.size(18, 18)
+                                        opacity: copyPinArea.pressed ? 0.5 : 1.0
+
+                                        MouseArea {
+                                            id: copyPinArea
+                                            anchors.fill: parent
+                                            anchors.margins: -6
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                cardController.copyToClipboard(root.cardResult.pin || "")
+                                                copyPinToast.show()
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        id: copyPinToast
+                                        anchors.right: parent.right
+                                        anchors.bottom: parent.top
+                                        anchors.bottomMargin: 4
+                                        width: copyPinToastLabel.width + 16
+                                        height: 24; radius: 8
+                                        color: Theme.green
+                                        opacity: 0
+                                        visible: opacity > 0
+
+                                        Text {
+                                            id: copyPinToastLabel
+                                            anchors.centerIn: parent
+                                            text: "Скопировано"
+                                            font.pixelSize: 11
+                                            color: "#FFFFFF"
+                                        }
+
+                                        function show() {
+                                            opacity = 1
+                                            copyPinTimer.restart()
+                                        }
+
+                                        Timer {
+                                            id: copyPinTimer
+                                            interval: 1200
+                                            onTriggered: copyPinToast.opacity = 0
+                                        }
+
+                                        Behavior on opacity { NumberAnimation { duration: 200 } }
+                                    }
                                 }
                             }
                         }
@@ -809,8 +954,6 @@ Item {
                         id: warningRow
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
                         spacing: 10
-
-                        //Text { text: "⚠️"; font.pixelSize: 28 }
 
                         Image {
                             width: 28; height: 28
@@ -831,7 +974,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 52; radius: 14
-                    color: doneArea.pressed ? "#14B8A6" : "#2DD4BF"
+                    color: Theme.accent
                     Behavior on color { ColorAnimation { duration: 100 } }
 
                     Text { anchors.centerIn: parent; text: "На главную"; font.pixelSize: 15; font.weight: Font.Bold; color: "#042F2E" }
@@ -855,9 +998,7 @@ Item {
         }
     }
 
-    // ══════════════════════════════════════════
     //  Связь с контроллером
-    // ══════════════════════════════════════════
     Connections {
         target: cardController
 

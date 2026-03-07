@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import PlutusBank
 
 Item {
     id: registerPage
@@ -48,7 +49,7 @@ Item {
                     width: 40
                     height: 40
                     radius: 10
-                    color: "#0F172A"
+                    color: "transparent"
 
                     Image {
                         anchors.centerIn: parent
@@ -110,7 +111,7 @@ Item {
                     text: "Личные данные"
                     font.pixelSize: 16
                     font.bold: true
-                    color: "#27D6C5"
+                    color: Theme.accent
                 }
 
                 // Фамилия
@@ -130,7 +131,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: lastNameInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: lastNameInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         TextInput {
@@ -170,7 +171,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: firstNameInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: firstNameInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         TextInput {
@@ -218,7 +219,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: middleNameInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: middleNameInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         TextInput {
@@ -258,7 +259,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: birthDateInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: birthDateInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         TextInput {
@@ -313,7 +314,7 @@ Item {
                     text: "Паспортные данные"
                     font.pixelSize: 16
                     font.bold: true
-                    color: "#27D6C5"
+                    color: Theme.accent
                 }
 
                 Row {
@@ -337,7 +338,7 @@ Item {
                             height: 52
                             radius: 12
                             color: "#0F172A"
-                            border.color: passportSeriesInput.activeFocus ? "#27D6C5" : "#1F2937"
+                            border.color: passportSeriesInput.activeFocus ? Theme.accent : "#1F2937"
                             border.width: 2
 
                             TextInput {
@@ -379,7 +380,7 @@ Item {
                             height: 52
                             radius: 12
                             color: "#0F172A"
-                            border.color: passportNumberInput.activeFocus ? "#27D6C5" : "#1F2937"
+                            border.color: passportNumberInput.activeFocus ? Theme.accent : "#1F2937"
                             border.width: 2
 
                             TextInput {
@@ -413,7 +414,7 @@ Item {
                     text: "Контактные данные"
                     font.pixelSize: 16
                     font.bold: true
-                    color: "#27D6C5"
+                    color: Theme.accent
                 }
 
                 // Поле Email
@@ -433,7 +434,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: emailInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: emailInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         TextInput {
@@ -486,7 +487,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: phoneInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: phoneInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         Row {
@@ -532,7 +533,7 @@ Item {
                     text: "Безопасность"
                     font.pixelSize: 16
                     font.bold: true
-                    color: "#27D6C5"
+                    color: Theme.accent
                 }
 
                 // Поле пароля
@@ -552,7 +553,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: passwordInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: passwordInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         Row {
@@ -648,7 +649,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: confirmPasswordInput.activeFocus ? "#27D6C5" : 
+                        border.color: confirmPasswordInput.activeFocus ? Theme.accent : 
                                      (confirmPasswordInput.text.length > 0 && confirmPasswordInput.text !== passwordInput.text) ? "#EF4444" : "#1F2937"
                         border.width: 2
 
@@ -724,7 +725,7 @@ Item {
                         width: 24
                         height: 24
                         radius: 6
-                        color: termsCheckbox.checked ? "#27D6C5" : "#0F172A"
+                        color: termsCheckbox.checked ? Theme.accent : "#0F172A"
                         border.color: "#1F2937"
                         border.width: 2
 
@@ -762,7 +763,7 @@ Item {
                             Text {
                                 text: "Политики конфиденциальности"
                                 font.pixelSize: 12
-                                color: "#27D6C5"
+                                color: Theme.accent
                                 font.underline: true
 
                                 MouseArea {
@@ -780,7 +781,7 @@ Item {
                             Text {
                                 text: "Пользовательского соглашения"
                                 font.pixelSize: 12
-                                color: "#27D6C5"
+                                color: Theme.accent
                                 font.underline: true
 
                                 MouseArea {
@@ -819,7 +820,7 @@ Item {
                                emailValid && phoneValid && passwordValid && passwordMatch && termsAccepted;
                     }
 
-                    color: isFormValid ? "#27D6C5" : "#1F2937"
+                    color: isFormValid ? Theme.accent : "#1F2937"
 
                     Text {
                         anchors.centerIn: parent
@@ -890,7 +891,7 @@ Item {
                         text: "Войти"
                         font.pixelSize: 13
                         font.bold: true
-                        color: "#27D6C5"
+                        color: Theme.accent
 
                         MouseArea {
                             anchors.fill: parent

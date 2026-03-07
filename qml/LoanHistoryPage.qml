@@ -35,24 +35,30 @@ Item {
             width: parent.width
             spacing: 20
 
-            // ═══════ Шапка ═══════
+            // Шапка
             Item {
                 width: parent.width
                 height: 56
 
                 Rectangle {
                     width: 40; height: 40; radius: 20
-                    color: backArea.pressed ? "#374151" : "#1F2937"
+                    color: "transparent"
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
-                        anchors.centerIn: parent; text: "‹"
-                        font { pixelSize: 22; bold: true }
-                        color: "#E5E7EB"
+                    Image {
+                        anchors.centerIn: parent
+                        width: 24; height: 24
+                        source: "assets/arrow-left.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
-                    MouseArea { id: backArea; anchors.fill: parent; onClicked: root.backToCatalog() }
+
+                    MouseArea {
+                        id: backArea
+                        anchors.fill: parent
+                        onClicked: root.backToCatalog()
+                    }
                 }
 
                 Text {
@@ -63,13 +69,17 @@ Item {
                 }
             }
 
-            // ═══════ Итоговая карточка ═══════
+            // Итоговая карточка 
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: summaryCol.height + 28
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: summaryCol
@@ -86,7 +96,7 @@ Item {
                     Text {
                         text: Number(loanController.totalPaidAll).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
                         font { pixelSize: 26; bold: true; family: manropeFont.name }
-                        color: "#27D6C5"
+                        color: Theme.accent
                     }
 
                     Rectangle { width: parent.width; height: 1; color: "#374151" }
@@ -106,7 +116,7 @@ Item {
                 }
             }
 
-            // ═══════ Пусто ═══════
+            // Пусто
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -126,7 +136,7 @@ Item {
                 }
             }
 
-            // ═══════ Список закрытых кредитов ═══════
+            // Список закрытых кредитов
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -140,17 +150,21 @@ Item {
                         width: parent.width
                         height: itemCol.height + 28
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         required property var modelData
                         required property int index
 
-                        readonly property string icon: {
+                        readonly property string iconSource: {
                             var cat = modelData.category ?? ""
-                            if (cat === "mortgage")    return "🏠"
-                            if (cat === "auto")        return "🚗"
-                            if (cat === "electronics") return "💻"
-                            return "💰"
+                            if (cat === "mortgage")    return "assets/house.svg"
+                            if (cat === "auto")        return "assets/car.svg"
+                            if (cat === "electronics") return "assets/laptop.svg"
+                            return "assets/money.svg"
                         }
 
                         Column {
@@ -164,8 +178,10 @@ Item {
                                 width: parent.width
                                 spacing: 10
 
-                                Text {
-                                    text: icon; font.pixelSize: 24
+                                Image {
+                                    width: 24; height: 24
+                                    source: iconSource
+                                    sourceSize: Qt.size(24, 24)
                                     Layout.alignment: Qt.AlignVCenter
                                 }
 
@@ -245,21 +261,21 @@ Item {
                                     property double overpay: Number(modelData.total_paid ?? 0) - Number(modelData.principal ?? 0)
                                     text: Number(Math.max(0, overpay)).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                     font { pixelSize: 12; bold: true }
-                                    color: "#F59E0B"
+                                    color: Theme.textMuted
                                 }
                             }
 
                             // Кнопка
                             Rectangle {
                                 width: parent.width; height: 42; radius: 12
-                                color: "#111827"
-                                border.color: "#374151"; border.width: 1
+                                color: Theme.accent
+                                
 
                                 Text {
                                     anchors.centerIn: parent
                                     text: "История платежей"
                                     font { pixelSize: 13; bold: true; family: manropeFont.name }
-                                    color: "#27D6C5"
+                                    color: Theme.textSubtle
                                 }
                                 MouseArea {
                                     anchors.fill: parent

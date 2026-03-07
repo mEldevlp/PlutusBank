@@ -79,14 +79,6 @@ Item {
         }
     }
 
-    readonly property color accentColor: {
-        var cat = product.category ?? ""
-        if (cat === "mortgage")    return "#3B82F6"
-        if (cat === "auto")        return "#F59E0B"
-        if (cat === "electronics") return "#8B5CF6"
-        return "#27D6C5"
-    }
-
     Flickable {
         anchors.fill: parent
         contentHeight: mainCol.height + 40
@@ -97,24 +89,25 @@ Item {
             width: parent.width
             spacing: 20
 
-            // ═══════ Шапка ═══════
+            // Шапка
             Item {
                 width: parent.width
                 height: 56
 
                 Rectangle {
                     width: 40; height: 40; radius: 20
-                    color: backArea.pressed ? "#374151" : "#1F2937"
+                    color: "transparent"
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
+                    Image {
                         anchors.centerIn: parent
-                        text: "‹"
-                        font { pixelSize: 22; bold: true }
-                        color: "#E5E7EB"
+                        width: 24; height: 24
+                        source: "assets/arrow-left.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
+
                     MouseArea {
                         id: backArea
                         anchors.fill: parent
@@ -130,7 +123,7 @@ Item {
                 }
             }
 
-            // ═══════ Сумма ═══════
+            // Сумма
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -148,7 +141,7 @@ Item {
                     height: 48
                     radius: 12
                     color: "#111827"
-                    border.color: amountInput.activeFocus ? accentColor : "#374151"
+                    border.color: amountInput.activeFocus ? Theme.accent : "#374151"
                     border.width: amountInput.activeFocus ? 2 : 1
 
                     TextInput {
@@ -229,7 +222,7 @@ Item {
                         Rectangle {
                             width: amountSlider.visualPosition * parent.width
                             height: parent.height; radius: 2
-                            color: accentColor
+                            color: Theme.accent
                         }
                     }
 
@@ -237,7 +230,7 @@ Item {
                         x: amountSlider.leftPadding + amountSlider.visualPosition * (amountSlider.availableWidth - width)
                         y: amountSlider.topPadding + amountSlider.availableHeight / 2 - height / 2
                         width: 24; height: 24; radius: 12
-                        color: amountSlider.pressed ? Qt.lighter(accentColor, 1.2) : accentColor
+                        color: amountSlider.pressed ? Qt.lighter(Theme.accent, 1.2) : Theme.accent
                         border.color: "#FFFFFF"; border.width: 2
                     }
                 }
@@ -281,7 +274,7 @@ Item {
                     height: 48
                     radius: 12
                     color: "#111827"
-                    border.color: termInput.activeFocus ? accentColor : "#374151"
+                    border.color: termInput.activeFocus ? Theme.accent : "#374151"
                     border.width: termInput.activeFocus ? 2 : 1
 
                     TextInput {
@@ -377,7 +370,7 @@ Item {
                         Rectangle {
                             width: termSlider.visualPosition * parent.width
                             height: parent.height; radius: 2
-                            color: accentColor
+                            color: Theme.accent
                         }
                     }
 
@@ -385,7 +378,7 @@ Item {
                         x: termSlider.leftPadding + termSlider.visualPosition * (termSlider.availableWidth - width)
                         y: termSlider.topPadding + termSlider.availableHeight / 2 - height / 2
                         width: 24; height: 24; radius: 12
-                        color: termSlider.pressed ? Qt.lighter(accentColor, 1.2) : accentColor
+                        color: termSlider.pressed ? Qt.lighter(Theme.accent, 1.2) : Theme.accent
                         border.color: "#FFFFFF"; border.width: 2
                     }
                 }
@@ -411,13 +404,17 @@ Item {
                 }
             }
 
-            // ═══════ Результат расчёта ═══════
+            // Результат расчёта
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: resultCol.height + 28
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: resultCol
@@ -435,7 +432,7 @@ Item {
                         Text {
                             text: Number(monthlyPayment).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
                             font { pixelSize: 26; bold: true; family: manropeFont.name }
-                            color: accentColor
+                            color: Theme.accent
                         }
                     }
 
@@ -451,7 +448,7 @@ Item {
                             Text {
                                 text: Number(product.annual_rate ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 1) + "%"
                                 font { pixelSize: 14; bold: true }
-                                color: "#E5E7EB"
+                                color: Theme.accent
                             }
                         }
 
@@ -462,7 +459,7 @@ Item {
                             Text {
                                 text: Number(overpayment).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                 font { pixelSize: 14; bold: true }
-                                color: "#EF4444"
+                                color: Theme.textMuted
                             }
                         }
 
@@ -480,79 +477,184 @@ Item {
                 }
             }
 
-            // ═══════ Выбор счёта ═══════
-            Column {
+            // Выбор счёта
+            Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 10
-
-                Text {
-                    text: "Зачислить на счёт"
-                    font { pixelSize: 14; bold: true }
-                    color: "#9CA3AF"
+                height: accountsCol.height + 32
+                radius: 16
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
                 }
+                border.color: Theme.card
 
-                Repeater {
-                    model: loanController.accounts
+                Column {
+                    id: accountsCol
+                    width: parent.width - 32
+                    anchors.centerIn: parent
+                    spacing: 12
 
-                    delegate: Rectangle {
-                        width: parent.width
-                        height: 56
-                        radius: 12
-                        color: selectedAccountId === modelData.id ? "#27D6C520" : "#111827"
-                        border.color: selectedAccountId === modelData.id ? accentColor : "#374151"
-                        border.width: selectedAccountId === modelData.id ? 2 : 1
+                    Text {
+                        text: "Зачислить на счёт"
+                        font { pixelSize: 14; bold: true; family: manropeFont.name }
+                        color: "#9CA3AF"
+                    }
 
-                        required property var modelData
+                    Repeater {
+                        model: loanController.accounts
 
-                        Row {
-                            anchors.fill: parent
-                            anchors.margins: 12
-                            spacing: 10
+                        Rectangle {
+                            id: accItem
+                            width: accountsCol.width
+                            height: 72
+                            radius: 12
 
-                            Rectangle {
-                                width: 22; height: 22; radius: 11
-                                color: "transparent"
-                                border.color: selectedAccountId === modelData.id ? accentColor : "#4B5563"
-                                border.width: 2
-                                anchors.verticalCenter: parent.verticalCenter
+                            required property var modelData
 
+                            property int accId: modelData.id
+                            property bool isSelected: root.selectedAccountId === accId
+                            property bool isBlocked: (modelData.is_blocked ?? false)
+                            property bool isFrozen:  !(modelData.is_active ?? true) && !isBlocked
+                            property bool isDisabled: isBlocked || isFrozen
+
+                            color: isSelected ? "#112B3C" : "#111827"
+                            border.color: isSelected ? Theme.accent : "#374151"
+                            border.width: isSelected ? 2 : 1
+
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on color        { ColorAnimation { duration: 150 } }
+
+                            Row {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                spacing: 12
+
+                                // Радиокнопка
                                 Rectangle {
-                                    anchors.centerIn: parent
-                                    width: 12; height: 12; radius: 6
-                                    color: accentColor
-                                    visible: selectedAccountId === modelData.id
-                                }
-                            }
+                                    width: 26; height: 26; radius: 13
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    color: "transparent"
+                                    border.color: accItem.isSelected ? Theme.accent : "#6B7280"
+                                    border.width: 2
+                                    opacity: accItem.isDisabled ? 0.3 : 1.0
 
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 2
+                                    Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                                Text {
-                                    text: {
-                                        var num = modelData.card_number ?? ""
-                                        return num.length > 4 ? "•••• " + num.slice(-4) : "Счёт"
+                                    Rectangle {
+                                        width: 14; height: 14; radius: 7
+                                        anchors.centerIn: parent
+                                        color: Theme.accent
+                                        scale: accItem.isSelected ? 1.0 : 0.0
+                                        visible: scale > 0
+
+                                        Behavior on scale {
+                                            NumberAnimation { duration: 150; easing.type: Easing.OutBack }
+                                        }
                                     }
-                                    font { pixelSize: 14; bold: true }
-                                    color: "#E5E7EB"
                                 }
-                                Text {
-                                    text: Number(modelData.balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
-                                    font.pixelSize: 12; color: "#9CA3AF"
+
+                                // Иконка бренда карты
+                                Rectangle {
+                                    width: 44; height: 44; radius: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    gradient: Gradient {
+                                        GradientStop {
+                                            position: 0.0
+                                            color: modelData.card_brand === "visa"
+                                                    ? Theme.grVisaPosStart
+                                                    : modelData.card_brand === "mastercard"
+                                                        ? Theme.grMSPosStart
+                                                        : Theme.grMirPosStart
+                                        }
+                                        GradientStop {
+                                            position: 1.0
+                                            color: modelData.card_brand === "visa"
+                                                    ? Theme.grVisaPosEnd
+                                                    : modelData.card_brand === "mastercard"
+                                                        ? Theme.grMSPosEnd
+                                                        : Theme.grMirPosEnd
+                                        }
+                                    }
+
+                                    Image {
+                                        anchors.centerIn: parent
+                                        width: 28; height: 28
+                                        sourceSize: Qt.size(28, 28)
+                                        fillMode: Image.PreserveAspectFit
+                                        source: modelData.card_brand === "visa"
+                                                ? "assets/visa.svg"
+                                                : modelData.card_brand === "mastercard"
+                                                    ? "assets/mastercard.svg"
+                                                    : "assets/mir.svg"
+                                    }
+                                }
+
+                                // Информация о карте
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    spacing: 2
+                                    width: parent.width - 26 - 44 - 36
+
+                                    Text {
+                                        text: "Дебетовая •••• " + (modelData.card_number ?? "").slice(-4)
+                                        font { pixelSize: 14; bold: true }
+                                        color: accItem.isDisabled ? "#6B7280" : "#F7F7FB"
+                                    }
+
+                                    Row {
+                                        spacing: 4
+
+                                        Image {
+                                            width: 12; height: 12
+                                            source: accItem.isBlocked
+                                                    ? "assets/lock.svg"
+                                                    : "assets/snowflake.svg"
+                                            sourceSize: Qt.size(12, 12)
+                                            visible: accItem.isBlocked || accItem.isFrozen
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        Text {
+                                            text: accItem.isBlocked
+                                                  ? "Заблокирована"
+                                                  : (accItem.isFrozen
+                                                     ? "Заморожена"
+                                                     : Number(modelData.balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽")
+                                            font.pixelSize: 12
+                                            color: accItem.isBlocked ? "#EF4444"
+                                                   : (accItem.isFrozen ? "#60A5FA" : "#9CA3AF")
+                                        }
+                                    }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                enabled: !accItem.isDisabled
+                                onClicked: {
+                                    if (root.selectedAccountId === accItem.accId)
+                                        root.selectedAccountId = -1
+                                    else
+                                        root.selectedAccountId = accItem.accId
                                 }
                             }
                         }
+                    }
 
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: selectedAccountId = modelData.id
-                        }
+                    // Нет счетов
+                    Text {
+                        visible: loanController.accounts.length === 0
+                        text: "У вас пока нет дебетовых карт"
+                        font.pixelSize: 14
+                        color: "#6B7280"
+                        anchors.horizontalCenter: parent.horizontalCenter
                     }
                 }
             }
 
-            // ═══════ Ошибка (инлайн) ═══════
+            // Ошибка (инлайн)
             Text {
                 visible: resultMessage.length > 0 && !resultSuccess
                 width: parent.width - 32
@@ -564,13 +666,13 @@ Item {
                 wrapMode: Text.WordWrap
             }
 
-            // ═══════ Кнопка «Оформить» ═══════
+            // Кнопка Оформить
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 52
                 radius: 16
-                color: (selectedAccountId > 0 && !isProcessing) ? accentColor : "#374151"
+                color: (selectedAccountId > 0 && !isProcessing) ? Theme.accent : "#374151"
                 opacity: (selectedAccountId > 0 && !isProcessing) ? 1.0 : 0.5
 
                 Text {
@@ -600,7 +702,7 @@ Item {
         }
     }
 
-    // ═══════ Оверлей «Кредит одобрен» ═══════
+    // Оверлей «Кредит одобрен»
     Item {
         id: successOverlay
         anchors.fill: parent
@@ -666,11 +768,11 @@ Item {
                 color: "#11a24d"
                 anchors.horizontalCenter: parent.horizontalCenter
 
-                Text {
+                Image {
                     anchors.centerIn: parent
-                    text: "✓"
-                    font { pixelSize: 36; bold: true }
-                    color: "#FFFFFF"
+                    width: 40; height: 40
+                    source: "assets/check-mark.svg"
+                    sourceSize: Qt.size(40, 40)
                 }
             }
 
@@ -696,7 +798,11 @@ Item {
                 width: parent.width
                 height: detailsCol.height + 24
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: detailsCol
@@ -745,7 +851,7 @@ Item {
                         Text {
                             text: Number(monthlyPayment).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
                             font { pixelSize: 13; bold: true }
-                            color: accentColor
+                            color: Theme.accent
                         }
                     }
                 }
@@ -758,7 +864,7 @@ Item {
                 width: parent.width
                 height: 54
                 radius: 16
-                color: accentColor
+                color: Theme.accent
 
                 Text {
                     anchors.centerIn: parent
@@ -781,9 +887,11 @@ Item {
                 width: parent.width
                 height: 54
                 radius: 16
-                color: "transparent"
-                border.color: "#374151"
-                border.width: 2
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Text {
                     anchors.centerIn: parent

@@ -91,6 +91,7 @@ set(QML_UI_FILES
 	qml/MyLoansPage.qml
 	qml/LoanSchedulePage.qml
 	qml/LoanHistoryPage.qml
+	qml/Theme.qml  
 )
 
 # QML Resources - Assets
@@ -129,6 +130,8 @@ source_group("Generated" REGULAR_EXPRESSION ".*moc_.*|.*qrc_.*|.*ui_.*")
 # Создание приложения
 qt_add_executable(${PROJECT_NAME} ${SOURCES})
 
+set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
+
 # QML модуль
 qt_add_qml_module(${PROJECT_NAME}
     URI PlutusBank
@@ -142,8 +145,8 @@ qt_add_qml_module(${PROJECT_NAME}
 if(ANDROID)
     set_target_properties(${PROJECT_NAME} PROPERTIES
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
-        QT_ANDROID_MIN_SDK_VERSION 28
-        QT_ANDROID_TARGET_SDK_VERSION 34
+        QT_ANDROID_MIN_SDK_VERSION 34
+        QT_ANDROID_TARGET_SDK_VERSION 36
     )
 endif()
 

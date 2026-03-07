@@ -1,37 +1,56 @@
 #pragma once
 
-#include <QObject>
+#include <QAbstractListModel>
 #include <QVariantList>
+#include <QVariantMap>
 #include "DatabaseManager.h"
 
-class HistoryController : public QObject
+class HistoryController : public QAbstractListModel
 {
     Q_OBJECT
 
-        Q_PROPERTY(QVariantList transactions READ transactions NOTIFY transactionsChanged)
         Q_PROPERTY(bool isLoading READ isLoading NOTIFY loadingChanged)
-        Q_PROPERTY(bool hasMore READ hasMore NOTIFY transactionsChanged)
+        Q_PROPERTY(bool hasMore   READ hasMore   NOTIFY hasMoreChanged)
 
 public:
+    enum Roles {
+        IdRole = Qt::UserRole + 1,
+        AmountRole,
+        TransactionTypeRole,
+        DescriptionRole,
+        StatusRole,
+        CreatedAtRole,
+        DateGroupRole,
+        DirectionRole,
+        FromNameRole,
+        ToNameRole,
+        FromCardLast4Role,
+        ToCardLast4Role
+    };
+
     explicit HistoryController(QObject* parent = nullptr);
 
-    QVariantList transactions() const { return m_transactions; }
-    bool isLoading() const { return m_isLoading; }
-    bool hasMore() const { return m_hasMore; }
+    // QAbstractListModel
+    int rowCount(const QModelIndex& parent = {}) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
-    Q_INVOKABLE void loadTransactions();      // Первая загрузка (сброс)
-    Q_INVOKABLE void loadMore();              // Подгрузка следующей порции
+    bool isLoading() const { return m_isLoading; }
+    bool hasMore()   const { return m_hasMore; }
+
+    Q_INVOKABLE void loadTransactions();   // Полный сброс
+    Q_INVOKABLE void loadMore();           // Догрузка
 
 signals:
-    void transactionsChanged();
     void loadingChanged();
+    void hasMoreChanged();
 
 private:
     static constexpr int PAGE_SIZE = 30;
 
     DatabaseManager& m_db;
-    QVariantList m_transactions;
+    QList<QVariantMap> m_items;
     bool m_isLoading = false;
     bool m_hasMore = true;
-    int m_offset = 0;
+    int  m_offset = 0;
 };

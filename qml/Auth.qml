@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import PlutusBank
 
 Item {
     id: authPage
@@ -187,7 +188,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: phoneInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: phoneInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         Row {
@@ -304,7 +305,7 @@ Item {
                         height: 52
                         radius: 12
                         color: "#0F172A"
-                        border.color: passwordInput.activeFocus ? "#27D6C5" : "#1F2937"
+                        border.color: passwordInput.activeFocus ? Theme.accent : "#1F2937"
                         border.width: 2
 
                         Row {
@@ -366,6 +367,8 @@ Item {
                 }
 
                 // Забыли пароль
+
+/*
                 Text {
                     text: "Забыли пароль?"
                     font.pixelSize: 13
@@ -377,7 +380,7 @@ Item {
                         onClicked: console.log("Password Recovery")
                     }
                 }
-
+*/
                 // Отступ
                 Item { width: 1; height: 8 }
 
@@ -391,7 +394,7 @@ Item {
                     property bool isFormValid: cleanPhone.length === 10 && passwordInput.text.length >= 8
                     property bool isLoading: false
                     
-                    color: isFormValid && !isLoading ? "#27D6C5" : "#1F2937"
+                    color: isFormValid && !isLoading ? Theme.accent : "#1F2937"
 
                     Row {
                         anchors.centerIn: parent
@@ -477,7 +480,7 @@ Item {
                     }
 
                     Rectangle {
-                        width: (parent.width - orText.implicitWidth - parent.spacing * 2) / 2  // ← ИЗМЕНЕНО: точный расчёт
+                        width: (parent.width - orText.implicitWidth - parent.spacing * 2) / 2
                         height: 1
                         color: "#1F2937"
                         anchors.verticalCenter: parent.verticalCenter
@@ -490,7 +493,7 @@ Item {
                     height: 54
                     radius: 16
                     color: "transparent"
-                    border.color: "#27D6C5"
+                    border.color: Theme.accent
                     border.width: 2
 
                     Text {
@@ -499,7 +502,7 @@ Item {
                         font.pixelSize: 16
                         font.bold: true
                         font.family: manropeFont.name
-                        color: "#27D6C5"
+                        color: Theme.accent
                     }
 
                     MouseArea {

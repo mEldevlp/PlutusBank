@@ -58,24 +58,30 @@ Item {
             width: parent.width
             spacing: 20
 
-            // ═══════ Шапка ═══════
+            // Шапка
             Item {
                 width: parent.width
                 height: 56
 
                 Rectangle {
                     width: 40; height: 40; radius: 20
-                    color: backArea.pressed ? "#374151" : "#1F2937"
+                    color: "transparent"
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
-                        anchors.centerIn: parent; text: "‹"
-                        font { pixelSize: 22; bold: true }
-                        color: "#E5E7EB"
+                    Image {
+                        anchors.centerIn: parent
+                        width: 24; height: 24
+                        source: "assets/arrow-left.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
-                    MouseArea { id: backArea; anchors.fill: parent; onClicked: root.backToLoans() }
+
+                    MouseArea {
+                        id: backArea
+                        anchors.fill: parent
+                        onClicked: root.backToLoans()
+                    }
                 }
 
                 Text {
@@ -86,13 +92,17 @@ Item {
                 }
             }
 
-            // ═══════ Сводка кредита ═══════
+            // Сводка кредита
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: summaryCol.height + 28
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: summaryCol
@@ -132,7 +142,7 @@ Item {
                             Text {
                                 text: Number(loanData.total_paid ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                 font { pixelSize: 13; bold: true }
-                                color: "#27D6C5"
+                                color: Theme.accent
                             }
                         }
                         Column {
@@ -157,12 +167,12 @@ Item {
                 }
             }
 
-            // ═══════ Кнопка оплаты ═══════
+            // Кнопка оплаты
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 52; radius: 16
-                color: (loanData.status === "active" && !loanController.isLoading) ? "#27D6C5" : "#374151"
+                color: (loanData.status === "active" && !loanController.isLoading) ? Theme.accent : "#374151"
                 opacity: (loanData.status === "active" && !loanController.isLoading) ? 1.0 : 0.5
                 visible: loanData.status !== "closed"
 
@@ -184,19 +194,19 @@ Item {
                 }
             }
 
-            // ═══════ Результат ═══════
+            // Результат
             Text {
                 visible: resultMessage.length > 0
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: resultMessage
                 font { pixelSize: 14; bold: true }
-                color: resultSuccess ? "#27D6C5" : "#EF4444"
+                color: resultSuccess ? Theme.accent : "#EF4444"
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
             }
 
-            // ═══════ График платежей ═══════
+            // График платежей
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -231,18 +241,12 @@ Item {
                         required property var modelData
                         required property int index
 
-                        readonly property color rowStatusColor: {
-                            var s = modelData.status ?? ""
-                            if (s === "paid")    return "#27D6C5"
-                            if (s === "overdue") return "#EF4444"
-                            return "#9CA3AF"
-                        }
 
-                        readonly property string rowStatusText: {
+                        readonly property string rowStatusIcon: {
                             var s = modelData.status ?? ""
-                            if (s === "paid")    return "✓"
-                            if (s === "overdue") return "!"
-                            return "○"
+                            if (s === "paid")    return "assets/check-mark-blue.svg"
+                            if (s === "overdue") return "assets/exclamation-orange.svg"
+                            return "assets/empty.svg"
                         }
 
                         Row {
@@ -251,35 +255,43 @@ Item {
 
                             Text {
                                 width: parent.width * 0.10
+                                height: parent.height 
                                 text: modelData.payment_number ?? ""
-                                font.pixelSize: 12; color: "#9CA3AF"
+                                font.pixelSize: 12; color: Theme.accent
                                 verticalAlignment: Text.AlignVCenter
                             }
                             Text {
                                 width: parent.width * 0.22
+                                height: parent.height 
                                 text: modelData.due_date ?? ""
                                 font.pixelSize: 12; color: "#E5E7EB"
                                 verticalAlignment: Text.AlignVCenter
                             }
                             Text {
                                 width: parent.width * 0.22
+                                height: parent.height 
                                 text: Number(modelData.principal_part ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0)
                                 font.pixelSize: 12; color: "#E5E7EB"
                                 verticalAlignment: Text.AlignVCenter
                             }
                             Text {
                                 width: parent.width * 0.22
+                                height: parent.height 
                                 text: Number(modelData.interest_part ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0)
-                                font.pixelSize: 12; color: "#F59E0B"
+                                font.pixelSize: 12; color: Theme.accent
                                 verticalAlignment: Text.AlignVCenter
                             }
-                            Text {
+                            Item {
                                 width: parent.width * 0.24
-                                text: rowStatusText
-                                font { pixelSize: 16; bold: true }
-                                color: rowStatusColor
-                                verticalAlignment: Text.AlignVCenter
-                                horizontalAlignment: Text.AlignRight
+                                height: parent.height
+
+                                Image {
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    width: 20; height: 20
+                                    source: rowStatusIcon
+                                    sourceSize: Qt.size(20, 20)
+                                }
                             }
                         }
 
@@ -296,7 +308,7 @@ Item {
         }
     }
 
-    // ═══════ Диалог успешного закрытия ═══════
+    // Диалог успешного закрытия
     Dialog {
         id: closedDialog
         anchors.centerIn: parent
@@ -306,9 +318,11 @@ Item {
 
         background: Rectangle {
             radius: 20
-            color: "#1F2937"
-            border.color: "#27D6C5"
-            border.width: 1
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+            }
+            border.color: Theme.accent
         }
 
         contentItem: Column {
@@ -316,10 +330,11 @@ Item {
             padding: 24
             width: parent.width
 
-            Text {
-                text: "🎉"
-                font.pixelSize: 56
+            Image {
                 anchors.horizontalCenter: parent.horizontalCenter
+                width: 56; height: 56
+                source: "assets/congratulate.svg"
+                sourceSize: Qt.size(56, 56)
             }
 
             Text {
@@ -344,7 +359,7 @@ Item {
             Rectangle {
                 width: parent.width - 48
                 height: 48; radius: 14
-                color: "#27D6C5"
+                color: Theme.accent
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Text {

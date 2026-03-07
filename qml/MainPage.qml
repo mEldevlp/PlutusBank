@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PlutusBank
 import "."
 
 Item {
@@ -24,7 +25,7 @@ Item {
         source: "assets/fonts/Manrope-Bold.ttf"
     }
 
-    // --- Фон ---
+    // Фон
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -33,11 +34,11 @@ Item {
         }
     }
 
-    // --- Pull-to-refresh ---
+    // Обновить страницу (потянуть)
     Rectangle {
         id: pullIndicator
         width: 46; height: 46; radius: 23
-        color: "#27D6C5"
+        color: Theme.accent
         anchors.horizontalCenter: parent.horizontalCenter
         y: Math.max(-60, Math.min(40, -flick.contentY - 16))
         opacity: flick.contentY < -16 ? Math.min(1, Math.abs(flick.contentY) / 70) : 0
@@ -97,7 +98,7 @@ Item {
             topPadding: 24
             bottomPadding: 24
 
-            // ========== ПРИВЕТСТВИЕ ==========
+            // Приветствие 
             Item {
                 width: parent.width - 32
                 height: 52
@@ -123,7 +124,7 @@ Item {
 
                 Rectangle {
                     width: 44; height: 44; radius: 22
-                    color: "#27D6C5"
+                    color: Theme.accent
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -138,16 +139,17 @@ Item {
                 }
             }
 
-            // ========== ОБЩИЙ БАЛАНС ==========
+            //  Общий баланс
             Rectangle {
                 width: parent.width - 32
                 height: 140
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 20
                 gradient: Gradient {
-                    GradientStop { position: 0.0; color: "#374151" }
-                    GradientStop { position: 1.0; color: "#111827" }
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
                 }
+                border.color: Theme.card
 
                 // Левая часть: заголовок + сумма
                 Column {
@@ -195,7 +197,7 @@ Item {
                         Text {
                             text: "+" + userSession.dailyIncome.toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                             font { pixelSize: 14; bold: true }
-                            color: "#10B981"
+                            color: "#10B981" // Сделать акцентом приложения?
                             anchors.right: parent.right
                         }
                     }
@@ -221,7 +223,7 @@ Item {
                 }
             }
 
-            // ========== МОИ КАРТЫ ==========
+            // Мои карты
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -233,7 +235,7 @@ Item {
                     color: "#F7F7FB"
                 }
 
-                // --- Пустое состояние ---
+                // Пустое состояние
                 Column {
                     width: parent.width
                     spacing: 14
@@ -251,11 +253,14 @@ Item {
                             anchors.centerIn: parent
                             spacing: 10
 
-                            Text {
-                                text: "📇"
-                                font.pixelSize: 44
+
+                            Image {
+                                width: 44; height: 44
+                                source: "assets/empty-wallet-remove.svg"
+                                sourceSize: Qt.size(44, 44)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
+
                             Text {
                                 text: "У вас пока нет карт"
                                 font.pixelSize: 14
@@ -273,15 +278,31 @@ Item {
 
                     Rectangle {
                         width: parent.width
-                        height: 52
+                        height: 60
                         radius: 16
-                        color: "#374151"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
-                        Text {
+                        Row {
                             anchors.centerIn: parent
-                            text: "Выпустить карту"
-                            font { pixelSize: 15; bold: true; family: manropeFont.name }
-                            color: "#E5E7EB"
+                            spacing: 8
+
+                            Image {
+                                width: 18; height: 18
+                                source: "assets/wallet-add.svg"
+                                sourceSize: Qt.size(18, 18)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                text: "Выпустить карту"
+                                font { pixelSize: 15; bold: true; family: manropeFont.name }
+                                color: "#E5E7EB"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
 
                         MouseArea {
@@ -291,7 +312,7 @@ Item {
                     }
                 }
 
-                // --- Список карт ---
+                // Список карт
                 Column {
                     width: parent.width
                     spacing: 12
@@ -314,15 +335,15 @@ Item {
                             // Градиенты по бренду
                             readonly property color gradStart: {
                                 var b = modelData.card_brand ?? ""
-                                if (b === "visa")       return "#111827" // Очень темный сине-серый (почти черный)
-                                if (b === "mastercard") return "#2E1065" // Глубокий темный баклажан
-                                return "#064E3B" // Темно-хвойный зеленый
+                                if (b === "visa")       return Theme.grVisaPosStart
+                                if (b === "mastercard") return Theme.grMSPosStart
+                                return Theme.grMirPosStart
                             }
                             readonly property color gradEnd: {
                                 var b = modelData.card_brand ?? ""
-                                if (b === "visa")       return "#1E3A8A" // Приглушенный темно-синий
-                                if (b === "mastercard") return "#5B21B6" // Приглушенный фиолетовый
-                                return "#059669" // Приглушенный изумрудный
+                                if (b === "visa")       return Theme.grVisaPosEnd
+                                if (b === "mastercard") return Theme.grMSPosEnd
+                                return Theme.grMirPosEnd
                             }
 
                             Rectangle {
@@ -333,6 +354,7 @@ Item {
                                     GradientStop { position: 0.0; color: cardDelegate.gradStart }
                                     GradientStop { position: 1.0; color: cardDelegate.gradEnd }
                                 }
+                                border.color: Theme.card
 
                                 // Затемнение при блокировке/заморозке
                                 Rectangle {
@@ -389,7 +411,7 @@ Item {
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: "•••• " + (cardDelegate.modelData.card_number ?? "").slice(-4)
                                             font { pixelSize: 20; family: "Courier"; bold: true }
-                                            color: "#9CA3AF"
+                                            color: Theme.textSecondary
                                         }
 
                                         Text {
@@ -397,7 +419,7 @@ Item {
                                             anchors.verticalCenter: parent.verticalCenter
                                             text: cardDelegate.modelData.expiry_date ?? ""
                                             font.pixelSize: 11
-                                            color: "#9CA3AF"
+                                            color: Theme.textSecondary
                                             opacity: 0.8
                                         }
                                     }
@@ -416,7 +438,6 @@ Item {
                                         }
 
                                         // Бейдж статуса
-                                                                                // Бейдж статуса
                                         Rectangle {
                                             visible: cardDelegate.isBlocked || cardDelegate.isFrozen
                                             width: badgeRow.width + 16
@@ -464,17 +485,31 @@ Item {
                     // Кнопка «Выпустить ещё карту»
                     Rectangle {
                         width: parent.width
-                        height: 52
+                        height: 60
                         radius: 16
-                        color: "transparent"
-                        border.color: "#4B5563" // Приглушенный серый контур
-                        border.width: 1 // Уменьшаем толщину до 1px
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart; }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd; }
+                        }
+                        border.color: Theme.card
 
-                        Text {
+                        Row {
                             anchors.centerIn: parent
-                            text: "+ Выпустить ещё карту"
-                            font { pixelSize: 14; bold: true; family: manropeFont.name }
-                            color: "#9CA3AF" // Серый текст
+                            spacing: 8
+
+                            Image {
+                                width: 18; height: 18
+                                source: "assets/wallet-add.svg"
+                                sourceSize: Qt.size(18, 18)
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+
+                            Text {
+                                text: "Выпустить карту"
+                                font { pixelSize: 15; bold: true; family: manropeFont.name }
+                                color: "#E5E7EB"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
                         }
 
                         MouseArea {
@@ -485,7 +520,7 @@ Item {
                 }
             }
 
-            // ========== БЫСТРЫЕ ДЕЙСТВИЯ ==========
+            // Быстрые действия
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -503,12 +538,16 @@ Item {
                     columnSpacing: 12
                     rowSpacing: 12
 
-                    // -- Перевод --
+                    // Перевод
                     Rectangle {
                         width: (parent.width - 12) / 2
                         height: 90
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Column {
                             anchors.centerIn: parent
@@ -534,12 +573,16 @@ Item {
                         }
                     }
 
-                    // -- Пополнить --
+                    // Пополнить
                     Rectangle {
                         width: (parent.width - 12) / 2
                         height: 90
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Column {
                             anchors.centerIn: parent
@@ -565,12 +608,16 @@ Item {
                         }
                     }
 
-                    // -- История --
+                    // История
                     Rectangle {
                         width: (parent.width - 12) / 2
                         height: 90
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Column {
                             anchors.centerIn: parent
@@ -596,12 +643,16 @@ Item {
                         }
                     }
 
-                    // -- Настройки --
+                    // Настройки
                     Rectangle {
                         width: (parent.width - 12) / 2
                         height: 90
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Column {
                             anchors.centerIn: parent
@@ -627,27 +678,32 @@ Item {
                         }
                     }
 
-                    // -- Кредит --
+                    // Кредит
                     Rectangle {
                         width: (parent.width - 12) / 2
                         height: 90
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Column {
                             anchors.centerIn: parent
                             spacing: 8
 
-                            Text {
-                                text: "💳"
-                                font.pixelSize: 28
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/purse.svg"
+                                sourceSize: Qt.size(28, 28)
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
 
                             Text {
                                 text: "Кредит"
                                 font.pixelSize: 13
-                                color: "#E5E7EB"
+                                color: Theme.textSubtle
                                 anchors.horizontalCenter: parent.horizontalCenter
                             }
                         }

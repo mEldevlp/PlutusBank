@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PlutusBank
 
 Item {
     id: root
@@ -17,7 +18,7 @@ Item {
         source: "assets/fonts/Manrope-Bold.ttf"
     }
 
-    // --- Фон ---
+    // Фон
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
@@ -26,18 +27,12 @@ Item {
         }
     }
 
-    // --- Шапка ---
+    // Шапка
     Item {
         id: header
         width: parent.width
         height: 56
         z: 10
-
-        Rectangle {
-            anchors.fill: parent
-            color: "#0A1229"
-            opacity: 0.95
-        }
 
         Image {
             width: 24; height: 24
@@ -46,6 +41,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 16
             anchors.verticalCenter: parent.verticalCenter
+        
 
             MouseArea {
                 anchors.fill: parent
@@ -78,11 +74,16 @@ Item {
             topPadding: 20
             spacing: 24
 
-            // ═══════ БЛОК «ВАШИ ДАННЫЕ» ═══════
+            // Ваши данные
             Rectangle {
                 width: parent.width
                 radius: 16
-                color: "#1F2937"
+                    
+                gradient: Gradient {
+                    GradientStop { position: 0.40; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                }
+
                 height: dataCol.height + 32
 
                 Column {
@@ -107,7 +108,7 @@ Item {
                 }
             }
 
-            // ═══════ БЛОК «ОСНОВНОЙ СЧЁТ» ═══════
+            // Основной счёт
             Column {
                 width: parent.width
                 spacing: 2
@@ -132,7 +133,10 @@ Item {
                     width: parent.width
                     height: accountsList.height + 24
                     radius: 16
-                    color: "#1F2937"
+                    gradient: Gradient {
+                        GradientStop { position: 0.40; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                    }
 
                     Column {
                         id: accountsList
@@ -206,13 +210,13 @@ Item {
                                         anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
                                         color: "transparent"
-                                        border.color: isCurrent ? "#27D6C5" : "#4B5563"
+                                        border.color: isCurrent ? Theme.accent : "#4B5563"
                                         border.width: 2
 
                                         Rectangle {
                                             width: 12; height: 12; radius: 6
                                             anchors.centerIn: parent
-                                            color: "#27D6C5"
+                                            color: Theme.accent
                                             visible: isCurrent
                                         }
                                     }
@@ -256,7 +260,7 @@ Item {
         }
     }
 
-    // ═══════ ДИАЛОГ ПОДТВЕРЖДЕНИЯ ═══════
+    // Диалог подтверждения
     Rectangle {
         id: confirmDialog
         anchors.fill: parent
@@ -345,7 +349,7 @@ Item {
                         width: (parent.width - 12) / 2
                         height: 44
                         radius: 12
-                        color: "#27D6C5"
+                        color: Theme.accent
 
                         Text {
                             anchors.centerIn: parent
@@ -366,7 +370,7 @@ Item {
         }
     }
 
-    // ═══════ ДИАЛОГ ПОДТВЕРЖДЕНИЯ ВЫХОДА ═══════
+    // Диалог подтверждения выхода
     Rectangle {
         id: logoutDialog
         anchors.fill: parent
@@ -461,7 +465,7 @@ Item {
         }
     }
 
-    // ═══════ INLINE-КОМПОНЕНТЫ ═══════
+    // INLINE-КОМПОНЕНТЫ 
 
     // Поле данных в стиле реквизитов (label сверху, тёмный бокс с копированием)
     component SettingsField: Column {
@@ -527,7 +531,7 @@ Item {
                 width: sfToastLabel.width + 16
                 height: 24
                 radius: 8
-                color: "#10B981"
+                color: Theme.green
                 opacity: 0
                 visible: opacity > 0
 

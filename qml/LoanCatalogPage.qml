@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PlutusBank
 
 Item {
     id: root
@@ -40,23 +41,23 @@ Item {
             width: parent.width
             spacing: 20
 
-            // ═══════ Шапка ═══════
+            // Шапка
             Item {
                 width: parent.width
                 height: 56
 
                 Rectangle {
                     width: 40; height: 40; radius: 20
-                    color: backArea.pressed ? "#374151" : "#1F2937"
+                    color: "transparent"
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Text {
+                    Image {
                         anchors.centerIn: parent
-                        text: "‹"
-                        font { pixelSize: 22; bold: true }
-                        color: "#E5E7EB"
+                        width: 24; height: 24
+                        source: "assets/arrow-left.svg"
+                        sourceSize: Qt.size(24, 24)
                     }
 
                     MouseArea {
@@ -74,13 +75,18 @@ Item {
                 }
             }
 
-            // ═══════ Мои кредиты (если есть) ═══════
+            // Мои кредиты
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: myLoansCol.height + 28
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
+
                 visible: {
                     for (var i = 0; i < loanController.userLoans.length; i++) {
                         if (loanController.userLoans[i].status === "active") return true
@@ -98,10 +104,13 @@ Item {
                         width: parent.width
                         spacing: 8
 
-                        Text {
-                            text: "📋"
-                            font.pixelSize: 18
+                        Image {
+                            width: 24; height: 24
+                            source: "assets/clipboard.svg"
+                            sourceSize: Qt.size(24, 24)
+                            anchors.verticalCenter: parent.verticalCenter
                         }
+
                         Text {
                             text: "Мои кредиты"
                             font { pixelSize: 16; bold: true; family: manropeFont.name }
@@ -114,7 +123,7 @@ Item {
                         Rectangle {
                             width: activeCountText.width + 16
                             height: 24; radius: 12
-                            color: "#27D6C5"
+                            color: Theme.accent
                             anchors.verticalCenter: parent.verticalCenter
 
                             Text {
@@ -181,15 +190,14 @@ Item {
                         width: parent.width
                         height: 42
                         radius: 12
-                        color: "transparent"
-                        border.color: "#374151"
-                        border.width: 1
+                        color: Theme.accent
+                        border.color: Theme.card
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Все мои кредиты →"
+                            text: "Все мои кредиты"
                             font { pixelSize: 13; bold: true; family: manropeFont.name }
-                            color: "#27D6C5"
+                            color: Theme.textSubtle
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -199,13 +207,17 @@ Item {
                 }
             }
 
-            // ═══════ История кредитов ═══════
+            // История кредитов
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: historyRow.height + 28
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
 
                 Row {
                     id: historyRow
@@ -213,14 +225,19 @@ Item {
                     anchors.centerIn: parent
                     spacing: 12
 
-                    Text { text: "📜"; font.pixelSize: 22; anchors.verticalCenter: parent.verticalCenter }
+                    Image {
+                        width: 24; height: 24
+                        source: "assets/history.svg"
+                        sourceSize: Qt.size(24, 24)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
 
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 2
 
                         Text {
-                            text: "История кредитов"
+                            text: "Посмотреть историю кредитов"
                             font { pixelSize: 15; bold: true; family: manropeFont.name }
                             color: "#F7F7FB"
                         }
@@ -228,15 +245,6 @@ Item {
                             text: "Закрытые кредиты и статистика"
                             font.pixelSize: 11; color: "#6B7280"
                         }
-                    }
-
-                    Item { width: 1; Layout.fillWidth: true }
-
-                    Text {
-                        text: "›"
-                        font { pixelSize: 22; bold: true }
-                        color: "#6B7280"
-                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
 
@@ -246,7 +254,7 @@ Item {
                 }
             }
 
-            // ═══════ Каталог продуктов ═══════
+            // Каталог продуктов
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -265,25 +273,21 @@ Item {
                         width: parent.width
                         height: productCol.height + 32
                         radius: 16
-                        color: "#1F2937"
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         required property var modelData
                         required property int index
 
-                        readonly property string icon: {
+                        readonly property string iconSource: {
                             var cat = modelData.category ?? ""
-                            if (cat === "mortgage")    return "🏠"
-                            if (cat === "auto")        return "🚗"
-                            if (cat === "electronics") return "💻"
-                            return "💰"
-                        }
-
-                        readonly property color accentColor: {
-                            var cat = modelData.category ?? ""
-                            if (cat === "mortgage")    return "#3B82F6"
-                            if (cat === "auto")        return "#F59E0B"
-                            if (cat === "electronics") return "#8B5CF6"
-                            return "#27D6C5"
+                            if (cat === "mortgage")    return "assets/house.svg"
+                            if (cat === "auto")        return "assets/car.svg"
+                            if (cat === "electronics") return "assets/laptop.svg"
+                            return "assets/money.svg"
                         }
 
                         Column {
@@ -296,9 +300,10 @@ Item {
                             Row {
                                 spacing: 10
 
-                                Text {
-                                    text: icon
-                                    font.pixelSize: 28
+                                Image {
+                                    width: 28; height: 28
+                                    source: iconSource
+                                    sourceSize: Qt.size(28, 28)
                                 }
 
                                 Column {
@@ -337,7 +342,7 @@ Item {
                                     Text {
                                         text: "от " + Number(modelData.annual_rate).toLocaleString(Qt.locale("ru_RU"), 'f', 1) + "%"
                                         font { pixelSize: 14; bold: true }
-                                        color: accentColor
+                                        color: Theme.accent
                                     }
                                 }
 
@@ -388,7 +393,7 @@ Item {
                                 width: parent.width
                                 height: 44
                                 radius: 12
-                                color: accentColor
+                                color: Theme.accent
 
                                 Text {
                                     anchors.centerIn: parent

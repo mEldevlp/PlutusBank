@@ -12,7 +12,7 @@ LoanController::LoanController(QObject* parent)
 {
 }
 
-// ── Каталог продуктов ──────────────────────────────────────
+// Каталог продуктов
 
 void LoanController::loadProducts()
 {
@@ -50,7 +50,7 @@ void LoanController::loadProducts()
     emit productsChanged();
 }
 
-// ── Калькулятор аннуитета ──────────────────────────────────
+// Калькулятор аннуитета
 
 QVariantMap LoanController::calculatePayment(double amount, int months, double annualRate)
 {
@@ -76,7 +76,7 @@ QVariantMap LoanController::calculatePayment(double amount, int months, double a
     return result;
 }
 
-// ── Счета пользователя ─────────────────────────────────────
+// Счета пользователя 
 
 void LoanController::loadAccounts()
 {
@@ -87,7 +87,7 @@ void LoanController::loadAccounts()
     emit accountsChanged();
 }
 
-// ── Оформление кредита ─────────────────────────────────────
+// Оформление кредита
 
 void LoanController::applyForLoan(int productId, double amount, int months, int targetAccountId)
 {
@@ -133,6 +133,32 @@ void LoanController::applyForLoan(int productId, double amount, int months, int 
         m_isLoading = false; emit loadingChanged();
         emit loanFailed(u"Срок вне допустимого диапазона"_qs);
         return;
+    }
+
+    // 2a. Проверяем, что карта привязанного счёта не заблокирована / заморожена
+    q.prepare(
+        "SELECT c.is_blocked, c.is_active FROM cards c "
+        "WHERE c.account_id = :accId LIMIT 1"
+    );
+    q.bindValue(":accId", targetAccountId);
+
+    if (q.exec() && q.next())
+    {
+        bool blocked = q.value(0).toBool();
+        bool active = q.value(1).toBool();
+
+        if (blocked)
+        {
+            m_isLoading = false; emit loadingChanged();
+            emit loanFailed(u"Невозможно зачислить на заблокированную карту"_qs);
+            return;
+        }
+        if (!active)
+        {
+            m_isLoading = false; emit loadingChanged();
+            emit loanFailed(u"Невозможно зачислить на замороженную карту"_qs);
+            return;
+        }
     }
 
     // 2. Находим банковский счёт
@@ -303,8 +329,7 @@ void LoanController::applyForLoan(int productId, double amount, int months, int 
     emit loanApproved(u"Кредит одобрен! Средства зачислены на счёт."_qs);
 }
 
-// ── Список кредитов пользователя ───────────────────────────
-
+// Список кредитов пользователя
 void LoanController::loadUserLoans()
 {
     int userId = UserSession::instance().userId();
@@ -352,8 +377,7 @@ void LoanController::loadUserLoans()
     emit userLoansChanged();
 }
 
-// ── История закрытых кредитов ──────────────────────────────
-
+// История закрытых кредитов
 void LoanController::loadClosedLoans()
 {
     int userId = UserSession::instance().userId();
@@ -404,8 +428,7 @@ void LoanController::loadClosedLoans()
     emit closedLoansChanged();
 }
 
-// ── График платежей ────────────────────────────────────────
-
+// График платежей 
 void LoanController::loadSchedule(int loanId)
 {
     m_schedule.clear();
@@ -443,8 +466,7 @@ void LoanController::loadSchedule(int loanId)
     emit scheduleChanged();
 }
 
-// ── Внести платёж ──────────────────────────────────────────
-
+// Внести платёж
 void LoanController::makePayment(int loanId)
 {
     int userId = UserSession::instance().userId();
@@ -630,7 +652,7 @@ void LoanController::makePayment(int loanId)
     if (isFullyPaid)
     {
         emit paymentSuccess(u"Кредит полностью погашен!"_qs);
-        emit loanClosed();                       // ← добавлено
+        emit loanClosed();
     }
     else
     {

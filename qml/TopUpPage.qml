@@ -4,7 +4,6 @@ import QtQuick.Layouts
 
 Item {
     id: topUpPage
-    // БЕЗ anchors.fill: parent — StackView сам управляет размером
 
     // Если задан — карта уже выбрана (вызов из CardDetailPage)
     property int preselectedAccountId: -1
@@ -17,6 +16,10 @@ Item {
     property bool isProcessing: false
     property string resultMessage: ""
     property bool resultSuccess: false
+
+    // 0 = форма, 1 = экран успеха
+    property int currentStep: 0
+    property string successMessage: ""
 
     Component.onCompleted: {
         userSession.loadCards()
@@ -31,11 +34,11 @@ Item {
 
         function onTopUpSuccess(totalAmount, cardCount) {
             isProcessing = false
-            resultSuccess = true
-            resultMessage = "Успешно пополнено: " +
-                            totalAmount.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+            successMessage = "Успешно пополнено: " +
+                             totalAmount.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
             amountText = ""
             userSession.loadCards()
+            currentStep = 1
         }
 
         function onTopUpFailed(error) {
@@ -64,13 +67,14 @@ Item {
         anchors.fill: parent
         contentHeight: mainCol.height + 40
         clip: true
+        visible: currentStep === 0
 
         Column {
             id: mainCol
             width: parent.width
             spacing: 20
 
-            // ═══════ Шапка ═══════
+            // Шапка
             Item {
                 width: parent.width
                 height: 56
@@ -78,7 +82,7 @@ Item {
                 Rectangle {
                     width: 40; height: 40
                     radius: 20
-                    color: backArea.pressed ? "#374151" : "#1F2937"
+                    color: "transparent"
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
@@ -107,13 +111,17 @@ Item {
                 }
             }
 
-            // ═══════ Сумма ═══════
+            // Сумма
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: amountCol.height + 32
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: amountCol
@@ -134,7 +142,7 @@ Item {
                         height: 56
                         radius: 12
                         color: "#111827"
-                        border.color: amountInput.activeFocus ? "#27D6C5" : "#374151"
+                        border.color: amountInput.activeFocus ? Theme.accent : "#374151"
                         border.width: amountInput.activeFocus ? 2 : 1
 
                         Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -205,7 +213,7 @@ Item {
                                     text: modelData.toLocaleString(Qt.locale("ru_RU"))
                                     font.pixelSize: 13
                                     font.bold: true
-                                    color: "#27D6C5"
+                                    color: Theme.accent
                                 }
 
                                 MouseArea {
@@ -222,13 +230,17 @@ Item {
                 }
             }
 
-            // ═══════ Выбор карты (радиокнопки) ═══════
+            // Выбор карты (радиокнопки)
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: cardsCol.height + 32
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                }
+                border.color: Theme.card
 
                 Column {
                     id: cardsCol
@@ -260,7 +272,7 @@ Item {
                             property bool isDisabled: isBlocked || isFrozen
 
                             color: isSelected ? "#112B3C" : "#111827"
-                            border.color: isSelected ? "#27D6C5" : "#374151"
+                            border.color: isSelected ? Theme.accent : "#374151"
                             border.width: isSelected ? 2 : 1
 
                             Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -278,7 +290,7 @@ Item {
                                     radius: 13
                                     anchors.verticalCenter: parent.verticalCenter
                                     color: "transparent"
-                                    border.color: cardItem.isSelected ? "#27D6C5" : "#6B7280"
+                                    border.color: cardItem.isSelected ? Theme.accent : "#6B7280"
                                     border.width: 2
                                     opacity: cardItem.isDisabled ? 0.3 : 1.0
 
@@ -289,7 +301,7 @@ Item {
                                         width: 14; height: 14
                                         radius: 7
                                         anchors.centerIn: parent
-                                        color: "#27D6C5"
+                                        color: Theme.accent
                                         scale: cardItem.isSelected ? 1.0 : 0.0
                                         visible: scale > 0
 
@@ -302,7 +314,7 @@ Item {
                                     }
                                 }
 
-                                // Цветной индикатор бренда
+                                // Цветной индикатор бренда + SVG-логотип
                                 Rectangle {
                                     width: 44; height: 44
                                     radius: 12
@@ -310,23 +322,32 @@ Item {
                                     gradient: Gradient {
                                         GradientStop {
                                             position: 0.0
-                                            color: modelData.card_brand === "visa" ? "#1E3A8A" :
-                                                   modelData.card_brand === "mastercard" ? "#7C3AED" : "#059669"
+                                            color: modelData.card_brand === "visa"
+                                                    ? Theme.grVisaPosStart
+                                                    : modelData.card_brand === "mastercard"
+                                                        ? Theme.grMSPosStart
+                                                        : Theme.grMirPosStart
                                         }
                                         GradientStop {
                                             position: 1.0
-                                            color: modelData.card_brand === "visa" ? "#3B82F6" :
-                                                   modelData.card_brand === "mastercard" ? "#A78BFA" : "#10B981"
+                                            color: modelData.card_brand === "visa"
+                                                    ? Theme.grVisaPosEnd
+                                                    : modelData.card_brand === "mastercard"
+                                                        ? Theme.grMSPosEnd
+                                                        : Theme.grMirPosEnd
                                         }
                                     }
 
-                                    Text {
+                                    Image {
                                         anchors.centerIn: parent
-                                        text: modelData.card_brand === "visa" ? "V" :
-                                              modelData.card_brand === "mastercard" ? "MC" : "М"
-                                        font.pixelSize: 12
-                                        font.bold: true
-                                        color: "#FFFFFF"
+                                        width: 28; height: 28
+                                        sourceSize: Qt.size(28, 28)
+                                        fillMode: Image.PreserveAspectFit
+                                        source: modelData.card_brand === "visa"
+                                                ? "assets/visa.svg"
+                                                : modelData.card_brand === "mastercard"
+                                                    ? "assets/mastercard.svg"
+                                                    : "assets/mir.svg"
                                     }
                                 }
 
@@ -398,35 +419,7 @@ Item {
                 }
             }
 
-            // ═══════ Сообщение результата ═══════
-            Rectangle {
-                width: parent.width - 32
-                height: 48
-                radius: 12
-                anchors.horizontalCenter: parent.horizontalCenter
-                color: resultSuccess ? "#064E3B" : "#7F1D1D"
-                visible: resultMessage !== ""
-                opacity: visible ? 1 : 0
-
-                Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                Text {
-                    anchors.centerIn: parent
-                    width: parent.width - 24
-                    text: resultMessage
-                    font.pixelSize: 13
-                    font.bold: true
-                    color: resultSuccess ? "#34D399" : "#FCA5A5"
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                }
-
-                Timer {
-                    running: resultMessage !== ""
-                    interval: 3000
-                    onTriggered: resultMessage = ""
-                }
-            }
+            // (результат теперь показывается на отдельном экране успеха)
 
             // ═══════ Кнопка ═══════
             Rectangle {
@@ -441,7 +434,7 @@ Item {
                                         && amountText.length > 0
                                         && parseFloat(amountText) > 0
 
-                color: canTopUp ? (topUpBtnArea.pressed ? "#1FA89A" : "#27D6C5") : "#374151"
+                color: canTopUp ? (topUpBtnArea.pressed ? "#1FA89A" : Theme.accent) : "#374151"
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -468,6 +461,147 @@ Item {
             }
 
             Item { width: 1; height: 20 }
+        }
+    }
+
+    // Экран успеха
+    Item {
+        id: successScreen
+        anchors.fill: parent
+        visible: false
+        opacity: 0
+        scale: 0.85
+
+        property bool isActive: currentStep === 1
+
+        states: [
+            State {
+                name: "active"; when: successScreen.isActive
+                PropertyChanges { target: successScreen; opacity: 1.0; visible: true; scale: 1.0 }
+            },
+            State {
+                name: "inactive"; when: !successScreen.isActive
+                PropertyChanges { target: successScreen; opacity: 0.0; scale: 0.85 }
+            }
+        ]
+
+        transitions: [
+            Transition {
+                to: "active"
+                SequentialAnimation {
+                    PropertyAction { target: successScreen; property: "visible"; value: true }
+                    ParallelAnimation {
+                        NumberAnimation { target: successScreen; property: "opacity"; duration: 350; easing.type: Easing.OutCubic }
+                        NumberAnimation { target: successScreen; property: "scale"; duration: 400; easing.type: Easing.OutBack }
+                    }
+                }
+            },
+            Transition {
+                to: "inactive"
+                SequentialAnimation {
+                    ParallelAnimation {
+                        NumberAnimation { target: successScreen; property: "opacity"; duration: 200; easing.type: Easing.InCubic }
+                        NumberAnimation { target: successScreen; property: "scale"; duration: 200; easing.type: Easing.InCubic }
+                    }
+                    PropertyAction { target: successScreen; property: "visible"; value: false }
+                }
+            }
+        ]
+
+        Column {
+            width: parent.width - 32
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 24
+
+            // Иконка успеха
+            Rectangle {
+                width: 80; height: 80; radius: 40
+                color: "#11a24d"
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                Image {
+                    anchors.centerIn: parent
+                    width: 40; height: 40
+                    source: "assets/check-mark.svg"
+                    sourceSize: Qt.size(40, 40)
+                }
+            }
+
+            Text {
+                text: "Пополнение выполнено!"
+                font.pixelSize: 22
+                font.bold: true
+                font.family: manropeFont.name
+                color: "#F7F7FB"
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            Text {
+                text: successMessage
+                font.pixelSize: 14
+                color: "#9CA3AF"
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+            }
+
+            Item { width: 1; height: 12 }
+
+            // Кнопки
+            Rectangle {
+                width: parent.width
+                height: 54
+                radius: 16
+                color: Theme.accent
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "Новое пополнение"
+                    font.pixelSize: 16
+                    font.bold: true
+                    font.family: manropeFont.name
+                    color: "#050B1A"
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: {
+                        selectedAccountId = preselectedAccountId > 0 ? preselectedAccountId : -1
+                        amountText = ""
+                        isProcessing = false
+                        successMessage = ""
+                        currentStep = 0
+                        userSession.loadCards()
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: 54
+                radius: 16
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "На главную"
+                    font.pixelSize: 16
+                    font.bold: true
+                    font.family: manropeFont.name
+                    color: "#E5E7EB"
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    onClicked: backToMain()
+                }
+            }
         }
     }
 }

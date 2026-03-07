@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PlutusBank
 
 Item {
     id: transferPage
@@ -29,6 +30,13 @@ Item {
     property bool showError: false
     property bool isLoading: false
 
+    function cardBrandIcon(brand) {
+        if (brand === "visa") return "assets/visa.svg"
+        if (brand === "mastercard") return "assets/mastercard.svg"
+        if (brand === "mir") return "assets/mir.svg"
+        return ""
+    }
+
     function goToStep(step) {
         _prevStep = currentStep
         currentStep = step
@@ -54,7 +62,7 @@ Item {
         }
     }
 
-    // ═══ Шапка (всегда видна) ═══
+    // Шапка
     Column {
         id: headerColumn
         width: parent.width
@@ -68,9 +76,10 @@ Item {
             spacing: 16
 
             Rectangle {
-                width: 44; height: 44; radius: 22
-                color: "#1F2937"
+                width: 44
+                height: 44
                 visible: currentStep <= 2
+                color: "transparent" 
 
                 Image {
                     anchors.centerIn: parent
@@ -174,7 +183,7 @@ Item {
         Item { width: 1; height: 12 }
     }
 
-    // ═══ Контейнер шагов с анимациями ═══
+    // Контейнер шагов с анимациями
     Item {
         id: stepsContainer
         anchors.top: headerColumn.bottom
@@ -183,9 +192,8 @@ Item {
         anchors.bottom: parent.bottom
         clip: true
 
-        // ────────────────────────────────────────────
+
         // ШАГ 0: Выбор типа перевода
-        // ────────────────────────────────────────────
         Flickable {
             id: step0
             anchors.fill: parent
@@ -250,9 +258,11 @@ Item {
                         width: parent.width
                         height: 100
                         radius: 16
-                        color: "#1F2937"
-                        border.color: "#374151"
-                        border.width: 1
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Row {
                             anchors.fill: parent
@@ -308,9 +318,11 @@ Item {
                         width: parent.width
                         height: 100
                         radius: 16
-                        color: "#1F2937"
-                        border.color: "#374151"
-                        border.width: 1
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
 
                         Row {
                             anchors.fill: parent
@@ -319,7 +331,7 @@ Item {
 
                             Rectangle {
                                 width: 56; height: 56; radius: 16
-                                color: "#7C3AED"
+                                color: Theme.accent
                                 anchors.verticalCenter: parent.verticalCenter
 
                                 Image {
@@ -364,9 +376,7 @@ Item {
             }
         }
 
-        // ────────────────────────────────────────────
         // ШАГ 1: Между своими счетами
-        // ────────────────────────────────────────────
         Flickable {
             id: step1
             anchors.fill: parent
@@ -447,14 +457,16 @@ Item {
 
                                 property bool isFrozenOrBlocked: !(modelData.is_active ?? true) || (modelData.is_blocked ?? false)
 
-                                color: isFrozenOrBlocked ? "#111827" :
-                                       (fromAccountId === modelData.id ? "#1E3A5F" : "#1F2937")
-                                border.color: isFrozenOrBlocked ? "#374151" :
-                                              (fromAccountId === modelData.id ? "#3B82F6" : "#374151")
-                                border.width: fromAccountId === modelData.id && !isFrozenOrBlocked ? 2 : 1
-                                opacity: isFrozenOrBlocked ? 0.5 : 1.0
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                                }
 
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : Theme.card
+                                border.width: fromAccountId === modelData.id && !isFrozenOrBlocked ? 1.5 : 1
+                                opacity: isFrozenOrBlocked ? 0.35 : 1.0
+
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
 
                                 Row {
                                     anchors.fill: parent
@@ -466,20 +478,27 @@ Item {
                                         color: "#111827"
                                         anchors.verticalCenter: parent.verticalCenter
 
+                                        Image {
+                                            anchors.centerIn: parent
+                                            width: 28; height: 20
+                                            source: cardBrandIcon(modelData.card_brand)
+                                            sourceSize: Qt.size(28, 20)
+                                            fillMode: Image.PreserveAspectFit
+                                            visible: cardBrandIcon(modelData.card_brand) !== ""
+                                        }
+
                                         Text {
                                             anchors.centerIn: parent
-                                            text: modelData.card_brand === "visa" ? "V" :
-                                                  modelData.card_brand === "mastercard" ? "M" :
-                                                  modelData.card_brand === "mir" ? "М" : "₽"
+                                            text: "₽"
                                             font.pixelSize: 16
                                             font.bold: true
-                                            color: modelData.card_brand === "visa" ? "#3B82F6" :
-                                                   modelData.card_brand === "mastercard" ? "#EF4444" : "#10B981"
+                                            color: "#10B981"
+                                            visible: cardBrandIcon(modelData.card_brand) === ""
                                         }
                                     }
 
                                     Column {
-                                        width: parent.width - 140
+                                        width: parent.width - 86
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 2
 
@@ -522,9 +541,9 @@ Item {
                                     Rectangle {
                                         width: 22; height: 22; radius: 11
                                         anchors.verticalCenter: parent.verticalCenter
-                                        color: fromAccountId === modelData.id && !isFrozenOrBlocked ? "#3B82F6" : "transparent"
+                                        color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : "transparent"
                                         border.width: 2
-                                        border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? "#3B82F6" : "#4B5563"
+                                        border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : "#4B5563"
                                         opacity: isFrozenOrBlocked ? 0.3 : 1.0
 
                                         Image {
@@ -552,7 +571,7 @@ Item {
                     // Разделитель со стрелкой
                     Rectangle {
                         width: 40; height: 40; radius: 20
-                        color: "#27D6C5"
+                        color: Theme.accent
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         Image {
@@ -585,14 +604,16 @@ Item {
                                 property bool isFrozenOrBlocked: !(modelData.is_active ?? true) || (modelData.is_blocked ?? false)
 
                                 visible: modelData.id !== fromAccountId
-                                color: isFrozenOrBlocked ? "#111827" :
-                                       (toAccountId === modelData.id ? "#1A3A2F" : "#1F2937")
-                                border.color: isFrozenOrBlocked ? "#374151" :
-                                              (toAccountId === modelData.id ? "#10B981" : "#374151")
-                                border.width: toAccountId === modelData.id && !isFrozenOrBlocked ? 2 : 1
-                                opacity: isFrozenOrBlocked ? 0.5 : 1.0
 
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                                }
+                                border.color: toAccountId === modelData.id && !isFrozenOrBlocked ? "#10B981" : Theme.card
+                                border.width: toAccountId === modelData.id && !isFrozenOrBlocked ? 1.5 : 1
+                                opacity: isFrozenOrBlocked ? 0.35 : 1.0
+
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
 
                                 Row {
                                     anchors.fill: parent
@@ -604,20 +625,27 @@ Item {
                                         color: "#111827"
                                         anchors.verticalCenter: parent.verticalCenter
 
+                                        Image {
+                                            anchors.centerIn: parent
+                                            width: 28; height: 20
+                                            source: cardBrandIcon(modelData.card_brand)
+                                            sourceSize: Qt.size(28, 20)
+                                            fillMode: Image.PreserveAspectFit
+                                            visible: cardBrandIcon(modelData.card_brand) !== ""
+                                        }
+
                                         Text {
                                             anchors.centerIn: parent
-                                            text: modelData.card_brand === "visa" ? "V" :
-                                                  modelData.card_brand === "mastercard" ? "M" :
-                                                  modelData.card_brand === "mir" ? "М" : "₽"
+                                            text: "₽"
                                             font.pixelSize: 16
                                             font.bold: true
-                                            color: modelData.card_brand === "visa" ? "#3B82F6" :
-                                                   modelData.card_brand === "mastercard" ? "#EF4444" : "#10B981"
+                                            color: "#10B981"
+                                            visible: cardBrandIcon(modelData.card_brand) === ""
                                         }
                                     }
 
                                     Column {
-                                        width: parent.width - 140
+                                        width: parent.width - 86
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 2
 
@@ -703,7 +731,7 @@ Item {
                             height: 56
                             radius: 12
                             color: "#0F172A"
-                            border.color: internalAmountInput.activeFocus ? "#27D6C5" : "#1F2937"
+                            border.color: internalAmountInput.activeFocus ? Theme.accent: "#1F2937"
                             border.width: 2
 
                             Row {
@@ -760,7 +788,7 @@ Item {
                                                    parseFloat(internalAmountInput.text) > 0 &&
                                                    !isLoading
 
-                        color: canTransfer ? "#27D6C5" : "#374151"
+                        color: canTransfer ? Theme.accent : "#374151"
 
                         Behavior on color { ColorAnimation { duration: 200 } }
 
@@ -788,9 +816,7 @@ Item {
             }
         }
 
-        // ────────────────────────────────────────────
         // ШАГ 2: Другому человеку
-        // ────────────────────────────────────────────
         Flickable {
             id: step2
             anchors.fill: parent
@@ -872,12 +898,13 @@ Item {
                                 property bool isFrozenOrBlocked: !(modelData.is_active ?? true) || (modelData.is_blocked ?? false)
 
                                 visible: modelData.account_type === "debit"
-                                color: isFrozenOrBlocked ? "#111827" :
-                                       (fromAccountId === modelData.id ? "#1E3A5F" : "#1F2937")
-                                border.color: isFrozenOrBlocked ? "#374151" :
-                                              (fromAccountId === modelData.id ? "#3B82F6" : "#374151")
-                                border.width: fromAccountId === modelData.id && !isFrozenOrBlocked ? 2 : 1
-                                opacity: isFrozenOrBlocked ? 0.5 : 1.0
+                                gradient: Gradient {
+                                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                                }
+                                border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : Theme.card
+                                border.width: fromAccountId === modelData.id && !isFrozenOrBlocked ? 1.5 : 1
+                                opacity: isFrozenOrBlocked ? 0.35 : 1.0
 
                                 Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -891,20 +918,27 @@ Item {
                                         color: "#111827"
                                         anchors.verticalCenter: parent.verticalCenter
 
+                                        Image {
+                                            anchors.centerIn: parent
+                                            width: 28; height: 20
+                                            source: cardBrandIcon(modelData.card_brand)
+                                            sourceSize: Qt.size(28, 20)
+                                            fillMode: Image.PreserveAspectFit
+                                            visible: cardBrandIcon(modelData.card_brand) !== ""
+                                        }
+
                                         Text {
                                             anchors.centerIn: parent
-                                            text: modelData.card_brand === "visa" ? "V" :
-                                                  modelData.card_brand === "mastercard" ? "M" :
-                                                  modelData.card_brand === "mir" ? "М" : "₽"
+                                            text: "₽"
                                             font.pixelSize: 16
                                             font.bold: true
-                                            color: modelData.card_brand === "visa" ? "#3B82F6" :
-                                                   modelData.card_brand === "mastercard" ? "#EF4444" : "#10B981"
+                                            color: "#10B981"
+                                            visible: cardBrandIcon(modelData.card_brand) === ""
                                         }
                                     }
 
                                     Column {
-                                        width: parent.width - 140
+                                        width: parent.width - 86
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 2
 
@@ -943,9 +977,9 @@ Item {
                                     Rectangle {
                                         width: 22; height: 22; radius: 11
                                         anchors.verticalCenter: parent.verticalCenter
-                                        color: fromAccountId === modelData.id && !isFrozenOrBlocked ? "#3B82F6" : "transparent"
+                                        color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : "transparent"
                                         border.width: 2
-                                        border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? "#3B82F6" : "#4B5563"
+                                        border.color: fromAccountId === modelData.id && !isFrozenOrBlocked ? Theme.accent : "#4B5563"
                                         opacity: isFrozenOrBlocked ? 0.3 : 1.0
 
                                         Image {
@@ -970,7 +1004,7 @@ Item {
                     // Разделитель
                     Rectangle {
                         width: 40; height: 40; radius: 20
-                        color: "#7C3AED"
+                        color: Theme.accent
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         Image {
@@ -997,7 +1031,7 @@ Item {
                             height: 52
                             radius: 12
                             color: "#0F172A"
-                            border.color: extPhoneInput.activeFocus ? "#7C3AED" : "#1F2937"
+                            border.color: extPhoneInput.activeFocus ? Theme.accent : "#1F2937"
                             border.width: 2
 
                             Row {
@@ -1067,7 +1101,7 @@ Item {
 
                                 Image {
                                     width: 16; height: 16
-                                    source: "assets/check-mark.svg"
+                                    source: "assets/check-mark-green.svg"
                                     sourceSize: Qt.size(16, 16)
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
@@ -1107,7 +1141,7 @@ Item {
                             height: 56
                             radius: 12
                             color: "#0F172A"
-                            border.color: externalAmountInput.activeFocus ? "#7C3AED" : "#1F2937"
+                            border.color: externalAmountInput.activeFocus ? Theme.accent : "#1F2937"
                             border.width: 2
 
                             Row {
@@ -1164,7 +1198,7 @@ Item {
                                                    parseFloat(externalAmountInput.text) > 0 &&
                                                    !isLoading
 
-                        color: canTransfer ? "#7C3AED" : "#374151"
+                        color: canTransfer ? Theme.accent : "#374151"
 
                         Behavior on color { ColorAnimation { duration: 200 } }
 
@@ -1174,7 +1208,7 @@ Item {
                             font.pixelSize: 16
                             font.bold: true
                             font.family: manropeFont.name
-                            color: parent.canTransfer ? "#FFFFFF" : "#6B7280"
+                            color: parent.canTransfer ? Theme.textMuted : "#6B7280"
                         }
 
                         MouseArea {
@@ -1196,9 +1230,7 @@ Item {
             }
         }
 
-        // ────────────────────────────────────────────
         // ШАГ 3: Успех (scale + fade)
-        // ────────────────────────────────────────────
         Item {
             id: step3
             anchors.fill: parent
@@ -1271,16 +1303,6 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
 
-                Text {
-                    text: successMessage
-                    font.pixelSize: 14
-                    color: "#9CA3AF"
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                }
-
                 Item { width: 1; height: 12 }
 
                 // Кнопки
@@ -1288,7 +1310,7 @@ Item {
                     width: parent.width
                     height: 54
                     radius: 16
-                    color: "#27D6C5"
+                    color: Theme.accent
 
                     Text {
                         anchors.centerIn: parent
@@ -1312,9 +1334,11 @@ Item {
                     width: parent.width
                     height: 54
                     radius: 16
-                    color: "transparent"
-                    border.color: "#374151"
-                    border.width: 2
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
 
                     Text {
                         anchors.centerIn: parent
@@ -1322,7 +1346,7 @@ Item {
                         font.pixelSize: 16
                         font.bold: true
                         font.family: manropeFont.name
-                        color: "#E5E7EB"
+                        color: Theme.textSubtle
                     }
 
                     MouseArea {
@@ -1337,7 +1361,7 @@ Item {
     // Таймер для дебаунса поиска получателя
     Timer {
         id: searchTimer
-        interval: 500
+        interval: 1000
         onTriggered: {
             if (extPhoneInput.cleanDigits.length === 10) {
                 transferController.findRecipientName(extPhoneInput.cleanDigits)

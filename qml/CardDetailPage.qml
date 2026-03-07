@@ -1,10 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import PlutusBank
 
 Item {
-    id: cardDetailPage
-    //anchors.fill: parent
+    id: root
 
     // Входные данные — передаются из MainPage при открытии
     property var cardData: ({})
@@ -18,6 +18,7 @@ Item {
     property bool showTransactions: false
     property bool confirmBlockVisible: false
     property bool confirmFreezeVisible: false
+    property int visibleTransactionCount: 5
 
     // Обновлённые данные карты (после freeze/block)
     property bool cardIsBlocked: cardData.is_blocked ?? false
@@ -71,31 +72,25 @@ Item {
             width: parent.width
             spacing: 20
 
-            // ═══════════ Шапка с кнопкой назад ═══════════
+            // Шапка с кнопкой назад
             Item {
+                id: header
                 width: parent.width
                 height: 56
+                z: 10
 
-                Rectangle {
-                    id: backBtn
-                    width: 40; height: 40
-                    radius: 20
-                    color: backBtnArea.pressed ? "#374151" : "#1F2937"
+                Image {
+                    width: 24; height: 24
+                    source: "assets/arrow-left.svg"
+                    sourceSize: Qt.size(24, 24)
                     anchors.left: parent.left
                     anchors.leftMargin: 16
                     anchors.verticalCenter: parent.verticalCenter
 
-                    Image {
-                        anchors.centerIn: parent
-                        width: 20; height: 20
-                        source: "assets/arrow-left.svg"
-                        sourceSize: Qt.size(20, 20)
-                    }
-
                     MouseArea {
-                        id: backBtnArea
                         anchors.fill: parent
-                        onClicked: backToMain()
+                        anchors.margins: -8
+                        onClicked: root.backToMain()
                     }
                 }
 
@@ -109,7 +104,7 @@ Item {
                 }
             }
 
-            // ═══════════ Визуализация карты ═══════════
+            // Визуализация карты 
             Rectangle {
                 width: parent.width - 32
                 height: 180
@@ -119,15 +114,16 @@ Item {
                 gradient: Gradient {
                     GradientStop {
                         position: 0.0
-                        color: cardData.card_brand === "visa" ? "#1E3A8A" :
-                               cardData.card_brand === "mastercard" ? "#7C3AED" : "#059669"
+                        color: cardData.card_brand === "visa" ? Theme.grVisaPosStart :
+                               cardData.card_brand === "mastercard" ? Theme.grMSPosStart : Theme.grMirPosStart
                     }
                     GradientStop {
                         position: 1.0
-                        color: cardData.card_brand === "visa" ? "#3B82F6" :
-                               cardData.card_brand === "mastercard" ? "#A78BFA" : "#10B981"
+                        color: cardData.card_brand === "visa" ? Theme.grVisaPosEnd :
+                               cardData.card_brand === "mastercard" ? Theme.grMSPosEnd : Theme.grMirPosEnd
                     }
                 }
+                border.color: Theme.card
 
                 // Оверлей для заблокированных/замороженных карт
                 Rectangle {
@@ -232,12 +228,16 @@ Item {
                 }
             }
 
-            // ═══════════ Кнопки Блокировать / Заморозить ═══════════
+            // Кнопки Блокировать / Заморозить
             Rectangle {
                 width: parent.width - 32
                 height: 56
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Row {
@@ -317,7 +317,7 @@ Item {
                 }
             }
 
-            // ═══════════ Пополнить / Оплатить или перевести ═══════════
+            // Пополнить / Оплатить или перевести
             Row {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -327,8 +327,13 @@ Item {
                     width: (parent.width - 12) / 2
                     height: 80
                     radius: 16
-                    color: (cardIsFrozen || cardIsBlocked) ? "#111827" : "#1F2937"
-                    opacity: (cardIsFrozen || cardIsBlocked) ? 0.5 : 1.0
+                    //color: (cardIsFrozen || cardIsBlocked) ? "#111827" : "#1F2937"
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
+                    opacity: (cardIsFrozen || cardIsBlocked) ? 0.4 : 1.0
 
                     Column {
                         anchors.centerIn: parent
@@ -362,8 +367,13 @@ Item {
                     width: (parent.width - 12) / 2
                     height: 80
                     radius: 16
-                    color: (cardIsFrozen || cardIsBlocked) ? "#111827" : "#1F2937"
-                    opacity: (cardIsFrozen || cardIsBlocked) ? 0.5 : 1.0
+                    //color: (cardIsFrozen || cardIsBlocked) ? "#111827" : "#1F2937"
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
+                    opacity: (cardIsFrozen || cardIsBlocked) ? 0.4 : 1.0
 
                     Column {
                         anchors.centerIn: parent
@@ -395,12 +405,16 @@ Item {
                 }
             }
 
-            // ═══════════ Операции по карте ═══════════
+            // Операции по карте
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.40; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                }
+                border.color: Theme.card
                 height: transactionsColumn.height + 32
 
                 Column {
@@ -430,13 +444,17 @@ Item {
                             id: expandBtn
                             text: showTransactions ? "Скрыть" : "Показать"
                             font.pixelSize: 13
-                            color: "#27D6C5"
+                            color: Theme.accent
                             anchors.verticalCenter: parent.verticalCenter
 
                             MouseArea {
                                 anchors.fill: parent
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: showTransactions = !showTransactions
+                                onClicked: {
+                                    showTransactions = !showTransactions
+                                    if (!showTransactions)
+                                        visibleTransactionCount = 5
+                                }
                             }
                         }
                     }
@@ -461,7 +479,7 @@ Item {
                         visible: showTransactions
 
                         Repeater {
-                            model: cardController.cardTransactions
+                            model: cardController.cardTransactions.slice(0, visibleTransactionCount)
 
                             Rectangle {
                                 width: parent.width
@@ -486,9 +504,9 @@ Item {
                                             anchors.centerIn: parent
                                             width: 18; height: 18
                                             source: modelData.direction === "in"
-                                                    ? "assets/arrow-down.svg"
+                                                    ? "assets/arrow-down-white.svg"
                                                     : (modelData.direction === "out"
-                                                       ? "assets/arrow-up.svg"
+                                                       ? "assets/arrow-up-white.svg"
                                                        : "assets/transfer.svg")
                                             sourceSize: Qt.size(18, 18)
                                         }
@@ -545,6 +563,24 @@ Item {
                             }
                         }
 
+                        // Загрузить ещё
+                        Text {
+                            visible: showTransactions
+                                     && cardController.cardTransactions.length > visibleTransactionCount
+                            text: "Загрузить ещё"
+                            font.pixelSize: 14
+                            color: Theme.accent
+                            topPadding: 8
+                            bottomPadding: 4
+                            anchors.horizontalCenter: parent.horizontalCenter
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: visibleTransactionCount += 5
+                            }
+                        }
+
                         // Пусто
                         Text {
                             visible: cardController.cardTransactions.length === 0
@@ -558,12 +594,16 @@ Item {
                 }
             }
 
-            // ═══════════ Реквизиты ═══════════
+            // Реквизиты
             Rectangle {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 16
-                color: "#1F2937"
+                gradient: Gradient {
+                    GradientStop { position: 0.40; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockAltPosEnd }
+                }
+                border.color: Theme.card
                 height: requisitesColumn.height + 32
 
                 Column {
@@ -593,7 +633,7 @@ Item {
                             id: showReqBtn
                             text: showRequisites ? "Скрыть" : "Показать"
                             font.pixelSize: 13
-                            color: "#27D6C5"
+                            color: Theme.accent
                             anchors.verticalCenter: parent.verticalCenter
 
                             MouseArea {
@@ -668,31 +708,41 @@ Item {
                 }
             }
 
-            // ═══════════ Перевыпустить карту ═══════════
+            // Перевыпустить карту
             Rectangle {
                 width: parent.width - 32
-                height: 54
+                height: 62
                 radius: 16
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "transparent"
-                border.color: "#374151"
-                border.width: 1
 
-                Text {
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
+
+                Row {
                     anchors.centerIn: parent
-                    text: "Перевыпустить карту"
-                    font.pixelSize: 14
-                    font.bold: true
-                    font.family: manropeFont.name
-                    color: "#9CA3AF"
+                    spacing: 8
+
+                    Image {
+                        width: 18; height: 18
+                        source: "assets/reissue-wallet.svg"
+                        sourceSize: Qt.size(18, 18)
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: "Перевыпустить карту"
+                        font { pixelSize: 15; bold: true; family: manropeFont.name }
+                        color: "#E5E7EB"
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
                 }
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
-                        // Кнопка-пустышка
-                        console.log("Перевыпуск карты — функционал не реализован")
-                    }
+                    onClicked: console.log("Перевыпуск карты")
                 }
             }
 
@@ -701,7 +751,7 @@ Item {
         }
     }
 
-    // ═══════════ Диалог подтверждения блокировки ═══════════
+    // Диалог подтверждения блокировки
     Rectangle {
         id: blockDialog
         anchors.fill: parent
@@ -715,7 +765,11 @@ Item {
             width: parent.width - 64
             height: dialogBlockCol.height + 48
             radius: 20
-            color: "#1F2937"
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme.grBlockDefPosStart }
+                GradientStop { position: 1.0; color: Theme.grBlockAltDefPosEnd }
+            }
+            border.color: Theme.card
             anchors.centerIn: parent
 
             MouseArea { anchors.fill: parent }  // Поглощаем клик
@@ -731,7 +785,7 @@ Item {
                     font.pixelSize: 18
                     font.bold: true
                     font.family: manropeFont.name
-                    color: "#F7F7FB"
+                    color: Theme.textSecondary
                     width: parent.width
                     wrapMode: Text.WordWrap
                 }
@@ -739,7 +793,7 @@ Item {
                 Text {
                     text: "Карта будет заблокирована навсегда. Операции по ней станут невозможны. Для восстановления потребуется перевыпуск."
                     font.pixelSize: 13
-                    color: "#9CA3AF"
+                    color: Theme.redLight
                     width: parent.width
                     wrapMode: Text.WordWrap
                     lineHeight: 1.3
@@ -753,14 +807,14 @@ Item {
                         width: (parent.width - 12) / 2
                         height: 44
                         radius: 12
-                        color: "#374151"
+                        color: Theme.green
 
                         Text {
                             anchors.centerIn: parent
                             text: "Отмена"
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#F7F7FB"
+                            color: Theme.textPrimary
                         }
 
                         MouseArea {
@@ -773,14 +827,14 @@ Item {
                         width: (parent.width - 12) / 2
                         height: 44
                         radius: 12
-                        color: "#DC2626"
+                        color: Theme.red
 
                         Text {
                             anchors.centerIn: parent
                             text: "Заблокировать"
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#FFFFFF"
+                            color: Theme.textPrimary
                         }
 
                         MouseArea {
@@ -793,7 +847,7 @@ Item {
         }
     }
 
-    // ═══════════ Диалог подтверждения заморозки ═══════════
+    // Диалог подтверждения заморозки
     Rectangle {
         id: freezeDialog
         anchors.fill: parent
@@ -807,7 +861,11 @@ Item {
             width: parent.width - 64
             height: dialogFreezeCol.height + 48
             radius: 20
-            color: "#1F2937"
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Theme.grBlockDefPosStart }
+                GradientStop { position: 1.0; color: Theme.grBlockAltDefPosEnd }
+            }
+            border.color: Theme.card
             anchors.centerIn: parent
 
             MouseArea { anchors.fill: parent }
@@ -823,7 +881,7 @@ Item {
                     font.pixelSize: 18
                     font.bold: true
                     font.family: manropeFont.name
-                    color: "#F7F7FB"
+                    color: Theme.textSecondary
                     width: parent.width
                     wrapMode: Text.WordWrap
                 }
@@ -833,7 +891,7 @@ Item {
                         ? "Карта снова станет активной. Все операции будут доступны."
                         : "Операции по карте будут временно приостановлены. Вы сможете разморозить карту в любое время."
                     font.pixelSize: 13
-                    color: "#9CA3AF"
+                    color: Theme.textSecondary
                     width: parent.width
                     wrapMode: Text.WordWrap
                     lineHeight: 1.3
@@ -847,14 +905,14 @@ Item {
                         width: (parent.width - 12) / 2
                         height: 44
                         radius: 12
-                        color: "#374151"
+                        color: Theme.neutral
 
                         Text {
                             anchors.centerIn: parent
                             text: "Отмена"
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#F7F7FB"
+                            color: Theme.textPrimary
                         }
 
                         MouseArea {
@@ -867,14 +925,14 @@ Item {
                         width: (parent.width - 12) / 2
                         height: 44
                         radius: 12
-                        color: cardIsFrozen ? "#10B981" : "#3B82F6"
+                        color: cardIsFrozen ? Theme.green: Theme.red
 
                         Text {
                             anchors.centerIn: parent
                             text: cardIsFrozen ? "Разморозить" : "Заморозить"
                             font.pixelSize: 14
                             font.bold: true
-                            color: "#FFFFFF"
+                            color: Theme.textPrimary
                         }
 
                         MouseArea {
@@ -887,7 +945,7 @@ Item {
         }
     }
 
-    // ═══════════ Вспомогательный компонент — поле реквизита ═══════════
+    // Вспомогательный компонент — поле реквизита
     component RequisiteField: Column {
         property string label: ""
         property string value: ""
@@ -954,7 +1012,7 @@ Item {
                 width: copiedLabel.width + 16
                 height: 24
                 radius: 8
-                color: "#10B981"
+                color: Theme.green
                 opacity: 0
                 visible: opacity > 0
 
@@ -977,7 +1035,7 @@ Item {
                     onTriggered: copiedToast.opacity = 0
                 }
 
-                Behavior on opacity { NumberAnimation { duration: 200 } }
+                Behavior on opacity { NumberAnimation { duration: 300 } }
             }
         }
     }

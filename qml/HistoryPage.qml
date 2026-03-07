@@ -80,7 +80,7 @@ Item {
         Item {
             width: parent.width
             height: parent.height - 60
-            visible: !historyController.isLoading && historyController.transactions.length === 0
+            visible: !historyController.isLoading && transactionList.count === 0
 
             Column {
                 anchors.centerIn: parent
@@ -115,9 +115,9 @@ Item {
             width: parent.width
             height: parent.height - 60
             clip: true
-            visible: historyController.transactions.length > 0
+            visible: transactionList.count > 0
 
-            model: historyController.transactions
+            model: historyController
             spacing: 0
 
             // Пагинация при скролле к концу
@@ -165,7 +165,7 @@ Item {
 
             delegate: Rectangle {
                 width: transactionList.width
-                height: 76
+                height: 96
                 color: delegateArea.pressed ? "#1F2937" : "transparent"
 
                 MouseArea {
@@ -173,7 +173,7 @@ Item {
                     anchors.fill: parent
                 }
 
-                Row {
+                RowLayout {
                     anchors.fill: parent
                     anchors.leftMargin: 20
                     anchors.rightMargin: 20
@@ -181,22 +181,22 @@ Item {
 
                     // Иконка направления
                     Rectangle {
-                        width: 44
-                        height: 44
+                        Layout.preferredWidth: 44
+                        Layout.preferredHeight: 44
+                        Layout.alignment: Qt.AlignVCenter
                         radius: 22
-                        anchors.verticalCenter: parent.verticalCenter
                         color: {
-                            if (modelData.direction === "in") return "#064E3B"
-                            if (modelData.direction === "out") return "#7F1D1D"
-                            return "#1E3A5F"  // self
+                            if (model.direction === "in") return "#064E3B"
+                            if (model.direction === "out") return "#7F1D1D"
+                            return "#1E3A5F"
                         }
 
                         Image {
                             anchors.centerIn: parent
                             width: 22; height: 22
                             source: {
-                                if (modelData.direction === "in") return "assets/arrow-down.svg"
-                                if (modelData.direction === "out") return "assets/arrow-up.svg"
+                                if (model.direction === "in") return "assets/arrow-down-white.svg"
+                                if (model.direction === "out") return "assets/arrow-up-white.svg"
                                 return "assets/transfer.svg"
                             }
                             sourceSize: Qt.size(22, 22)
@@ -205,9 +205,9 @@ Item {
 
                     // Описание транзакции
                     Column {
-                        width: parent.width - 44 - 14 - amountColumn.width - 14 - 40
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 4
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
+                        spacing: 2
 
                         Text {
                             width: parent.width
@@ -216,17 +216,17 @@ Item {
                             font.bold: true
                             color: "#F7F7FB"
                             text: {
-                                if (modelData.direction === "self") {
+                                if (model.direction === "self") {
                                     return "Между своими счетами"
-                                } else if (modelData.direction === "out") {
-                                    var toName = modelData.to_name || ""
-                                    var toLast4 = modelData.to_card_last4 || ""
+                                } else if (model.direction === "out") {
+                                    var toName = model.to_name || ""
+                                    var toLast4 = model.to_card_last4 || ""
                                     if (toName) return "Перевод → " + toName
                                     if (toLast4) return "Перевод → •••• " + toLast4
                                     return "Исходящий перевод"
                                 } else {
-                                    var fromName = modelData.from_name || ""
-                                    var fromLast4 = modelData.from_card_last4 || ""
+                                    var fromName = model.from_name || ""
+                                    var fromLast4 = model.from_card_last4 || ""
                                     if (fromName) return "Перевод от " + fromName
                                     if (fromLast4) return "Перевод от •••• " + fromLast4
                                     return "Входящий перевод"
@@ -239,27 +239,39 @@ Item {
                             elide: Text.ElideRight
                             font.pixelSize: 12
                             color: "#6B7280"
+                            visible: !!model.description
+                            text: model.description || ""
+                        }
+
+                        Text {
+                            width: parent.width
+                            elide: Text.ElideRight
+                            font.pixelSize: 12
+                            color: "#6B7280"
+                            text: model.transaction_type === "internal" ? "Внутренний" : "Внешний"
+                        }
+
+                        Text {
+                            width: parent.width
+                            font.pixelSize: 12
+                            color: "#6B7280"
+                            visible: {
+                                var time = model.created_at || ""
+                                return time.length > 10
+                            }
                             text: {
-                                var parts = []
-                                if (modelData.description) parts.push(modelData.description)
-
-                                var typeLabel = modelData.transaction_type === "internal" ? "Внутренний" : "Внешний"
-                                parts.push(typeLabel)
-
-                                var time = modelData.created_at || ""
-                                if (time.length > 10) {
-                                    parts.push(time.substring(11))  // только HH:mm
-                                }
-                                return parts.join(" · ")
+                                var time = model.created_at || ""
+                                if (time.length > 10) return time.substring(11)
+                                return ""
                             }
                         }
                     }
 
-                    // Сумма
+                    // Сумма — прижата вправо
                     Column {
                         id: amountColumn
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: amountText.implicitWidth
+                        Layout.alignment: Qt.AlignVCenter
+                        Layout.preferredWidth: implicitWidth
 
                         Text {
                             id: amountText
@@ -267,31 +279,30 @@ Item {
                             font.bold: true
                             horizontalAlignment: Text.AlignRight
                             color: {
-                                if (modelData.direction === "in") return "#10B981"
-                                if (modelData.direction === "out") return "#EF4444"
+                                if (model.direction === "in") return "#10B981"
+                                if (model.direction === "out") return "#EF4444"
                                 return "#60A5FA"
                             }
                             text: {
                                 var prefix = ""
-                                if (modelData.direction === "in") prefix = "+"
-                                else if (modelData.direction === "out") prefix = "-"
-
-                                return prefix + Number(modelData.amount).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                if (model.direction === "in") prefix = "+"
+                                else if (model.direction === "out") prefix = "-"
+                                return prefix + Number(model.amount).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
                             }
                         }
 
                         Text {
                             font.pixelSize: 11
                             color: {
-                                if (modelData.status === "completed") return "#6B7280"
-                                if (modelData.status === "pending") return "#F59E0B"
+                                if (model.status === "completed") return "#6B7280"
+                                if (model.status === "pending") return "#F59E0B"
                                 return "#EF4444"
                             }
                             horizontalAlignment: Text.AlignRight
                             anchors.right: parent.right
                             text: {
-                                if (modelData.status === "completed") return "Выполнен"
-                                if (modelData.status === "pending") return "В обработке"
+                                if (model.status === "completed") return "Выполнен"
+                                if (model.status === "pending") return "В обработке"
                                 return "Ошибка"
                             }
                         }
@@ -311,7 +322,7 @@ Item {
             // Индикатор загрузки внизу списка
             footer: Item {
                 width: transactionList.width
-                height: historyController.isLoading ? 60 : 0
+                height: 60
                 visible: historyController.isLoading
 
                 BusyIndicator {
@@ -325,7 +336,7 @@ Item {
         // Начальная загрузка
         BusyIndicator {
             anchors.centerIn: parent
-            running: historyController.isLoading && historyController.transactions.length === 0
+            running: historyController.isLoading && transactionList.count === 0
             visible: running
             palette.dark: "#27D6C5"
         }

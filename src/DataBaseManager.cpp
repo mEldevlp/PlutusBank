@@ -96,7 +96,7 @@ bool DatabaseManager::registerUser(
 
     query.bindValue(":firstName", firstName);
     query.bindValue(":lastName", lastName);
-    query.bindValue(":middleName", middleName.isEmpty() ? QVariant(QVariant::String) : middleName);
+    query.bindValue(":middleName", middleName.isEmpty() ? QVariant(QMetaType(QMetaType::QString)) : middleName);
     query.bindValue(":dateOfBirth", dateOfBirth);
     query.bindValue(":passportSeries", passportSeries);
     query.bindValue(":passportNumber", passportNumber);
