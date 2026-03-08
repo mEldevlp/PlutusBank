@@ -66,18 +66,38 @@ QVariantMap LoanController::calculatePayment(double amount, int months, double a
 
     double r = annualRate / 12.0 / 100.0;
     double rn = std::pow(1.0 + r, months);
-    double monthly = amount * (r * rn) / (rn - 1.0);
-    double total = monthly * months;
 
-    result["monthlyPayment"] = std::round(monthly * 100.0) / 100.0;
-    result["totalAmount"] = std::round(total * 100.0) / 100.0;
-    result["overpayment"] = std::round((total - amount) * 100.0) / 100.0;
+    // Ежемесячный платёж — целые рубли, округление ВВЕРХ
+    double monthly = std::ceil(amount * (r * rn) / (rn - 1.0));
+
+    // Симулируем график, чтобы получить точную итоговую сумму
+    // (последний платёж будет меньше — добираем остаток тела + проценты)
+    double remainPrincipal = amount;
+    double actualTotal = 0.0;
+
+    for (int i = 1; i <= months; ++i)
+    {
+        double interest = std::round(remainPrincipal * r * 100.0) / 100.0;
+
+        if (i == months)
+        {
+            actualTotal += remainPrincipal + interest;
+        }
+        else
+        {
+            actualTotal += monthly;
+            remainPrincipal -= (monthly - interest);
+        }
+    }
+
+    result["monthlyPayment"] = monthly;
+    result["totalAmount"] = std::round(actualTotal * 100.0) / 100.0;
+    result["overpayment"] = std::round((actualTotal - amount) * 100.0) / 100.0;
 
     return result;
 }
 
 // Счета пользователя 
-
 void LoanController::loadAccounts()
 {
     int userId = UserSession::instance().userId();
@@ -341,9 +361,12 @@ void LoanController::loadUserLoans()
     q.prepare(
         "SELECT l.id, lp.name, lp.category, l.principal, l.annual_rate, "
         "l.term_months, l.monthly_payment, l.total_paid, l.remaining_balance, "
-        "l.status, l.issued_at, l.next_payment_date "
+        "l.status, l.issued_at, l.next_payment_date, "
+        "c.card_number, c.card_brand, a.balance "
         "FROM loans l "
         "INNER JOIN loan_products lp ON l.product_id = lp.id "
+        "LEFT JOIN accounts a ON a.id = l.target_account_id "
+        "LEFT JOIN cards c ON c.account_id = a.id "
         "WHERE l.user_id = :uid "
         "ORDER BY l.issued_at DESC"
     );
@@ -366,6 +389,9 @@ void LoanController::loadUserLoans()
             loan["status"] = q.value(9).toString();
             loan["issued_at"] = q.value(10).toDateTime().toString("dd.MM.yyyy");
             loan["next_payment_date"] = q.value(11).toDate().toString("dd.MM.yyyy");
+            loan["card_number"] = q.value(12).toString();
+            loan["card_brand"] = q.value(13).toString();
+            loan["card_balance"] = q.value(14).toDouble();
             m_userLoans.append(loan);
         }
     }
@@ -605,9 +631,9 @@ void LoanController::makePayment(int loanId)
 
     // 4e. Обновляем кредит
     double newRemaining = remaining - paymentAmount;
-    if (newRemaining < 0.01) newRemaining = 0;
+    if (newRemaining < 0.005) newRemaining = 0.0;
 
-    bool isFullyPaid = (newRemaining < 0.01);
+    bool isFullyPaid = (newRemaining <= 0.0);
 
     if (isFullyPaid)
     {
@@ -645,6 +671,9 @@ void LoanController::makePayment(int loanId)
     m_isLoading = false;
     emit loadingChanged();
 
+    // обновляем данные
+    emit paymentMade(paymentAmount);
+
     UserSession::instance().refreshAll();
     loadUserLoans();
     loadSchedule(loanId);
@@ -656,6 +685,6 @@ void LoanController::makePayment(int loanId)
     }
     else
     {
-        emit paymentSuccess(u"Платёж внесён: "_qs + QString::number(paymentAmount, 'f', 2) + u" ₽"_qs);
+        emit paymentSuccess(QString());   // пустая строка — без текстового сообщения
     }
 }

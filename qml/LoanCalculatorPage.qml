@@ -18,6 +18,7 @@ Item {
     property string resultMessage: ""
     property bool   resultSuccess: false
     property bool   showSuccess: false
+    property var    approvedAccount: ({})
 
     // Рассчитанные значения
     property double monthlyPayment: 0
@@ -56,6 +57,15 @@ Item {
             isProcessing = false
             resultSuccess = true
             resultMessage = message
+            // Перезагружаем счета чтобы получить актуальный баланс
+            loanController.loadAccounts()
+            // Находим карту куда зачислили
+            for (var i = 0; i < loanController.accounts.length; i++) {
+                if (loanController.accounts[i].id === selectedAccountId) {
+                    approvedAccount = loanController.accounts[i]
+                    break
+                }
+            }
             showSuccess = true
         }
         function onLoanFailed(error) {
@@ -793,6 +803,80 @@ Item {
                 wrapMode: Text.WordWrap
             }
 
+            // Мини-блок банковской карты
+            Rectangle {
+                width: parent.width
+                height: 64
+                radius: 12
+                visible: approvedAccount.card_number !== undefined
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+
+                    // Лого бренда
+                    Rectangle {
+                        width: 40; height: 40; radius: 10
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: (approvedAccount.card_brand ?? "") === "visa"
+                                        ? Theme.grVisaPosStart
+                                        : (approvedAccount.card_brand ?? "") === "mastercard"
+                                            ? Theme.grMSPosStart
+                                            : Theme.grMirPosStart
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: (approvedAccount.card_brand ?? "") === "visa"
+                                        ? Theme.grVisaPosEnd
+                                        : (approvedAccount.card_brand ?? "") === "mastercard"
+                                            ? Theme.grMSPosEnd
+                                            : Theme.grMirPosEnd
+                            }
+                        }
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 28; height: 20
+                            sourceSize: Qt.size(28, 20)
+                            fillMode: Image.PreserveAspectFit
+                            source: (approvedAccount.card_brand ?? "") === "visa"
+                                    ? "assets/visa.svg"
+                                    : (approvedAccount.card_brand ?? "") === "mastercard"
+                                        ? "assets/mastercard.svg"
+                                        : "assets/mir.svg"
+                        }
+                    }
+
+                    // Номер и баланс
+                    Column {
+                        width: parent.width - 64
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: "•••• " + (approvedAccount.card_number ?? "").slice(-4)
+                            font { pixelSize: 14; bold: true; family: manropeFont.name }
+                            color: "#F7F7FB"
+                        }
+
+                        Text {
+                            text: Number(approvedAccount.balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                            font { pixelSize: 13; bold: true }
+                            color: Theme.accent
+                        }
+                    }
+                }
+            }
+
             // Детали кредита
             Rectangle {
                 width: parent.width
@@ -849,7 +933,7 @@ Item {
                         width: parent.width
                         Text { text: "Ежемесячно"; font.pixelSize: 13; color: "#6B7280"; width: parent.width * 0.4 }
                         Text {
-                            text: Number(monthlyPayment).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                            text: Number(monthlyPayment).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                             font { pixelSize: 13; bold: true }
                             color: Theme.accent
                         }

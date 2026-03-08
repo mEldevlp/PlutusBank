@@ -12,15 +12,32 @@ Item {
     property string resultMessage: ""
     property bool   resultSuccess: false
 
+    // Анимация платежа
+    property bool   animateBalance: false
+    property bool   animateRemaining: false
+    property bool   showDeduction: false
+    property double deductionAmount: 0.0
+
     Component.onCompleted: {
         loanController.loadSchedule(loanData.id ?? 0)
     }
 
     Connections {
         target: loanController
+
+        function onPaymentMade(amount) {
+            deductionAmount  = amount
+            showDeduction    = true
+            animateBalance   = true
+            animateRemaining = true
+            deductionTimer.restart()
+        }
+
         function onPaymentSuccess(message) {
-            resultSuccess = true
-            resultMessage = message
+            if (message.length > 0) {
+                resultSuccess = true
+                resultMessage = message
+            }
         }
         function onPaymentFailed(error) {
             resultSuccess = false
@@ -30,8 +47,45 @@ Item {
             closedDialog.open()
         }
         function onScheduleChanged() {
-            // Обновляем данные кредита при изменении графика
             loanController.loadUserLoans()
+        }
+        function onUserLoansChanged() {
+            var loans = loanController.userLoans
+            for (var i = 0; i < loans.length; ++i) {
+                if (loans[i].id === loanData.id) {
+                    var updated = loans[i]
+
+                    // Сохраняем поля карты из старого снимка
+                    var cardNumber = loanData.card_number ?? ""
+                    var cardBrand  = loanData.card_brand  ?? ""
+                    if (cardNumber.length > 0) {
+                        updated.card_number = cardNumber
+                        updated.card_brand  = cardBrand
+                        // Баланс карты обновляем из сессии
+                        var cards = userSession.cards
+                        for (var j = 0; j < cards.length; ++j) {
+                            if (cards[j].card_number === cardNumber) {
+                                updated.card_balance = cards[j].balance ?? 0
+                                break
+                            }
+                        }
+                    }
+
+                    // Одно присваивание — все биндинги обновятся
+                    loanData = updated
+                    break
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: deductionTimer
+        interval: 1200
+        onTriggered: {
+            showDeduction    = false
+            animateBalance   = false
+            animateRemaining = false
         }
     }
 
@@ -149,9 +203,16 @@ Item {
                             width: parent.width / 3; spacing: 2
                             Text { text: "Остаток"; font.pixelSize: 11; color: "#6B7280" }
                             Text {
-                                text: Number(loanData.remaining_balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                                text: Number(Math.max(0, loanData.remaining_balance ?? 0)).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                 font { pixelSize: 13; bold: true }
                                 color: "#EF4444"
+
+                                SequentialAnimation on opacity {
+                                    running: animateRemaining
+                                    loops: 3
+                                    NumberAnimation { to: 0.3; duration: 150 }
+                                    NumberAnimation { to: 1.0; duration: 150 }
+                                }
                             }
                         }
                         Column {
@@ -161,6 +222,103 @@ Item {
                                 text: loanData.next_payment_date ?? "—"
                                 font { pixelSize: 13; bold: true }
                                 color: "#E5E7EB"
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Мини-блок банковской карты
+            Rectangle {
+                width: parent.width - 32
+                anchors.horizontalCenter: parent.horizontalCenter
+                height: 64
+                radius: 12
+                visible: (loanData.card_number ?? "").length > 0
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                    GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                }
+                border.color: Theme.card
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 12
+
+                    Rectangle {
+                        width: 40; height: 40; radius: 10
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: (loanData.card_brand ?? "") === "visa"
+                                        ? Theme.grVisaPosStart
+                                        : (loanData.card_brand ?? "") === "mastercard"
+                                            ? Theme.grMSPosStart
+                                            : Theme.grMirPosStart
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: (loanData.card_brand ?? "") === "visa"
+                                        ? Theme.grVisaPosEnd
+                                        : (loanData.card_brand ?? "") === "mastercard"
+                                            ? Theme.grMSPosEnd
+                                            : Theme.grMirPosEnd
+                            }
+                        }
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Image {
+                            anchors.centerIn: parent
+                            width: 28; height: 20
+                            sourceSize: Qt.size(28, 20)
+                            fillMode: Image.PreserveAspectFit
+                            source: (loanData.card_brand ?? "") === "visa"
+                                    ? "assets/visa.svg"
+                                    : (loanData.card_brand ?? "") === "mastercard"
+                                        ? "assets/mastercard.svg"
+                                        : "assets/mir.svg"
+                        }
+                    }
+
+                    Column {
+                        width: parent.width - 64
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: "•••• •••• •••• " + (loanData.card_number ?? "").slice(-4)
+                            font { pixelSize: 14; bold: true; family: manropeFont.name }
+                            color: "#F7F7FB"
+                        }
+
+                        Row {
+                            spacing: 6
+
+                            Text {
+                                id: balanceText
+                                text: Number(loanData.card_balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                font { pixelSize: 13; bold: true }
+                                color: Theme.accent
+
+                                SequentialAnimation on opacity {
+                                    running: animateBalance
+                                    loops: 3
+                                    NumberAnimation { to: 0.3; duration: 150 }
+                                    NumberAnimation { to: 1.0; duration: 150 }
+                                }
+                            }
+
+                            Text {
+                                id: deductionText
+                                text: "−" + Number(deductionAmount).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                font { pixelSize: 13; bold: true }
+                                color: "#EF4444"
+                                opacity: showDeduction ? 1.0 : 0.0
+
+                                Behavior on opacity {
+                                    NumberAnimation { duration: 300 }
+                                }
                             }
                         }
                     }
@@ -194,14 +352,14 @@ Item {
                 }
             }
 
-            // Результат
+            // Результат (только ошибки)
             Text {
-                visible: resultMessage.length > 0
+                visible: resultMessage.length > 0 && !resultSuccess
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: resultMessage
                 font { pixelSize: 14; bold: true }
-                color: resultSuccess ? Theme.accent : "#EF4444"
+                color: "#EF4444"
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
             }
@@ -319,8 +477,8 @@ Item {
         background: Rectangle {
             radius: 20
             gradient: Gradient {
-                GradientStop { position: 0.0; color: Theme.grBlockPosStart }
-                GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                GradientStop { position: 0.0; color: Theme.grBlockDefPosStart }
+                GradientStop { position: 1.0; color: Theme.grBlockDefPosEnd }
             }
             border.color: Theme.accent
         }

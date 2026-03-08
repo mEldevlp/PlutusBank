@@ -216,7 +216,7 @@ Item {
                                     width: parent.width / 3; spacing: 2
                                     Text { text: "Остаток"; font.pixelSize: 11; color: "#6B7280" }
                                     Text {
-                                        text: Number(modelData.remaining_balance ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                                        text: Number(Math.max(0, modelData.remaining_balance ?? 0)).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                         font { pixelSize: 13; bold: true }
                                         color: (modelData.status === "closed") ? "#6B7280" : "#EF4444"
                                     }

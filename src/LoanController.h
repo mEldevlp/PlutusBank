@@ -66,6 +66,7 @@ signals:
     void paymentSuccess(const QString& message);
     void paymentFailed(const QString& error);
     void loanClosed();
+    void paymentMade(double amount);
 
 private:
     DatabaseManager& m_db;

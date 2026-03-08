@@ -93,7 +93,7 @@ bool DatabaseManager::registerUser(
         ":email, :phone, :password"
         ")"
     );
-
+    
     query.bindValue(":firstName", firstName);
     query.bindValue(":lastName", lastName);
     query.bindValue(":middleName", middleName.isEmpty() ? QVariant(QMetaType(QMetaType::QString)) : middleName);
