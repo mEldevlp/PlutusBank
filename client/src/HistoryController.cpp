@@ -4,9 +4,9 @@
 
 HistoryController::HistoryController(QObject* parent)
     : QAbstractListModel(parent)
-    , m_db(DatabaseManager::instance())
-{
-}
+    , 
+    m_net(NetworkClient::instance())
+{}
 
 int HistoryController::rowCount(const QModelIndex& parent) const
 {
@@ -69,7 +69,7 @@ void HistoryController::loadTransactions()
     m_offset = 0;
     endResetModel();
 
-    auto batch = m_db.getTransactionHistory(userId, PAGE_SIZE, m_offset);
+    auto batch = m_net.getTransactionHistory(userId, PAGE_SIZE, m_offset);
 
     if (!batch.isEmpty()) 
     {
@@ -97,7 +97,7 @@ void HistoryController::loadMore()
     m_isLoading = true;
     emit loadingChanged();
 
-    auto batch = m_db.getTransactionHistory(userId, PAGE_SIZE, m_offset);
+    auto batch = m_net.getTransactionHistory(userId, PAGE_SIZE, m_offset);
 
     if (!batch.isEmpty()) 
     {

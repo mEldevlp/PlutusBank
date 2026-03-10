@@ -3,8 +3,9 @@
 #include <QQmlContext>
 #include <QDir>
 #include <QQuickStyle>
+#include <QSettings>
 
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 #include "AuthController.h"
 #include "UserSession.h"
 #include "CardController.h"
@@ -30,11 +31,16 @@ int main(int argc, char* argv[])
     QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
 
-    // Подключение к базе данных
-    DatabaseManager& db = DatabaseManager::instance();
-    if (!db.connect())
+    QSettings connCfg(
+        QDir(QCoreApplication::applicationDirPath()).filePath("connection.ini"),
+        QSettings::IniFormat);
+    QString serverHost = connCfg.value("Server/host", "127.0.0.1").toString();
+    quint16 serverPort = connCfg.value("Server/port", 9500).toUInt();
+
+    NetworkClient& net = NetworkClient::instance();
+    if (!net.connectToServer(serverHost, serverPort))
     {
-        qCritical() << u"Не удалось подключиться к базе данных!";
+        qCritical() << "Не удалось подключиться к серверу!";
         return -1;
     }
 
@@ -73,7 +79,7 @@ int main(int argc, char* argv[])
     int result = app.exec();
 
     // Отключение от БД при завершении
-    DatabaseManager::instance().disconnect();
+    NetworkClient::instance().disconnectFromServer();
 
     return result;
 }

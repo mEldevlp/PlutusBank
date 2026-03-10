@@ -3,7 +3,7 @@
 #include <QAbstractListModel>
 #include <QVariantList>
 #include <QVariantMap>
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 
 class HistoryController : public QAbstractListModel
 {
@@ -48,7 +48,7 @@ signals:
 private:
     static constexpr int PAGE_SIZE = 30;
 
-    DatabaseManager& m_db;
+    NetworkClient& m_net;
     QList<QVariantMap> m_items;
     bool m_isLoading = false;
     bool m_hasMore = true;

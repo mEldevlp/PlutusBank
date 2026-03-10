@@ -4,7 +4,7 @@
 #include <QString>
 #include <QVariantList>
 #include <QVariantMap>
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 
 class LoanController : public QObject
 {
@@ -69,7 +69,7 @@ signals:
     void paymentMade(double amount);
 
 private:
-    DatabaseManager& m_db;
+    NetworkClient& m_net;
     QVariantList m_products;
     QVariantList m_userLoans;
     QVariantList m_closedLoans;

@@ -4,16 +4,15 @@
 
 TransferController::TransferController(QObject* parent)
     : QObject(parent)
-    , m_db(DatabaseManager::instance())
-{
-}
+    , m_net(NetworkClient::instance())
+{}
 
 void TransferController::loadAccounts()
 {
     int userId = UserSession::instance().userId();
     if (userId <= 0) return;
 
-    m_accounts = m_db.getUserDebitAccounts(userId);
+    m_accounts = m_net.getUserDebitAccounts(userId);
     qDebug() << u"Загружено счетов для перевода:" << m_accounts.size();
     emit accountsChanged();
 }
@@ -35,20 +34,20 @@ void TransferController::transferInternal(int fromAccountId, int toAccountId, do
     }
 
     // Проверка заморозки/блокировки отправителя
-    if (m_db.isAccountFrozenOrBlocked(fromAccountId)) 
+    if (m_net.isAccountFrozenOrBlocked(fromAccountId)) 
     {
         emit transferFailed("Карта отправителя заморожена или заблокирована");
         return;
     }
 
     // Проверка заморозки/блокировки получателя
-    if (m_db.isAccountFrozenOrBlocked(toAccountId)) 
+    if (m_net.isAccountFrozenOrBlocked(toAccountId)) 
     {
         emit transferFailed("Карта получателя заморожена или заблокирована");
         return;
     }
 
-    if (m_db.transferBetweenAccounts(fromAccountId, toAccountId, amount)) 
+    if (m_net.transferBetweenAccounts(fromAccountId, toAccountId, amount)) 
     {
         UserSession::instance().refreshAll();
         loadAccounts();
@@ -71,7 +70,7 @@ void TransferController::transferExternal(int fromAccountId, const QString& phon
     }
 
     // Проверка заморозки/блокировки отправителя
-    if (m_db.isAccountFrozenOrBlocked(fromAccountId)) 
+    if (m_net.isAccountFrozenOrBlocked(fromAccountId)) 
     {
         emit transferFailed("Карта заморожена или заблокирована. Перевод невозможен");
         return;
@@ -90,14 +89,14 @@ void TransferController::transferExternal(int fromAccountId, const QString& phon
     }
 
     // Проверка блокировки/заморозки карты получателя
-    int recipientAccountId = m_db.findAccountByPhone(formattedPhone, "debit");
-    if (recipientAccountId > 0 && m_db.isAccountFrozenOrBlocked(recipientAccountId)) 
+    int recipientAccountId = m_net.findAccountByPhone(formattedPhone, "debit");
+    if (recipientAccountId > 0 && m_net.isAccountFrozenOrBlocked(recipientAccountId)) 
     {
         emit transferFailed("Карта получателя заблокирована. Перевод невозможен");
         return;
     }
 
-    if (m_db.transferToUser(fromAccountId, formattedPhone, amount)) 
+    if (m_net.transferToUser(fromAccountId, formattedPhone, amount)) 
     {
         UserSession::instance().refreshAll();
         loadAccounts();
@@ -117,10 +116,10 @@ QString TransferController::findRecipientName(const QString& phone)
         formattedPhone = "+7" + phone;
     }
 
-    int accountId = m_db.findAccountByPhone(formattedPhone, "debit");
+    int accountId = m_net.findAccountByPhone(formattedPhone, "debit");
     if (accountId > 0)
     {
-        QString name = m_db.getAccountOwnerName(accountId);
+        QString name = m_net.getAccountOwnerName(accountId);
         emit recipientFound(name);
         return name;
     }

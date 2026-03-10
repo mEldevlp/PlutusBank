@@ -1,5 +1,5 @@
 ﻿#include "UserSession.h"
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 #include <QDebug>
 
 UserSession& UserSession::instance()
@@ -14,12 +14,12 @@ UserSession::UserSession()
     , m_dailyIncome(0.0)
     , m_dailyExpense(0.0)
     , m_isRefreshing(false)
-{
-}
+{}
 
 QString UserSession::fullName() const
 {
-    if (m_middleName.isEmpty()) {
+    if (m_middleName.isEmpty()) 
+    {
         return m_lastName + " " + m_firstName;
     }
     return m_lastName + " " + m_firstName + " " + m_middleName;
@@ -73,7 +73,7 @@ void UserSession::loadUserData()
 {
     if (m_userId <= 0) return;
 
-    auto userData = DatabaseManager::instance().getUserData(m_userId);
+    auto userData = NetworkClient::instance().getUserData(m_userId);
     if (!userData.isEmpty()) 
     {
         m_firstName = userData["first_name"].toString();
@@ -106,8 +106,8 @@ void UserSession::loadCards()
         return;
     }
 
-    DatabaseManager& db = DatabaseManager::instance();
-    m_cards = db.getUserCards(m_userId);
+    m_cards = NetworkClient::instance().getUserCards(m_userId);
+
     qDebug() << u"Загружено карт:" << m_cards.size();
     emit cardsChanged();
 }
@@ -120,10 +120,12 @@ void UserSession::refreshBalance()
         return;
     }
 
-    DatabaseManager& db = DatabaseManager::instance();
-    m_totalBalance = db.getTotalDebitBalance(m_userId);
-    m_dailyIncome = db.getDailyIncome(m_userId);
-    m_dailyExpense = db.getDailyExpense(m_userId);
+    auto& net = NetworkClient::instance();
+
+    m_totalBalance = net.getTotalDebitBalance(m_userId);
+    m_dailyIncome = net.getDailyIncome(m_userId);
+    m_dailyExpense = net.getDailyExpense(m_userId);
+
     qDebug() << u"Общий баланс:" << m_totalBalance
         << u"Доход за сутки:" << m_dailyIncome
         << u"Расход за сутки:" << m_dailyExpense;
@@ -186,7 +188,7 @@ void UserSession::setPrimaryAccount(int accountId)
 {
     if (m_userId <= 0) return;
 
-    if (DatabaseManager::instance().setPrimaryAccount(m_userId, accountId)) {
+    if (NetworkClient::instance().setPrimaryAccount(m_userId, accountId)) {
         m_primaryAccountId = accountId;
         emit primaryAccountChanged();
         qDebug() << u"Основной счёт изменён на:" << accountId;

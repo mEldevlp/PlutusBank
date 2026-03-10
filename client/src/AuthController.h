@@ -2,7 +2,7 @@
 
 #include <QObject>
 #include <QString>
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 
 class AuthController : public QObject
 {
@@ -32,5 +32,5 @@ signals:
     void loginFailed(const QString& error);
 
 private:
-    DatabaseManager& m_db;
+    NetworkClient& m_net;
 };

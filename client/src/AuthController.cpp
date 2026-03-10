@@ -5,9 +5,8 @@
 
 AuthController::AuthController(QObject* parent)
     : QObject(parent)
-    , m_db(DatabaseManager::instance())
-{
-}
+    , m_net(NetworkClient::instance())
+{}
 
 bool AuthController::registerUser(
     const QString& firstName,
@@ -23,7 +22,7 @@ bool AuthController::registerUser(
     qDebug() << u"Попытка регистрации:" << firstName << lastName << email;
 
     // Проверка подключения к БД
-    if (!m_db.isConnected()) 
+    if (!m_net.isConnected()) 
     {
         qWarning() << u"База данных не подключена";
         emit registrationFailed("База данных недоступна");
@@ -83,7 +82,7 @@ bool AuthController::registerUser(
     }
 
     // Регистрация в БД
-    if (m_db.registerUser(firstName, lastName, middleName, dateOfBirth,
+    if (m_net.registerUser(firstName, lastName, middleName, dateOfBirth,
         passportSeries, passportNumber, email, formattedPhone, password)) 
     {
         qDebug() << u"Регистрация успешна:" << firstName << lastName;
@@ -102,25 +101,25 @@ bool AuthController::loginUser(const QString& phone, const QString& password)
 {
     qDebug() << u"Попытка входа:" << phone;
 
-    if (!m_db.isConnected()) 
-    {
-        emit loginFailed("База данных недоступна");
-        return false;
-    }
+	if (!m_net.isConnected()) {
+		emit loginFailed("Сервер недоступен");
+		return false;
+	}
 
     QString formattedPhone = phone;
     if (!phone.startsWith("+7")) 
     {
         formattedPhone = "+7" + phone;
     }
-
-    int userId = m_db.loginUser(formattedPhone, password);
+	
+	QVariantMap userData;
+    int userId = m_net.loginUser(formattedPhone, password, userData);
 
     if (userId > 0) 
     {
         qDebug() << u"Вход успешен. User ID:" << userId;
 
-        QVariantMap userData = m_db.getUserData(userId);
+        //QVariantMap userData = m_net.getUserData(userId);
 
         UserSession::instance().setUserData(
             userId,

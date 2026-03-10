@@ -9,9 +9,8 @@
 
 CardController::CardController(QObject* parent)
     : QObject(parent)
-    , m_db(DatabaseManager::instance())
-{
-}
+    , m_net(NetworkClient::instance())
+{}
 
 QString CardController::generateCVC()
 {
@@ -48,7 +47,7 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
 
     emit creationProgress("Создание нового счёта...");
 
-    int accountId = m_db.createAccount(userId, cardType);
+    int accountId = m_net.createAccount(userId, cardType);
     if (accountId <= 0) 
     {
         emit cardCreationFailed("Не удалось создать счёт");
@@ -57,7 +56,7 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
 
     emit creationProgress("Генерация номера карты...");
 
-    QString cardNumber = m_db.generateCardNumber(cardBrand);
+    QString cardNumber = m_net.generateCardNumber(cardBrand);
     if (cardNumber.isEmpty()) 
     {
         emit cardCreationFailed("Не удалось сгенерировать номер карты");
@@ -74,7 +73,7 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
 
     emit creationProgress("Сохранение карты...");
 
-    bool success = m_db.createCard(
+    bool success = m_net.createCard(
         accountId,
         cardNumber,
         cardHolderName,
@@ -108,7 +107,7 @@ void CardController::createCard(const QString& cardType, const QString& cardBran
 
 void CardController::blockCard(int cardId)
 {
-    if (m_db.blockCard(cardId)) 
+    if (m_net.blockCard(cardId)) 
     {
         UserSession::instance().loadCards();
         emit cardBlocked();
@@ -121,10 +120,10 @@ void CardController::blockCard(int cardId)
 
 void CardController::freezeCard(int cardId)
 {
-    if (m_db.freezeCard(cardId)) 
+    if (m_net.freezeCard(cardId)) 
     {
         // После toggle читаем актуальное состояние
-        auto details = m_db.getCardFullDetails(cardId);
+        auto details = m_net.getCardFullDetails(cardId);
         bool isActive = details.value("is_active").toBool();
         UserSession::instance().loadCards();
         emit cardFrozen(!isActive);  // isFrozen = !is_active
@@ -137,7 +136,7 @@ void CardController::freezeCard(int cardId)
 
 QVariantMap CardController::getCardDetails(int cardId)
 {
-    return m_db.getCardFullDetails(cardId);
+    return m_net.getCardFullDetails(cardId);
 }
 
 void CardController::loadCardTransactions(int accountId)
@@ -145,7 +144,7 @@ void CardController::loadCardTransactions(int accountId)
     m_isLoading = true;
     emit loadingChanged();
 
-    m_cardTransactions = m_db.getCardTransactions(accountId, 50, 0);
+    m_cardTransactions = m_net.getCardTransactions(accountId, 50, 0);
 
     m_isLoading = false;
     emit loadingChanged();
@@ -178,13 +177,13 @@ bool CardController::topUpAccounts(const QVariantList& accountIds, double amount
         int accId = v.toInt();
 
         // Проверка заморозки/блокировки
-        if (m_db.isAccountFrozenOrBlocked(accId)) 
+        if (m_net.isAccountFrozenOrBlocked(accId)) 
         {
             ++frozenCount;
             continue;
         }
 
-        if (m_db.topUpAccount(accId, amount)) 
+        if (m_net.topUpAccount(accId, amount)) 
         {
             ++successCount;
         }

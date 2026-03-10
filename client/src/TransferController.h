@@ -4,7 +4,7 @@
 #include <QString>
 #include <QVariantList>
 #include <QVariantMap>
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 
 class TransferController : public QObject
 {
@@ -36,6 +36,6 @@ signals:
     void recipientNotFound();
 
 private:
-    DatabaseManager& m_db;
+    NetworkClient& m_net;
     QVariantList m_accounts;
 };

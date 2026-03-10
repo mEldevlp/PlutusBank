@@ -4,7 +4,7 @@
 #include <QString>
 #include <QVariantMap>
 #include <QVariantList>
-#include "DatabaseManager.h"
+#include "NetworkClient.h"
 
 class CardController : public QObject
 {
@@ -51,7 +51,7 @@ signals:
     void topUpFailed(const QString& error);
 
 private:
-    DatabaseManager& m_db;
+    NetworkClient& m_net;
     QVariantList m_cardTransactions;
     bool m_isLoading = false;
 

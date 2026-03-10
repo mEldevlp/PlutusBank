@@ -36,7 +36,6 @@ find_package(Qt6 REQUIRED COMPONENTS
 	Gui
 	Widgets
 	Network
-	Sql
 	Quick
 	QuickControls2
 )
@@ -54,7 +53,7 @@ endif()
 # Source Files
 set(SOURCE_FILES
 	src/main.cpp
-	src/DatabaseManager.cpp
+	src/NetworkClient.cpp
 	src/AuthController.cpp
 	src/UserSession.cpp
 	src/CardController.cpp
@@ -65,13 +64,14 @@ set(SOURCE_FILES
 
 # Header Files
 set(HEADER_FILES
-	src/DatabaseManager.h
+	src/NetworkClient.h
 	src/AuthController.h
 	src/UserSession.h
 	src/CardController.h
 	src/TransferController.h
 	src/HistoryController.h
 	src/LoanController.h
+	../shared/NetworkProtocol.h
 )
 
 # QML Files - UI
@@ -156,7 +156,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Gui
     Qt6::Widgets
     Qt6::Network
-    Qt6::Sql
     Qt6::Quick
     Qt6::QuickControls2
 )
@@ -278,6 +277,12 @@ function(_organize_targets)
     message(STATUS "Организация завершена")
 endfunction()
 
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/connection.ini"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/connection.ini"
+)
 
 # Информация
 message(STATUS "")
