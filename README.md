@@ -164,7 +164,6 @@ PlutusBank/
 └── shared/                         # Общий код клиента и сервера
     └── NetworkProtocol.h           # Формат фреймов, pack/tryExtract, makeSuccess/makeError
 ```
-```
 
 ---
 
