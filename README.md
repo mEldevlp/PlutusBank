@@ -114,31 +114,56 @@
 ## Архитектура
 
 ```
-
-(Основная)
-
 PlutusBank/
-├── src/                    # C++ — контроллеры и бизнес-логика
-│   ├── main.cpp
-│   ├── DatabaseManager.*   # Singleton, работа с PostgreSQL
-│   ├── AuthController.*    # Авторизация / регистрация
-│   ├── UserSession.*       # Сессия текущего пользователя
-│   ├── CardController.*    # Управление картами
-│   ├── TransferController.*# Переводы
-│   └── HistoryController.* # История транзакций
-├── qml/                    # QML — декларативный UI
-│   ├── Main.qml            # Корневой StackView-навигатор
-│   ├── Auth.qml            # Экран входа
-│   ├── Register.qml        # Экран регистрации
-│   ├── MainPage.qml        # Главная страница
-│   ├── CreateCardDialog.qml# Мастер выпуска карты
-│   ├── CardDetailPage.qml  # Детали карты
-│   ├── TransferPage.qml    # Переводы
-│   ├── TopUpPage.qml       # Пополнение
-│   ├── HistoryPage.qml     # История операций
-│   └── assets/             # Шрифты, логотип
-├── android/                # Android-манифест и конфигурация
-└── CMakeLists.txt          # Сборка проекта
+├── client/                         # Мобильное / десктопное приложение (Qt Quick)
+│   ├── src/                        # C++ — контроллеры и сетевой слой
+│   │   ├── main.cpp                # Точка входа, регистрация контроллеров в QML
+│   │   ├── NetworkClient.*         # Singleton, TCP-клиент (синхронные запросы к серверу)
+│   │   ├── AuthController.*        # Авторизация / регистрация
+│   │   ├── UserSession.*           # Singleton, сессия текущего пользователя
+│   │   ├── CardController.*        # Выпуск, заморозка, блокировка карт
+│   │   ├── TransferController.*    # Переводы между счетами / другим пользователям
+│   │   ├── HistoryController.*     # История транзакций
+│   │   └── LoanController.*        # Кредиты: каталог, калькулятор, оформление, платежи
+│   ├── qml/                        # QML — декларативный UI
+│   │   ├── Main.qml                # Корневой StackView-навигатор
+│   │   ├── Auth.qml                # Экран входа
+│   │   ├── Register.qml            # Экран регистрации
+│   │   ├── MainPage.qml            # Главная: баланс, карты, быстрые действия
+│   │   ├── CreateCardDialog.qml    # Мастер выпуска карты (3 шага)
+│   │   ├── CardDetailPage.qml      # Реквизиты и управление картой
+│   │   ├── TransferPage.qml        # Переводы
+│   │   ├── TopUpPage.qml           # Пополнение счёта
+│   │   ├── HistoryPage.qml         # История операций с группировкой по датам
+│   │   ├── SettingsPage.qml        # Настройки пользователя
+│   │   ├── LoanCatalogPage.qml     # Каталог кредитных продуктов
+│   │   ├── LoanCalculatorPage.qml  # Кредитный калькулятор (аннуитет)
+│   │   ├── MyLoansPage.qml         # Список активных кредитов
+│   │   ├── LoanSchedulePage.qml    # График платежей по кредиту
+│   │   ├── LoanHistoryPage.qml     # Закрытые кредиты
+│   │   ├── Theme.qml               # QML-singleton: цвета, градиенты
+│   │   └── assets/                 # Шрифт Manrope, логотип, SVG-иконки
+│   ├── android/                    # AndroidManifest, Gradle-конфигурация
+│   ├── connection.ini              # Адрес и порт сервера
+│   └── CMakeLists.txt              # Сборка клиента
+│
+├── server/                         # TCP-сервер (консольное Qt-приложение)
+│   ├── main.cpp                    # Точка входа, запуск BankServer + консоль управления
+│   ├── BankServer.*                # QTcpServer: приём подключений, kick/kickall
+│   ├── ClientSession.*             # Сессия клиента: буферизация, маршрутизация запросов
+│   ├── RequestHandler.*            # Роутер методов: auth, cards, transfers, loans …
+│   ├── DatabaseManager.*           # Singleton, все SQL-запросы к PostgreSQL
+│   ├── ConsoleHandler.*            # Чтение stdin в отдельном потоке (help, status, kick)
+│   ├── Logger.*                    # Логирование в консоль и файл (debug/info/warning/error)
+│   ├── ServerConfig.h              # Чтение settings.ini (порт, БД, логирование)
+│   ├── settings.ini                # Конфигурация сервера
+│   ├── database/
+│   │   └── backup.sql              # Полный дамп схемы PostgreSQL
+│   └── CMakeLists.txt              # Сборка сервера
+│
+└── shared/                         # Общий код клиента и сервера
+    └── NetworkProtocol.h           # Формат фреймов, pack/tryExtract, makeSuccess/makeError
+```
 ```
 
 ---
