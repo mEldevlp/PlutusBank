@@ -76,8 +76,8 @@ cd .\vcpkg\
 
 | | |
 |:---:|:---:|
-| ![Screenshot 1](qt1.jpg) | ![Screenshot 2](qt2.jpg) |
-| ![Screenshot 3](qt3.jpg) | |
+| ![Screenshot 1](https://i.imgur.com/HiDTQrp.jpeg) | ![Screenshot 2](https://i.imgur.com/KvP0bZX.jpeg) |
+| ![Screenshot 3](https://i.imgur.com/gXNMjzf.jpeg) | |
 
 </div>
 	

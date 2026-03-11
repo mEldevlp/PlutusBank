@@ -79,7 +79,7 @@ void HistoryController::loadTransactions()
         endInsertRows();
     }
 
-    m_hasMore = (batch.size() == PAGE_SIZE);
+    m_hasMore = (batch.size() == kPAGE_SIZE);
     m_offset = m_items.size();
 
     m_isLoading = false;
@@ -110,7 +110,7 @@ void HistoryController::loadMore()
         endInsertRows();
     }
 
-    m_hasMore = (batch.size() == PAGE_SIZE);
+    m_hasMore = (batch.size() == kPAGE_SIZE);
     m_offset = m_items.size();
 
     m_isLoading = false;

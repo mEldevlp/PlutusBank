@@ -64,12 +64,12 @@
 
 | | |
 |:---:|:---:|
-| ![Screenshot 1](preview/1.jpg) | ![Screenshot 2](preview/2.jpg) |
-| ![Screenshot 3](preview/3.jpg) | ![Screenshot 4](preview/4.jpg) |
-| ![Screenshot 5](preview/5.jpg) | ![Screenshot 6](preview/6.jpg) |
-| ![Screenshot 7](preview/7.jpg) | ![Screenshot 8](preview/8.jpg) |
-| ![Screenshot 9](preview/9.jpg) | ![Screenshot 10](preview/10.jpg) |
-| ![Screenshot 11](preview/11.jpg) | ![Screenshot 12](preview/12.jpg) |
+| ![Screenshot 1](https://i.imgur.com/orwFBAS.jpeg) | ![Screenshot 2](https://i.imgur.com/kY1cc8H.jpeg) |
+| ![Screenshot 3](https://i.imgur.com/gGVyjvX.jpeg) | ![Screenshot 4](https://i.imgur.com/IOOX8Im.jpeg) |
+| ![Screenshot 5](https://i.imgur.com/sDPFt6k.jpeg) | ![Screenshot 6](https://i.imgur.com/noaTAFH.jpeg) |
+| ![Screenshot 7](https://i.imgur.com/lC07suE.jpeg) | ![Screenshot 8](https://i.imgur.com/AjOdnHa.jpeg) |
+| ![Screenshot 9](https://i.imgur.com/R19xifM.jpeg) | ![Screenshot 10](https://i.imgur.com/KI1omhD.jpeg) |
+| ![Screenshot 11](https://i.imgur.com/rzwODus.jpeg) | ![Screenshot 12](https://i.imgur.com/dTxhoWn.jpeg) |
 
 И многое другое...
 </div>
