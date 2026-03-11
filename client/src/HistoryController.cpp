@@ -69,7 +69,7 @@ void HistoryController::loadTransactions()
     m_offset = 0;
     endResetModel();
 
-    auto batch = m_net.getTransactionHistory(userId, PAGE_SIZE, m_offset);
+    auto batch = m_net.getTransactionHistory(userId, kPAGE_SIZE, m_offset);
 
     if (!batch.isEmpty()) 
     {
@@ -97,7 +97,7 @@ void HistoryController::loadMore()
     m_isLoading = true;
     emit loadingChanged();
 
-    auto batch = m_net.getTransactionHistory(userId, PAGE_SIZE, m_offset);
+    auto batch = m_net.getTransactionHistory(userId, kPAGE_SIZE, m_offset);
 
     if (!batch.isEmpty()) 
     {

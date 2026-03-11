@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
     // Инициализация логера
     Logger::instance().init(cfg.logFile, cfg.logLevel, cfg.logTimestamps);
 
-    Logger::instance().info("=== PlutusBank Server v1.0.0 ===");
+    Logger::instance().info("=== PlutusBank Server ===");
     Logger::instance().info("Конфигурация: " + configPath);
 
     // Подключение к БД

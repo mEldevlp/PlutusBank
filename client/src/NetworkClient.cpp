@@ -63,8 +63,7 @@ bool NetworkClient::isConnected() const
     return m_socket && m_socket->state() == QAbstractSocket::ConnectedState;
 }
 
-// ---------- Главный метод: отправка запроса и ожидание ответа ----------
-
+// Главный метод: отправка запроса и ожидание ответа 
 QJsonObject NetworkClient::sendRequest(const QString& method, const QJsonObject& params)
 {
     if (!isConnected())
@@ -123,8 +122,7 @@ QJsonObject NetworkClient::sendRequest(const QString& method, const QJsonObject&
     return response;
 }
 
-// ---------- Auth ----------
-
+// Auth
 bool NetworkClient::registerUser(
     const QString& firstName, const QString& lastName,
     const QString& middleName, const QString& dateOfBirth,
@@ -164,8 +162,7 @@ int NetworkClient::loginUser(const QString& phone, const QString& password, QVar
     return userId;
 }
 
-// ---------- User data ----------
-
+// User data
 QVariantMap NetworkClient::getUserData(int userId)
 {
     auto resp = sendRequest("getUserData", {{"userId", userId}});
@@ -234,8 +231,7 @@ QVariantList NetworkClient::getTransactionHistory(int userId, int limit, int off
     return resp["result"].toObject()["history"].toArray().toVariantList();
 }
 
-// ---------- Cards ----------
-
+// Cards
 int NetworkClient::createAccount(int userId, const QString& accountType)
 {
     QJsonObject params;
@@ -321,8 +317,7 @@ bool NetworkClient::isAccountFrozenOrBlocked(int accountId)
     return resp["result"].toObject()["frozen"].toBool();
 }
 
-// ---------- Transfers ----------
-
+// Transfers
 bool NetworkClient::transferBetweenAccounts(int fromAccountId, int toAccountId, double amount)
 {
     QJsonObject params;
@@ -372,8 +367,7 @@ QVariantList NetworkClient::getUserDebitAccounts(int userId)
     return resp["result"].toObject()["accounts"].toArray().toVariantList();
 }
 
-// ---------- Top-up ----------
-
+// Top-up
 bool NetworkClient::topUpAccount(int accountId, double amount)
 {
     QJsonObject params;
@@ -385,8 +379,7 @@ bool NetworkClient::topUpAccount(int accountId, double amount)
     return resp["result"].toObject()["ok"].toBool();
 }
 
-// ---------- Primary account ----------
-
+// Primary account
 bool NetworkClient::setPrimaryAccount(int userId, int accountId)
 {
     QJsonObject params;
@@ -405,8 +398,7 @@ int NetworkClient::getPrimaryAccountId(int userId)
     return resp["result"].toObject()["accountId"].toInt();
 }
 
-// ---------- Loans ----------
-
+// Loans
 QVariantList NetworkClient::loadLoanProducts()
 {
     auto resp = sendRequest("loadLoanProducts", {});

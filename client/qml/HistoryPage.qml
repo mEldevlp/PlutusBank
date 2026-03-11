@@ -4,7 +4,6 @@ import QtQuick.Layouts
 
 Item {
     id: historyPage
-    //anchors.fill: parent
 
     signal backToMain()
 

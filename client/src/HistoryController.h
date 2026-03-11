@@ -46,7 +46,7 @@ signals:
     void hasMoreChanged();
 
 private:
-    static constexpr int PAGE_SIZE = 30;
+    static constexpr int kPAGE_SIZE = 30;
 
     NetworkClient& m_net;
     QList<QVariantMap> m_items;

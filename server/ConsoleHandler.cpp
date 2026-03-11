@@ -4,8 +4,7 @@
 
 ConsoleHandler::ConsoleHandler(QObject* parent)
     : QThread(parent)
-{
-}
+{}
 
 void ConsoleHandler::stop()
 {

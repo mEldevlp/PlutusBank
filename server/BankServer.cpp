@@ -8,8 +8,7 @@
 BankServer::BankServer(QObject* parent)
     : QTcpServer(parent)
     , m_handler(new RequestHandler(this))
-{
-}
+{}
 
 BankServer::~BankServer()
 {
@@ -71,6 +70,7 @@ void BankServer::kickClient(const QString& tag)
             return;
         }
     }
+
     Logger::instance().warning("Клиент не найден: " + tag);
 }
 

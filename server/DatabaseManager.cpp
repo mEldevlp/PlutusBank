@@ -36,15 +36,12 @@ bool DatabaseManager::connect()
     m_db.setUserName(m_user);
     m_db.setPassword(m_password);
 
-    // qDebug() << "Подключение к" << m_host << ":" << m_port << "/" << m_dbName;
-
-    Logger::instance().info("Подключение к " + m_host +
-        ":" + QString::number(m_port) + "/" + m_dbName);
+    Logger::instance().info(QString("Подключение к %1 : %2 / %3").arg(m_host).arg(m_port).arg(m_dbName));
 
     if (!m_db.open())
     {
-        qWarning() << "Ошибка подключения к БД:" << m_db.lastError().text();
-        emit error("Не удалось подключиться к базе данных");
+        qWarning() << "" << m_db.lastError().text();
+        Logger::instance().warning("Ошибка подключения к БД: ");
         return false;
     }
 
@@ -59,7 +56,7 @@ void DatabaseManager::disconnect()
     {
         m_db.close();
         m_connected = false;
-        qDebug() << u"Отключено от PostgreSQL";
+        Logger::instance().info("Отключено от PostgreSQL");
         emit disconnected();
     }
 }
@@ -116,12 +113,14 @@ bool DatabaseManager::registerUser(
 
     if (!query.exec())
     {
-        qWarning() << u"Ошибка регистрации:" << query.lastError().text();
+        Logger::instance().warning(QString("Ошибка регистрации:").arg(query.lastError().text());
         emit error("Ошибка регистрации пользователя");
         return false;
     }
 
-    qDebug() << u"Пользователь зарегистрирован:" << firstName << lastName << email;
+    Logger::instance().info(
+        QString("Пользователь зарегистрирован: %1 %2 %3").arg(firstName).arg(lastName).arg(email));
+
     return true;
 }
 
@@ -134,7 +133,7 @@ int DatabaseManager::loginUser(const QString& phone, const QString& password)
     if (!query.exec() || !query.next())
     {
         emit error("Неверный номер телефона или пароль");
-        return -1;  // -1 означает ошибку
+        return -1;
     }
 
     int userId = query.value(0).toInt();
@@ -237,11 +236,13 @@ QVariantList DatabaseManager::getUserCards(int userId)
 
             cards.append(card);
         }
-        qDebug() << "Загружено карт:" << cards.size();
+        
+        Logger::instance().info(
+            QString("Загружено карт: %1").arg(cards.size()));
     }
     else
     {
-        qWarning() << "Ошибка загрузки карт:" << query.lastError().text();
+        Logger::instance().warning("Ошибка загрузки карт: %1", query.lastError().text());
     }
 
     return cards;
@@ -261,11 +262,13 @@ double DatabaseManager::getTotalDebitBalance(int userId)
     if (query.exec() && query.next())
     {
         double totalBalance = query.value(0).toDouble();
-        qDebug() << u"Общий баланс дебетовых счетов:" << totalBalance;
+        Logger::instance().info(QString("Общий баланс дебетовых счетов: %1").arg(totalBalance));
         return totalBalance;
     }
 
-    qWarning() << u"Ошибка получения баланса:" << query.lastError().text();
+    Logger::instance().warning(
+        QString("Ошибка получения баланса: %1").arg(query.lastError().text()));
+
     return 0.0;
 }
 
@@ -296,7 +299,8 @@ double DatabaseManager::getAccountBalance(int accountId)
     query.prepare("SELECT balance FROM accounts WHERE id = :accountId");
     query.bindValue(":accountId", accountId);
 
-    if (query.exec() && query.next()) {
+    if (query.exec() && query.next())
+    {
         return query.value(0).toDouble();
     }
 
@@ -324,7 +328,9 @@ double DatabaseManager::getDailyIncome(int userId)
         return query.value(0).toDouble();
     }
 
-    qWarning() << u"Ошибка получения дохода за сутки:" << query.lastError().text();
+    Logger::instance().warning(
+        QString("Ошибка получения дохода за сутки: %1").arg(query.lastError().text());
+
     return 0.0;
 }
 
@@ -349,7 +355,8 @@ double DatabaseManager::getDailyExpense(int userId)
         return query.value(0).toDouble();
     }
 
-    qWarning() << u"Ошибка получения расхода за сутки:" << query.lastError().text();
+    Logger::instance().info(QString("Ошибка получения расхода за сутки:").arg(query.lastError().text()));
+
     return 0.0;
 }
 
@@ -426,7 +433,7 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
 
             if (isOutgoing && isIncoming)
             {
-                item["direction"] = "self";   // перевод между своими счетами
+                item["direction"] = "self";   // между своими счетами
             }
             else if (isOutgoing)
             {
@@ -448,11 +455,13 @@ QVariantList DatabaseManager::getTransactionHistory(int userId, int limit, int o
 
             history.append(item);
         }
-        qDebug() << u"Загружено транзакций:" << history.size();
+
+        Logger::instance().info(QString("Загружено транзакций: %1").arg(history.size()));
     }
     else
     {
-        qWarning() << u"Ошибка загрузки истории:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка загрузки истории:").arg(query.lastError().text()));
     }
 
     return history;
@@ -463,7 +472,7 @@ int DatabaseManager::createAccount(int userId, const QString& accountType)
     QSqlQuery query(m_db);
 
     // Генерируем номер счёта (20 цифр)
-    QString accountNumber = "40817810";  // Префикс для физлиц РФ
+    QString accountNumber = "40817810";  // Префикс для РФ
     for (int i = 0; i < 12; i++)
     {
         accountNumber += QString::number(QRandomGenerator::global()->bounded(10));
@@ -489,12 +498,16 @@ int DatabaseManager::createAccount(int userId, const QString& accountType)
 
     if (!query.exec() || !query.next())
     {
-        qWarning() << u"Ошибка создания счёта:" << query.lastError().text();
+    
+        Logger::instance().warning(
+            QString("Ошибка создания счёта: %1").arg(query.lastError().text()));
         return -1;
     }
 
     int accountId = query.value(0).toInt();
-    qDebug() << u"Счёт создан:" << accountNumber << "ID:" << accountId;
+
+    Logger::instance().info(
+        QString("Счёт создан: %1 ID: %2").arg(accountNumber).arg(accountId)));
 
     return accountId;
 }
@@ -509,13 +522,15 @@ QString DatabaseManager::generateCardNumber(const QString& brand)
 
     if (!query.exec() || !query.next())
     {
-        qWarning() << u"Ошибка генерации номера карты:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка генерации номера карты: %1").arg(query.lastError().text());
+
         return QString();
     }
 
     QString cardNumber = query.value(0).toString();
-    qDebug() << u"Сгенерирован номер карты:" << cardNumber;
-
+    Logger::instance().info(QString("Сгенерирован номер карты: %1").arg(cardNumber));
+    
     return cardNumber;
 }
 
@@ -554,11 +569,12 @@ bool DatabaseManager::createCard(
 
     if (!query.exec())
     {
-        qWarning() << u"Ошибка создания карты:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка создания карты: %1").arg(query.lastError().text()));
         return false;
     }
 
-    qDebug() << u"Карта создана в БД";
+    Logger::instance().info("Карта создана в БД");
     return true;
 }
 
@@ -613,7 +629,10 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     if (!query.exec())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка списания:" << query.lastError().text();
+
+        Logger::instance().warning(
+            QString("Ошибка списания: %1").arg(query.lastError().text()));
+
         return false;
     }
 
@@ -625,7 +644,10 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     if (!query.exec())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка зачисления:" << query.lastError().text();
+
+        Logger::instance().warning(
+            QString("Ошибка зачисления: %1").arg(query.lastError().text()));
+
         return false;
     }
 
@@ -654,7 +676,9 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     if (!query.exec())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка записи транзакции:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка записи транзакции: %1").arg(query.lastError().text()));
+
         return false;
     }
 
@@ -664,8 +688,10 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
         qWarning() << u"Ошибка коммита:" << m_db.lastError().text();
         return false;
     }
-
-    qDebug() << u"Перевод выполнен:" << amount << u"со счёта" << fromAccountId << u"на счёт" << toAccountId;
+    
+    Logger::instance().info(
+        QString("Перевод выполнен: %1 со счёта %2 на счёт %3").arg(amount).arg(fromAccountId).arg(toAccountId);
+    
     return true;
 }
 
@@ -776,11 +802,12 @@ bool DatabaseManager::blockCard(int cardId)
 
     if (!query.exec())
     {
-        qWarning() << u"Ошибка блокировки карты:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка блокировки карты: %1").arg(query.lastError().text()));
         return false;
     }
 
-    qDebug() << u"Карта заблокирована. ID:" << cardId;
+    Logger::instance().info(QString("Карта заблокирована. ID: %1").arg(cardId));
     return true;
 }
 
@@ -792,12 +819,17 @@ bool DatabaseManager::freezeCard(int cardId)
 
     if (!query.exec() || !query.next())
     {
-        qWarning() << u"Ошибка заморозки карты:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка заморозки карты: %1").arg(query.lastError().text()));
+
         return false;
     }
 
     bool newState = query.value(0).toBool();
-    qDebug() << u"Карта" << (newState ? "разморожена" : "заморожена") << "ID:" << cardId;
+    
+    Logger::instance().info(
+        QString("Карта %1 ID: %2").arg(newState ? "разморожена" : "заморожена").arg(cardId));
+
     return true;
 }
 
@@ -809,7 +841,8 @@ bool DatabaseManager::unfreezeCard(int cardId)
 
     if (!query.exec())
     {
-        qWarning() << u"Ошибка разморозки карты:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка разморозки карты: %1").arg(query.lastError().text()));
         return false;
     }
 
@@ -957,7 +990,8 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     if (!query.exec())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка зачисления:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка зачисления:").arg(query.lastError().text()));
         return false;
     }
 
@@ -973,7 +1007,9 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     if (!query.exec())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка записи транзакции:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка записи транзакции:").arg(query.lastError().text()));
+
         return false;
     }
 
@@ -983,7 +1019,9 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
         return false;
     }
 
-    qDebug() << u"Пополнение:" << amount << u"на счёт" << accountId;
+    Logger::instance().info(
+        QString("Пополнение: %1 на счёт %2").arg(amount).arg(accountId));
+
     return true;
 }
 
@@ -999,10 +1037,12 @@ bool DatabaseManager::setPrimaryAccount(int userId, int accountId)
 
     if (!query.exec())
     {
-        qWarning() << u"Ошибка установки основного счёта:" << query.lastError().text();
+        Logger::instance().warning(
+            QString("Ошибка установки основного счёта: %1").arg(query.lastError().text()));
         emit error("Не удалось назначить основной счёт");
         return false;
     }
+
     return true;
 }
 

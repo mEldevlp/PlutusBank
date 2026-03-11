@@ -31,9 +31,8 @@ int main(int argc, char* argv[])
     QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
 
-    QSettings connCfg(
-        QDir(QCoreApplication::applicationDirPath()).filePath("connection.ini"),
-        QSettings::IniFormat);
+    auto connect_ini = QDir(QCoreApplication::applicationDirPath()).filePath("connection.ini");
+    QSettings connCfg(connect_ini, QSettings::IniFormat);
     QString serverHost = connCfg.value("Server/host", "127.0.0.1").toString();
     quint16 serverPort = connCfg.value("Server/port", 9500).toUInt();
 

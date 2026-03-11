@@ -9,7 +9,7 @@ set(CMAKE_AUTOMOC ON)
 # Qt6
 find_package(Qt6 REQUIRED COMPONENTS Core Network Sql)
 
-# OpenSSL (опционально)
+# OpenSSLs
 find_package(OpenSSL)
 if(OpenSSL_FOUND)
     message(STATUS "OpenSSL найден: ${OPENSSL_VERSION}")
