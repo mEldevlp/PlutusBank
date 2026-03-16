@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(PlutusBankServer VERSION 1.0.0 LANGUAGES CXX)
+project(Server VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -16,23 +16,23 @@ if(OpenSSL_FOUND)
 endif()
 
 set(SOURCES
-    main.cpp
-    DatabaseManager.cpp
-    RequestHandler.cpp
-    BankServer.cpp
-    ClientSession.cpp
-    ConsoleHandler.cpp
-    Logger.cpp
+    src/main.cpp
+    src/DatabaseManager.cpp
+    src/RequestHandler.cpp
+    src/BankServer.cpp
+    src/ClientSession.cpp
+    src/ConsoleHandler.cpp
+    src/Logger.cpp
 )
 
 set(HEADERS
-    DatabaseManager.h
-    RequestHandler.h
-    BankServer.h
-    ClientSession.h
-    ConsoleHandler.h
-    Logger.h
-    ServerConfig.h
+    src/DatabaseManager.h
+    src/RequestHandler.h
+    src/BankServer.h
+    src/ClientSession.h
+    src/ConsoleHandler.h
+    src/Logger.h
+    src/ServerConfig.h
     ../shared/NetworkProtocol.h
 )
 
@@ -90,7 +90,7 @@ if(WIN32)
 endif()
 
 message(STATUS "")
-message(STATUS "=== PlutusBankServer Configuration ===")
+message(STATUS "=== Server Configuration ===")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Qt: ${Qt6_VERSION}")
 message(STATUS "Build: ${CMAKE_BUILD_TYPE}")

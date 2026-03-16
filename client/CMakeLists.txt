@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(PlutusBank VERSION 1.0.0 LANGUAGES CXX)
+project(Client VERSION 1.0.0 LANGUAGES CXX)
 
 # C++ стандарт
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Qt настройки
@@ -134,7 +134,7 @@ set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 # QML модуль
 qt_add_qml_module(${PROJECT_NAME}
-    URI PlutusBank
+    URI Client
     VERSION 1.0
     QML_FILES ${QML_UI_FILES}
     RESOURCES ${QML_ASSET_FILES}
@@ -227,56 +227,9 @@ endif()
 # Финализация
 qt_finalize_target(${PROJECT_NAME})
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT PlutusBank)
-
-# Включаем папки
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# Отложенная установка папок (выполняется в конце генерации)
-cmake_language(DEFER CALL _organize_targets)
-
-function(_organize_targets)
-    message(STATUS "Организация проектов в папки...")
-    
-    # Функция для безопасной установки папки
-    function(set_folder target_name folder_name)
-        if(TARGET ${target_name})
-            set_target_properties(${target_name} PROPERTIES FOLDER "${folder_name}")
-            message(STATUS "  ${target_name} → ${folder_name}")
-        endif()
-    endfunction()
-    
-    # CMake служебные
-    set_folder(ALL_BUILD "CMakePredefinedTargets")
-    set_folder(ZERO_CHECK "CMakePredefinedTargets")
-    
-    # Qt автогенерация - Generated
-    set_folder(${PROJECT_NAME}_autogen "Generated")
-    set_folder(${PROJECT_NAME}_automoc_json_extraction "Generated")
-    set_folder(${PROJECT_NAME}_qmltyperegistration "Generated")
-    set_folder(${PROJECT_NAME}_qmlimportscan "Generated")
-    set_folder(${PROJECT_NAME}_copy_qml "Generated")
-    set_folder(${PROJECT_NAME}_copy_res "Generated")
-    
-    # QML Lint - Generated/QMLLint
-    set_folder(${PROJECT_NAME}_qmllint "Generated/QMLLint")
-    set_folder(${PROJECT_NAME}_qmllint_json "Generated/QMLLint")
-    set_folder(${PROJECT_NAME}_qmllint_module "Generated/QMLLint")
-    set_folder(all_qmllint "Generated/QMLLint")
-    set_folder(all_qmllint_json "Generated/QMLLint")
-    set_folder(all_qmllint_module "Generated/QMLLint")
-    
-    # AOT - Generated/AOT
-    set_folder(module_${PROJECT_NAME}_aotstats_target "Generated/AOT")
-    set_folder(all_aotstats "Generated/AOT")
-    
-    # Прочие инструменты → Generated/Tools
-    set_folder(generate_qmlls_build_ini_file "Generated/Tools")
-    set_folder(all_qmltyperegistrations "Generated/Tools")
-    
-    message(STATUS "Организация завершена")
-endfunction()
-
+if(TARGET ${PROJECT_NAME}_autogen)
+    set_target_properties(${PROJECT_NAME}_autogen PROPERTIES FOLDER "_Infrastructure/Generated")
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -286,7 +239,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Информация
 message(STATUS "")
-message(STATUS "=== PlutusBank Configuration ===")
+message(STATUS "=== Client Configuration ===")
 message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Qt: ${Qt6_VERSION}")
 message(STATUS "Build: ${CMAKE_BUILD_TYPE}")
