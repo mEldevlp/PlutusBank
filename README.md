@@ -167,7 +167,7 @@ PlutusBank/
 
 **Зависимости:** Qt 6.10, CMake 3.21+, PostgreSQL 18
 
-[Гайд по установке](guide/GUIDE.md)
+[Гайд по установке](GUIDE.md)
 
 ---
 
