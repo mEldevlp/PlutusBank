@@ -196,12 +196,15 @@ int DatabaseManager::loginUser(const QString& phone, const QString& password)
 QVariantMap DatabaseManager::getUserData(int userId)
 {
     QVariantMap userData;
+
+    m_db.exec("DEALLOCATE ALL");
+
     QSqlQuery query(m_db);
+    query.setForwardOnly(true);
 
     query.prepare(
         "SELECT first_name, last_name, middle_name, email, phone, "
-        "passport_series, passport_number, date_of_birth, "
-        "COALESCE(address, ''), COALESCE(primary_account_id, -1) "
+        "passport_series, passport_number, date_of_birth "
         "FROM users WHERE id = :userId"
     );
     query.bindValue(":userId", userId);
@@ -224,9 +227,10 @@ QVariantMap DatabaseManager::getUserData(int userId)
         qWarning() << u"Ошибка загрузки данных пользователя:" << query.lastError().text();
     }
 
+    query.clear();
+
     return userData;
 }
-
 int DatabaseManager::getUserAccountId(int userId)
 {
     QSqlQuery query(m_db);

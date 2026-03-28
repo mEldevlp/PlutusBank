@@ -117,11 +117,9 @@ bool AuthController::loginUser(const QString& phone, const QString& password)
 
     qDebug() << "CLIENT userData:" << userData;  // test
 
-    if (userId > 0) 
+    if (userId > 0)
     {
         qDebug() << u"Вход успешен. User ID:" << userId;
-
-        //QVariantMap userData = m_net.getUserData(userId);
 
         UserSession::instance().setUserData(
             userId,
@@ -131,6 +129,9 @@ bool AuthController::loginUser(const QString& phone, const QString& password)
             userData["email"].toString(),
             userData["phone"].toString()
         );
+
+        // Догружаем паспорт, адрес, дату рождения, основной счёт
+        UserSession::instance().loadUserData();
 
         emit loginSuccess();
         return true;

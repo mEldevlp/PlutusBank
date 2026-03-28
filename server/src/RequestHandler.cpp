@@ -39,8 +39,7 @@ QJsonObject RequestHandler::handle(const QJsonObject& request, const QString& cl
     }
 }
 
-// ---------- Конвертеры ----------
-
+// касты
 QJsonArray RequestHandler::variantListToJson(const QVariantList& list)
 {
     return QJsonArray::fromVariantList(list);
@@ -51,12 +50,10 @@ QJsonObject RequestHandler::variantMapToJson(const QVariantMap& map)
     return QJsonObject::fromVariantMap(map);
 }
 
-// ---------- Регистрация всех обработчиков ----------
-
+// Регистрация всех обработчиков
 void RequestHandler::registerHandlers()
 {
-    // ---- Auth ----
-
+    // Auth
     m_handlers["registerUser"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
     {
         bool ok = m_db.registerUser(
@@ -78,19 +75,19 @@ void RequestHandler::registerHandlers()
     };
 
     m_handlers["loginUser"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
+    {
+        int userId = m_db.loginUser(p["phone"].toString(), p["password"].toString());
+        if (userId > 0)
         {
-            QVariantMap userData;
-            int userId = m_db.loginUser(p["phone"].toString(), p["password"].toString());
-            if (userId > 0)
-            {
-                Logger::instance().userAction(tag, userId, "Вход в систему");
-                return {
-                    {"userId", userId},
-                    {"userData", variantMapToJson(userData)}
-                };
-            }
-            return { {"userId", 0} };
-        };
+            Logger::instance().userAction(tag, userId, "Вход в систему");
+            QVariantMap userData = m_db.getUserData(userId);
+            return {
+                {"userId", userId},
+                {"userData", variantMapToJson(userData)}
+            };
+        }
+        return { {"userId", 0} };
+    };
 
     // ---- User data ----
 
