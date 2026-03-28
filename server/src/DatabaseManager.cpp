@@ -68,12 +68,30 @@ bool DatabaseManager::isConnected() const
 
 QString DatabaseManager::hashPassword(const QString& password)
 {
-    return QString(QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex());
+    QByteArray salt(16, Qt::Uninitialized);
+    for (int i = 0; i < salt.size(); ++i)
+        salt[i] = static_cast<char>(QRandomGenerator::global()->bounded(256));
+
+    QByteArray salted = salt + password.toUtf8();
+    QByteArray hash = QCryptographicHash::hash(salted, QCryptographicHash::Sha256);
+
+    return salt.toHex() + ':' + hash.toHex();
 }
 
-bool DatabaseManager::verifyPassword(const QString& password, const QString& hash)
+bool DatabaseManager::verifyPassword(const QString& password, const QString& stored)
 {
-    return hashPassword(password) == hash;
+    auto parts = stored.split(':');
+
+    if (parts.size() == 2) {
+        QByteArray salt = QByteArray::fromHex(parts[0].toUtf8());
+        QByteArray expectedHash = QByteArray::fromHex(parts[1].toUtf8());
+        QByteArray actual = QCryptographicHash::hash(salt + password.toUtf8(), QCryptographicHash::Sha256);
+        return actual == expectedHash;
+    }
+
+    // голый SHA-256 без соли
+    QByteArray oldHash = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256).toHex();
+    return stored == QString::fromLatin1(oldHash);
 }
 
 bool DatabaseManager::registerUser(
@@ -113,7 +131,7 @@ bool DatabaseManager::registerUser(
 
     if (!query.exec())
     {
-        Logger::instance().warning(QString("Ошибка регистрации:").arg(query.lastError().text());
+        Logger::instance().warning(QString("Ошибка регистрации:").arg(query.lastError().text()));
         emit error("Ошибка регистрации пользователя");
         return false;
     }
@@ -126,23 +144,49 @@ bool DatabaseManager::registerUser(
 
 int DatabaseManager::loginUser(const QString& phone, const QString& password)
 {
-    QSqlQuery query(m_db);
-    query.prepare("SELECT id, password_hash FROM users WHERE phone = :phone");
-    query.bindValue(":phone", phone);
+    // Принудительно сбрасываем все подготовленные операции
+    m_db.exec("DEALLOCATE ALL");
 
-    if (!query.exec() || !query.next())
+    int userId = -1;
+    QString storedHash;
+
     {
+        QSqlQuery query(m_db);
+        query.setForwardOnly(true);
+        query.prepare("SELECT id, password_hash FROM users WHERE phone = :phone");
+        query.bindValue(":phone", phone);
+
+        if (!query.exec() || !query.next())
+        {
+            emit error("Неверный номер телефона или пароль");
+            return -1;
+        }
+
+        userId = query.value(0).toInt();
+        storedHash = query.value(1).toString();
+        query.clear();
+    }
+
+    qDebug() << "LOGIN DEBUG: userId=" << userId << "storedHash=" << storedHash.left(20) << "...";
+
+    if (!verifyPassword(password, storedHash))
+    {
+        qDebug() << "LOGIN DEBUG: verifyPassword FAILED";
         emit error("Неверный номер телефона или пароль");
         return -1;
     }
 
-    int userId = query.value(0).toInt();
-    QString storedHash = query.value(1).toString();
-
-    if (!verifyPassword(password, storedHash))
+    // миграция старого хэша
+    if (!storedHash.contains(':'))
     {
-        emit error("Неверный номер телефона или пароль");
-        return -1;
+        m_db.exec("DEALLOCATE ALL");
+        QSqlQuery update(m_db);
+        update.setForwardOnly(true);
+        update.prepare("UPDATE users SET password_hash = :newHash WHERE id = :id");
+        update.bindValue(":newHash", hashPassword(password));
+        update.bindValue(":id", userId);
+        update.exec();
+        update.clear();
     }
 
     qDebug() << u"Успешный вход. User ID:" << userId;
@@ -329,7 +373,7 @@ double DatabaseManager::getDailyIncome(int userId)
     }
 
     Logger::instance().warning(
-        QString("Ошибка получения дохода за сутки: %1").arg(query.lastError().text());
+        QString("Ошибка получения дохода за сутки: %1").arg(query.lastError().text()));
 
     return 0.0;
 }
@@ -507,7 +551,7 @@ int DatabaseManager::createAccount(int userId, const QString& accountType)
     int accountId = query.value(0).toInt();
 
     Logger::instance().info(
-        QString("Счёт создан: %1 ID: %2").arg(accountNumber).arg(accountId)));
+        QString("Счёт создан: %1 ID: %2").arg(accountNumber).arg(accountId));
 
     return accountId;
 }
@@ -523,7 +567,7 @@ QString DatabaseManager::generateCardNumber(const QString& brand)
     if (!query.exec() || !query.next())
     {
         Logger::instance().warning(
-            QString("Ошибка генерации номера карты: %1").arg(query.lastError().text());
+            QString("Ошибка генерации номера карты: %1").arg(query.lastError().text()));
 
         return QString();
     }
@@ -690,7 +734,7 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     }
     
     Logger::instance().info(
-        QString("Перевод выполнен: %1 со счёта %2 на счёт %3").arg(amount).arg(fromAccountId).arg(toAccountId);
+        QString("Перевод выполнен: %1 со счёта %2 на счёт %3").arg(amount).arg(fromAccountId).arg(toAccountId));
     
     return true;
 }

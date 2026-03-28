@@ -2,23 +2,17 @@ cmake_minimum_required(VERSION 3.21)
 
 project(Client VERSION 1.0.0 LANGUAGES CXX)
 
-# C++ стандарт
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Qt настройки
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
-
-# Qt policies для QML
 if(COMMAND qt_policy)
     qt_policy(SET QTP0001 NEW)
     qt_policy(SET QTP0002 NEW)
     qt_policy(SET QTP0004 NEW)
 endif()
 
-# Для Android
 if(ANDROID)
 	if(NOT DEFINED QT_HOST_PATH)
 		message(FATAL_ERROR "QT_HOST_PATH must be set for Android builds")
@@ -134,11 +128,32 @@ set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 # QML модуль
 qt_add_qml_module(${PROJECT_NAME}
-    URI Client
+    URI PlutusBank
     VERSION 1.0
     QML_FILES ${QML_UI_FILES}
     RESOURCES ${QML_ASSET_FILES}
     RESOURCE_PREFIX /qt/qml
+)
+
+# Версионирование
+execute_process(
+    COMMAND git rev-list --count HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE BUILD_NUMBER
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT BUILD_NUMBER)
+    set(BUILD_NUMBER 0)
+endif()
+
+set(APP_VERSION_FULL "${PROJECT_VERSION}.${BUILD_NUMBER}")
+
+math(EXPR VERSION_CODE
+    "${PROJECT_VERSION_MAJOR} * 1000000 + \
+     ${PROJECT_VERSION_MINOR} * 10000 + \
+     ${PROJECT_VERSION_PATCH} * 100 + \
+     ${BUILD_NUMBER}"
 )
 
 # Android настройки
@@ -147,6 +162,8 @@ if(ANDROID)
         QT_ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android"
         QT_ANDROID_MIN_SDK_VERSION 34
         QT_ANDROID_TARGET_SDK_VERSION 36
+        QT_ANDROID_VERSION_CODE ${VERSION_CODE}
+        QT_ANDROID_VERSION_NAME "${APP_VERSION_FULL}"
     )
 endif()
 
@@ -177,7 +194,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Определения
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     QT_QML_DEBUG
-    APP_VERSION="${PROJECT_VERSION}"
+    APP_VERSION="${APP_VERSION_FULL}"
+)
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    APP_VERSION="${APP_VERSION_FULL}"
+    APP_VERSION_MAJOR=${PROJECT_VERSION_MAJOR}
+    APP_VERSION_MINOR=${PROJECT_VERSION_MINOR}
+    APP_VERSION_PATCH=${PROJECT_VERSION_PATCH}
+    APP_BUILD_NUMBER=${BUILD_NUMBER}
 )
 
 # Копирование QML и ресурсов в папку сборки (Debug/Release)
@@ -197,7 +222,7 @@ if(WIN32 AND NOT ANDROID)
     if(WINDEPLOYQT_EXECUTABLE)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
             COMMAND "${WINDEPLOYQT_EXECUTABLE}"
-                --qmldir "${CMAKE_SOURCE_DIR}/qml"
+                --qmldir "${CMAKE_CURRENT_SOURCE_DIR}/qml"
                 --no-translations
                 "$<TARGET_FILE:${PROJECT_NAME}>"
             COMMENT "Deploying Qt libraries..."

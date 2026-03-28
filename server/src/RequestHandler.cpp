@@ -78,19 +78,19 @@ void RequestHandler::registerHandlers()
     };
 
     m_handlers["loginUser"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
-    {
-        int userId = m_db.loginUser(p["phone"].toString(), p["password"].toString());
-        if (userId > 0)
         {
-            Logger::instance().userAction(tag, userId, "Вход в систему");
-            QVariantMap data = m_db.getUserData(userId);
-            return {
-                {"userId", userId},
-                {"userData", variantMapToJson(data)}
-            };
-        }
-        return {{"userId", 0}};
-    };
+            QVariantMap userData;
+            int userId = m_db.loginUser(p["phone"].toString(), p["password"].toString());
+            if (userId > 0)
+            {
+                Logger::instance().userAction(tag, userId, "Вход в систему");
+                return {
+                    {"userId", userId},
+                    {"userData", variantMapToJson(userData)}
+                };
+            }
+            return { {"userId", 0} };
+        };
 
     // ---- User data ----
 

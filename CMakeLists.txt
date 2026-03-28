@@ -1,24 +1,31 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(PlutusBank VERSION 1.0.0 LANGUAGES CXX)
+project(PlutusBank VERSION 0.9.0 LANGUAGES CXX)
 
-# ── Включаем папки в Solution Explorer ────────────
+# build-номер
+execute_process(
+    COMMAND git rev-list --count HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE BUILD_NUMBER
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(NOT BUILD_NUMBER)
+    set(BUILD_NUMBER 0)
+endif()
+
+set(APP_VERSION_FULL "${PROJECT_VERSION}.${BUILD_NUMBER}")
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
-# ── CMakePredefinedTargets → _Infrastructure ──────
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_Infrastructure/CMake")
 
-# ── Autogen таргеты (moc, uic, rcc) → _Infrastructure ──
 set(CMAKE_AUTOGEN_TARGETS_FOLDER "_Infrastructure/Generated")
-
-# ── Опции сборки ──────────────────────────────────
 option(BUILD_CLIENT "Build PlutusBank Client" ON)
 option(BUILD_SERVER "Build PlutusBank Server"  ON)
 
-# ── Общая папка shared ────────────────────────────
 set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shared")
 
-# ── Подпроекты ────────────────────────────────────
+
 if(BUILD_CLIENT)
     add_subdirectory(client)
 endif()
@@ -27,7 +34,6 @@ if(BUILD_SERVER)
     add_subdirectory(server)
 endif()
 
-# ── Убираем мусор из Solution Explorer ────────────
 cmake_language(DEFER CALL _cleanup_solution)
 
 function(_cleanup_solution)
@@ -61,7 +67,7 @@ function(_cleanup_solution)
     _set_folder(generate_qmlls_build_ini_file  "_Infrastructure/Tools")
 endfunction()
 
-# ── Информация ────────────────────────────────────
+# Информация
 message(STATUS "")
 message(STATUS "=== PlutusBank Root ===")
 message(STATUS "Client : ${BUILD_CLIENT}")

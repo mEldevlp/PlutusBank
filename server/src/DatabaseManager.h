@@ -30,8 +30,7 @@ public:
 
     QSqlDatabase& database() { return m_db; }
 
-    // --- API (без изменений) ---
-
+    // API
     bool registerUser(
         const QString& firstName,
         const QString& lastName,

@@ -115,6 +115,8 @@ bool AuthController::loginUser(const QString& phone, const QString& password)
 	QVariantMap userData;
     int userId = m_net.loginUser(formattedPhone, password, userData);
 
+    qDebug() << "CLIENT userData:" << userData;  // test
+
     if (userId > 0) 
     {
         qDebug() << u"Вход успешен. User ID:" << userId;
