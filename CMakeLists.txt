@@ -34,6 +34,29 @@ if(BUILD_SERVER)
     add_subdirectory(server)
 endif()
 
+
+# ---------- Auto-start server before client (works on F5) ----------
+if(BUILD_CLIENT AND BUILD_SERVER AND WIN32)
+    add_custom_target(StartPlutusServer
+        COMMAND "${CMAKE_SOURCE_DIR}/start_server.bat" "$<TARGET_FILE:Server>"
+        COMMENT "Ensuring PlutusBank server is running..."
+        VERBATIM
+        USES_TERMINAL
+    )
+
+    # Сначала собрать сервер, потом дёрнуть скрипт
+    add_dependencies(StartPlutusServer Server)
+
+    # Привязываем к Client: F5 → MSBuild собирает Client → перед этим
+    # отрабатывает StartPlutusServer (всегда, потому что Utility-проект)
+    add_dependencies(Client StartPlutusServer)
+
+    # Чтобы Client стартовал по F5 без выбора через ПКМ
+    set_property(DIRECTORY "${CMAKE_SOURCE_DIR}"
+                 PROPERTY VS_STARTUP_PROJECT Client)
+endif()
+
+
 cmake_language(DEFER CALL _cleanup_solution)
 
 function(_cleanup_solution)
@@ -65,6 +88,7 @@ function(_cleanup_solution)
 
     # Прочее
     _set_folder(generate_qmlls_build_ini_file  "_Infrastructure/Tools")
+	_set_folder(StartPlutusServer  "_Infrastructure/Tools")
 endfunction()
 
 # Информация
