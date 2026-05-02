@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1J0fEwdrAvdVbj9M4RHcEs5VSCurD4bruRtnPNNbvJzlFsucChmb5i7PeVH6hPM
+\restrict 70FRye9tUVwnFNxCm1Szn6tbgvZqBSwWGFFdgil3ejsj7NwBlemW0lpARbl87Bl
 
 -- Dumped from database version 18.3
--- Dumped by pg_dump version 18.1
+-- Dumped by pg_dump version 18.3
 
--- Started on 2026-03-09 13:39:03
+-- Started on 2026-05-02 14:16:53
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -22,7 +22,26 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- TOC entry 238 (class 1255 OID 16389)
+-- TOC entry 4 (class 2615 OID 2200)
+-- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
+--
+
+CREATE SCHEMA public;
+
+
+ALTER SCHEMA public OWNER TO pg_database_owner;
+
+--
+-- TOC entry 5179 (class 0 OID 0)
+-- Dependencies: 4
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: pg_database_owner
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
+--
+-- TOC entry 238 (class 1255 OID 41413)
 -- Name: generate_valid_card_number(character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -89,7 +108,7 @@ $$;
 ALTER FUNCTION public.generate_valid_card_number(brand character varying) OWNER TO postgres;
 
 --
--- TOC entry 239 (class 1255 OID 16390)
+-- TOC entry 239 (class 1255 OID 41414)
 -- Name: is_valid_card_number(character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -116,7 +135,7 @@ $_$;
 ALTER FUNCTION public.is_valid_card_number(card_num character varying) OWNER TO postgres;
 
 --
--- TOC entry 244 (class 1255 OID 16391)
+-- TOC entry 244 (class 1255 OID 41415)
 -- Name: luhn_checksum(character varying); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -157,7 +176,7 @@ $$;
 ALTER FUNCTION public.luhn_checksum(card_num character varying) OWNER TO postgres;
 
 --
--- TOC entry 251 (class 1255 OID 16392)
+-- TOC entry 251 (class 1255 OID 41416)
 -- Name: update_cards_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -174,7 +193,7 @@ $$;
 ALTER FUNCTION public.update_cards_updated_at() OWNER TO postgres;
 
 --
--- TOC entry 252 (class 1255 OID 16393)
+-- TOC entry 252 (class 1255 OID 41417)
 -- Name: validate_card_number_trigger(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -199,7 +218,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- TOC entry 219 (class 1259 OID 16394)
+-- TOC entry 219 (class 1259 OID 41418)
 -- Name: accounts; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -210,14 +229,14 @@ CREATE TABLE public.accounts (
     balance numeric(15,2) DEFAULT 0.00,
     account_type character varying(50) DEFAULT 'debit'::character varying,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT accounts_account_type_check CHECK (((account_type)::text = ANY ((ARRAY['debit'::character varying, 'credit'::character varying, 'loan'::character varying, 'bank_loan_fund'::character varying])::text[])))
+    CONSTRAINT accounts_account_type_check CHECK (((account_type)::text = ANY (ARRAY[('debit'::character varying)::text, ('credit'::character varying)::text, ('loan'::character varying)::text, ('bank_loan_fund'::character varying)::text])))
 );
 
 
 ALTER TABLE public.accounts OWNER TO postgres;
 
 --
--- TOC entry 220 (class 1259 OID 16402)
+-- TOC entry 220 (class 1259 OID 41427)
 -- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -233,7 +252,7 @@ CREATE SEQUENCE public.accounts_id_seq
 ALTER SEQUENCE public.accounts_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5165 (class 0 OID 0)
+-- TOC entry 5180 (class 0 OID 0)
 -- Dependencies: 220
 -- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -242,7 +261,7 @@ ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 
 
 --
--- TOC entry 228 (class 1259 OID 16510)
+-- TOC entry 221 (class 1259 OID 41428)
 -- Name: loan_products; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -259,7 +278,7 @@ CREATE TABLE public.loan_products (
     is_active boolean DEFAULT true,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_amounts CHECK (((min_amount > (0)::numeric) AND (max_amount >= min_amount))),
-    CONSTRAINT chk_category CHECK (((category)::text = ANY ((ARRAY['mortgage'::character varying, 'auto'::character varying, 'electronics'::character varying, 'personal'::character varying])::text[]))),
+    CONSTRAINT chk_category CHECK (((category)::text = ANY (ARRAY[('mortgage'::character varying)::text, ('auto'::character varying)::text, ('electronics'::character varying)::text, ('personal'::character varying)::text]))),
     CONSTRAINT chk_rate CHECK (((annual_rate > (0)::numeric) AND (annual_rate < (100)::numeric))),
     CONSTRAINT chk_terms CHECK (((min_term_months > 0) AND (max_term_months >= min_term_months)))
 );
@@ -268,7 +287,7 @@ CREATE TABLE public.loan_products (
 ALTER TABLE public.loan_products OWNER TO postgres;
 
 --
--- TOC entry 230 (class 1259 OID 16534)
+-- TOC entry 222 (class 1259 OID 41448)
 -- Name: loans; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -288,7 +307,7 @@ CREATE TABLE public.loans (
     issued_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     next_payment_date date NOT NULL,
     closed_at timestamp without time zone,
-    CONSTRAINT chk_loan_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'closed'::character varying, 'overdue'::character varying, 'defaulted'::character varying])::text[]))),
+    CONSTRAINT chk_loan_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('closed'::character varying)::text, ('overdue'::character varying)::text, ('defaulted'::character varying)::text]))),
     CONSTRAINT chk_principal CHECK ((principal > (0)::numeric))
 );
 
@@ -296,7 +315,7 @@ CREATE TABLE public.loans (
 ALTER TABLE public.loans OWNER TO postgres;
 
 --
--- TOC entry 225 (class 1259 OID 16438)
+-- TOC entry 223 (class 1259 OID 41467)
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -322,7 +341,7 @@ CREATE TABLE public.users (
 ALTER TABLE public.users OWNER TO postgres;
 
 --
--- TOC entry 234 (class 1259 OID 16615)
+-- TOC entry 224 (class 1259 OID 41480)
 -- Name: active_loans_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -348,7 +367,7 @@ CREATE VIEW public.active_loans_view AS
 ALTER VIEW public.active_loans_view OWNER TO postgres;
 
 --
--- TOC entry 221 (class 1259 OID 16403)
+-- TOC entry 225 (class 1259 OID 41485)
 -- Name: cards; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -379,7 +398,7 @@ CREATE TABLE public.cards (
 ALTER TABLE public.cards OWNER TO postgres;
 
 --
--- TOC entry 222 (class 1259 OID 16424)
+-- TOC entry 226 (class 1259 OID 41506)
 -- Name: cards_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -395,8 +414,8 @@ CREATE SEQUENCE public.cards_id_seq
 ALTER SEQUENCE public.cards_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5166 (class 0 OID 0)
--- Dependencies: 222
+-- TOC entry 5181 (class 0 OID 0)
+-- Dependencies: 226
 -- Name: cards_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -404,7 +423,7 @@ ALTER SEQUENCE public.cards_id_seq OWNED BY public.cards.id;
 
 
 --
--- TOC entry 237 (class 1259 OID 16634)
+-- TOC entry 227 (class 1259 OID 41507)
 -- Name: loan_products_active_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -425,7 +444,7 @@ CREATE VIEW public.loan_products_active_view AS
 ALTER VIEW public.loan_products_active_view OWNER TO postgres;
 
 --
--- TOC entry 227 (class 1259 OID 16509)
+-- TOC entry 228 (class 1259 OID 41511)
 -- Name: loan_products_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -441,8 +460,8 @@ CREATE SEQUENCE public.loan_products_id_seq
 ALTER SEQUENCE public.loan_products_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5167 (class 0 OID 0)
--- Dependencies: 227
+-- TOC entry 5182 (class 0 OID 0)
+-- Dependencies: 228
 -- Name: loan_products_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -450,7 +469,7 @@ ALTER SEQUENCE public.loan_products_id_seq OWNED BY public.loan_products.id;
 
 
 --
--- TOC entry 232 (class 1259 OID 16579)
+-- TOC entry 229 (class 1259 OID 41512)
 -- Name: loan_schedule; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -465,14 +484,14 @@ CREATE TABLE public.loan_schedule (
     status character varying(20) DEFAULT 'pending'::character varying,
     paid_at timestamp without time zone,
     transaction_id integer,
-    CONSTRAINT chk_schedule_status CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'paid'::character varying, 'overdue'::character varying, 'partially_paid'::character varying])::text[])))
+    CONSTRAINT chk_schedule_status CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('paid'::character varying)::text, ('overdue'::character varying)::text, ('partially_paid'::character varying)::text])))
 );
 
 
 ALTER TABLE public.loan_schedule OWNER TO postgres;
 
 --
--- TOC entry 231 (class 1259 OID 16578)
+-- TOC entry 230 (class 1259 OID 41524)
 -- Name: loan_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -488,8 +507,8 @@ CREATE SEQUENCE public.loan_schedule_id_seq
 ALTER SEQUENCE public.loan_schedule_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5168 (class 0 OID 0)
--- Dependencies: 231
+-- TOC entry 5183 (class 0 OID 0)
+-- Dependencies: 230
 -- Name: loan_schedule_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -497,7 +516,7 @@ ALTER SEQUENCE public.loan_schedule_id_seq OWNED BY public.loan_schedule.id;
 
 
 --
--- TOC entry 236 (class 1259 OID 16629)
+-- TOC entry 231 (class 1259 OID 41525)
 -- Name: loan_schedule_summary_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -516,7 +535,7 @@ CREATE VIEW public.loan_schedule_summary_view AS
 ALTER VIEW public.loan_schedule_summary_view OWNER TO postgres;
 
 --
--- TOC entry 229 (class 1259 OID 16533)
+-- TOC entry 232 (class 1259 OID 41530)
 -- Name: loans_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -532,8 +551,8 @@ CREATE SEQUENCE public.loans_id_seq
 ALTER SEQUENCE public.loans_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5169 (class 0 OID 0)
--- Dependencies: 229
+-- TOC entry 5184 (class 0 OID 0)
+-- Dependencies: 232
 -- Name: loans_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -541,7 +560,7 @@ ALTER SEQUENCE public.loans_id_seq OWNED BY public.loans.id;
 
 
 --
--- TOC entry 223 (class 1259 OID 16425)
+-- TOC entry 233 (class 1259 OID 41531)
 -- Name: transactions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -556,14 +575,14 @@ CREATE TABLE public.transactions (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT transactions_amount_check CHECK ((amount > (0)::numeric)),
     CONSTRAINT transactions_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('completed'::character varying)::text, ('failed'::character varying)::text]))),
-    CONSTRAINT transactions_transaction_type_check CHECK (((transaction_type)::text = ANY ((ARRAY['internal'::character varying, 'external'::character varying, 'loan_disbursement'::character varying, 'loan_payment'::character varying])::text[])))
+    CONSTRAINT transactions_transaction_type_check CHECK (((transaction_type)::text = ANY (ARRAY[('internal'::character varying)::text, ('external'::character varying)::text, ('loan_disbursement'::character varying)::text, ('loan_payment'::character varying)::text])))
 );
 
 
 ALTER TABLE public.transactions OWNER TO postgres;
 
 --
--- TOC entry 235 (class 1259 OID 16622)
+-- TOC entry 234 (class 1259 OID 41543)
 -- Name: transaction_history_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -592,7 +611,7 @@ CREATE VIEW public.transaction_history_view AS
 ALTER VIEW public.transaction_history_view OWNER TO postgres;
 
 --
--- TOC entry 224 (class 1259 OID 16437)
+-- TOC entry 235 (class 1259 OID 41548)
 -- Name: transactions_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -608,8 +627,8 @@ CREATE SEQUENCE public.transactions_id_seq
 ALTER SEQUENCE public.transactions_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5170 (class 0 OID 0)
--- Dependencies: 224
+-- TOC entry 5185 (class 0 OID 0)
+-- Dependencies: 235
 -- Name: transactions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -617,7 +636,7 @@ ALTER SEQUENCE public.transactions_id_seq OWNED BY public.transactions.id;
 
 
 --
--- TOC entry 233 (class 1259 OID 16607)
+-- TOC entry 236 (class 1259 OID 41549)
 -- Name: user_cards_view; Type: VIEW; Schema: public; Owner: postgres
 --
 
@@ -644,7 +663,7 @@ CREATE VIEW public.user_cards_view AS
 ALTER VIEW public.user_cards_view OWNER TO postgres;
 
 --
--- TOC entry 226 (class 1259 OID 16449)
+-- TOC entry 237 (class 1259 OID 41554)
 -- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -660,8 +679,8 @@ CREATE SEQUENCE public.users_id_seq
 ALTER SEQUENCE public.users_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5171 (class 0 OID 0)
--- Dependencies: 226
+-- TOC entry 5186 (class 0 OID 0)
+-- Dependencies: 237
 -- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -669,7 +688,7 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- TOC entry 4911 (class 2604 OID 16450)
+-- TOC entry 4911 (class 2604 OID 41555)
 -- Name: accounts id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -677,7 +696,7 @@ ALTER TABLE ONLY public.accounts ALTER COLUMN id SET DEFAULT nextval('public.acc
 
 
 --
--- TOC entry 4915 (class 2604 OID 16451)
+-- TOC entry 4928 (class 2604 OID 41556)
 -- Name: cards id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -685,7 +704,7 @@ ALTER TABLE ONLY public.cards ALTER COLUMN id SET DEFAULT nextval('public.cards_
 
 
 --
--- TOC entry 4934 (class 2604 OID 16513)
+-- TOC entry 4915 (class 2604 OID 41557)
 -- Name: loan_products id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -693,7 +712,7 @@ ALTER TABLE ONLY public.loan_products ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4942 (class 2604 OID 16582)
+-- TOC entry 4938 (class 2604 OID 41558)
 -- Name: loan_schedule id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -701,7 +720,7 @@ ALTER TABLE ONLY public.loan_schedule ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4938 (class 2604 OID 16537)
+-- TOC entry 4919 (class 2604 OID 41559)
 -- Name: loans id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -709,7 +728,7 @@ ALTER TABLE ONLY public.loans ALTER COLUMN id SET DEFAULT nextval('public.loans_
 
 
 --
--- TOC entry 4925 (class 2604 OID 16452)
+-- TOC entry 4940 (class 2604 OID 41560)
 -- Name: transactions id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -717,7 +736,7 @@ ALTER TABLE ONLY public.transactions ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- TOC entry 4929 (class 2604 OID 16453)
+-- TOC entry 4923 (class 2604 OID 41561)
 -- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -725,7 +744,147 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- TOC entry 4959 (class 2606 OID 16455)
+-- TOC entry 5160 (class 0 OID 41418)
+-- Dependencies: 219
+-- Data for Name: accounts; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.accounts (id, user_id, account_number, balance, account_type, created_at) FROM stdin;
+1	1	40817810241179458708	3889.00	debit	2026-03-28 07:00:43.046755
+2	1	40817810741953746212	1111.00	debit	2026-03-28 07:01:46.625811
+\.
+
+
+--
+-- TOC entry 5165 (class 0 OID 41485)
+-- Dependencies: 225
+-- Data for Name: cards; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cards (id, account_id, card_number, card_holder_name, expiry_date, cvv_hash, card_type, card_brand, is_active, is_blocked, daily_limit, monthly_limit, pin_hash, failed_attempts, last_used_at, created_at, updated_at) FROM stdin;
+1	1	4409 6564 3169 8321	КОНДРАШОВ ДАНИИЛ	2031-03-28	83eaf4dc5e19bcbeb23801e2c3e08c4a89cc82d0a42a903767f9c938d1deac4f	debit	visa	t	f	100000.00	500000.00	13b4088f2f9a285e22128d11a6a1a31254baf9936c0192655d32a7f563aad503	0	\N	2026-03-28 07:00:43.06697	2026-03-28 07:00:43.06697
+2	2	5592 7686 2417 8369	КОНДРАШОВ ДАНИИЛ	2031-03-28	a77b6cbdf6fae1676369dea1e1ea675e4c2400c9e43bd535fdfd9395cb48cbaa	debit	mastercard	t	f	100000.00	500000.00	44e081556e1ae4a2bfed531a64dd185109c416e4248cec40ce28a7c272edafa9	0	\N	2026-03-28 07:01:46.629608	2026-03-28 07:01:46.629608
+\.
+
+
+--
+-- TOC entry 5162 (class 0 OID 41428)
+-- Dependencies: 221
+-- Data for Name: loan_products; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.loan_products (id, name, category, annual_rate, min_amount, max_amount, min_term_months, max_term_months, description, is_active, created_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5168 (class 0 OID 41512)
+-- Dependencies: 229
+-- Data for Name: loan_schedule; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.loan_schedule (id, loan_id, payment_number, due_date, principal_part, interest_part, total_amount, status, paid_at, transaction_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5163 (class 0 OID 41448)
+-- Dependencies: 222
+-- Data for Name: loans; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.loans (id, user_id, product_id, target_account_id, bank_account_id, principal, annual_rate, term_months, monthly_payment, total_paid, remaining_balance, status, issued_at, next_payment_date, closed_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5171 (class 0 OID 41531)
+-- Dependencies: 233
+-- Data for Name: transactions; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.transactions (id, from_account_id, to_account_id, amount, transaction_type, description, status, created_at) FROM stdin;
+1	\N	1	5000.00	external	Пополнение счёта	completed	2026-03-28 07:00:57.995455
+2	1	2	1111.00	internal		completed	2026-03-28 07:01:59.064235
+\.
+
+
+--
+-- TOC entry 5164 (class 0 OID 41467)
+-- Dependencies: 223
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.users (id, email, phone, password_hash, created_at, updated_at, first_name, last_name, middle_name, date_of_birth, passport_series, passport_number, address, primary_account_id, is_system_user) FROM stdin;
+1	kondrashobdevs@gmail.com	+71112223344	32363dcb3726ef4801badd2d1d0ae00f:b288ac8fee2c57334084b9fd0b9e89663d56f4ffa8fd0486e067b7870e916e83	2026-03-28 06:59:44.524079	2026-03-28 06:59:44.524079	Даниил	Кондрашов	Владимирович	2002-01-19	5465	176583		1	f
+\.
+
+
+--
+-- TOC entry 5187 (class 0 OID 0)
+-- Dependencies: 220
+-- Name: accounts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.accounts_id_seq', 2, true);
+
+
+--
+-- TOC entry 5188 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: cards_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.cards_id_seq', 2, true);
+
+
+--
+-- TOC entry 5189 (class 0 OID 0)
+-- Dependencies: 228
+-- Name: loan_products_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.loan_products_id_seq', 1, false);
+
+
+--
+-- TOC entry 5190 (class 0 OID 0)
+-- Dependencies: 230
+-- Name: loan_schedule_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.loan_schedule_id_seq', 1, false);
+
+
+--
+-- TOC entry 5191 (class 0 OID 0)
+-- Dependencies: 232
+-- Name: loans_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.loans_id_seq', 1, false);
+
+
+--
+-- TOC entry 5192 (class 0 OID 0)
+-- Dependencies: 235
+-- Name: transactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.transactions_id_seq', 2, true);
+
+
+--
+-- TOC entry 5193 (class 0 OID 0)
+-- Dependencies: 237
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, true);
+
+
+--
+-- TOC entry 4959 (class 2606 OID 41563)
 -- Name: accounts accounts_account_number_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -734,7 +893,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- TOC entry 4961 (class 2606 OID 16457)
+-- TOC entry 4961 (class 2606 OID 41565)
 -- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -743,7 +902,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- TOC entry 4963 (class 2606 OID 16459)
+-- TOC entry 4977 (class 2606 OID 41567)
 -- Name: cards cards_card_number_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -752,7 +911,7 @@ ALTER TABLE ONLY public.cards
 
 
 --
--- TOC entry 4965 (class 2606 OID 16461)
+-- TOC entry 4979 (class 2606 OID 41569)
 -- Name: cards cards_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -761,7 +920,7 @@ ALTER TABLE ONLY public.cards
 
 
 --
--- TOC entry 4983 (class 2606 OID 16532)
+-- TOC entry 4963 (class 2606 OID 41571)
 -- Name: loan_products loan_products_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -770,7 +929,7 @@ ALTER TABLE ONLY public.loan_products
 
 
 --
--- TOC entry 4992 (class 2606 OID 16593)
+-- TOC entry 4987 (class 2606 OID 41573)
 -- Name: loan_schedule loan_schedule_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -779,7 +938,7 @@ ALTER TABLE ONLY public.loan_schedule
 
 
 --
--- TOC entry 4987 (class 2606 OID 16555)
+-- TOC entry 4967 (class 2606 OID 41575)
 -- Name: loans loans_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -788,7 +947,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4973 (class 2606 OID 16463)
+-- TOC entry 4992 (class 2606 OID 41577)
 -- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -797,7 +956,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 4977 (class 2606 OID 16465)
+-- TOC entry 4971 (class 2606 OID 41579)
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -806,7 +965,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4979 (class 2606 OID 16467)
+-- TOC entry 4973 (class 2606 OID 41581)
 -- Name: users users_phone_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -815,7 +974,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4981 (class 2606 OID 16469)
+-- TOC entry 4975 (class 2606 OID 41583)
 -- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -824,7 +983,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- TOC entry 4966 (class 1259 OID 16470)
+-- TOC entry 4980 (class 1259 OID 41584)
 -- Name: idx_cards_account_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -832,7 +991,7 @@ CREATE INDEX idx_cards_account_id ON public.cards USING btree (account_id);
 
 
 --
--- TOC entry 4967 (class 1259 OID 16471)
+-- TOC entry 4981 (class 1259 OID 41585)
 -- Name: idx_cards_card_number; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -840,7 +999,7 @@ CREATE INDEX idx_cards_card_number ON public.cards USING btree (card_number);
 
 
 --
--- TOC entry 4968 (class 1259 OID 16472)
+-- TOC entry 4982 (class 1259 OID 41586)
 -- Name: idx_cards_is_active; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -848,7 +1007,7 @@ CREATE INDEX idx_cards_is_active ON public.cards USING btree (is_active);
 
 
 --
--- TOC entry 4984 (class 1259 OID 16577)
+-- TOC entry 4964 (class 1259 OID 41587)
 -- Name: idx_loans_status; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -856,7 +1015,7 @@ CREATE INDEX idx_loans_status ON public.loans USING btree (status);
 
 
 --
--- TOC entry 4985 (class 1259 OID 16576)
+-- TOC entry 4965 (class 1259 OID 41588)
 -- Name: idx_loans_user; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -864,7 +1023,7 @@ CREATE INDEX idx_loans_user ON public.loans USING btree (user_id);
 
 
 --
--- TOC entry 4988 (class 1259 OID 16606)
+-- TOC entry 4983 (class 1259 OID 41589)
 -- Name: idx_schedule_due; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -872,7 +1031,7 @@ CREATE INDEX idx_schedule_due ON public.loan_schedule USING btree (due_date);
 
 
 --
--- TOC entry 4989 (class 1259 OID 16604)
+-- TOC entry 4984 (class 1259 OID 41590)
 -- Name: idx_schedule_loan; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -880,7 +1039,7 @@ CREATE INDEX idx_schedule_loan ON public.loan_schedule USING btree (loan_id);
 
 
 --
--- TOC entry 4990 (class 1259 OID 16605)
+-- TOC entry 4985 (class 1259 OID 41591)
 -- Name: idx_schedule_status; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -888,7 +1047,7 @@ CREATE INDEX idx_schedule_status ON public.loan_schedule USING btree (status);
 
 
 --
--- TOC entry 4969 (class 1259 OID 16473)
+-- TOC entry 4988 (class 1259 OID 41592)
 -- Name: idx_transactions_created; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -896,7 +1055,7 @@ CREATE INDEX idx_transactions_created ON public.transactions USING btree (create
 
 
 --
--- TOC entry 4970 (class 1259 OID 16474)
+-- TOC entry 4989 (class 1259 OID 41593)
 -- Name: idx_transactions_from; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -904,7 +1063,7 @@ CREATE INDEX idx_transactions_from ON public.transactions USING btree (from_acco
 
 
 --
--- TOC entry 4971 (class 1259 OID 16475)
+-- TOC entry 4990 (class 1259 OID 41594)
 -- Name: idx_transactions_to; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -912,7 +1071,7 @@ CREATE INDEX idx_transactions_to ON public.transactions USING btree (to_account_
 
 
 --
--- TOC entry 4974 (class 1259 OID 16476)
+-- TOC entry 4968 (class 1259 OID 41595)
 -- Name: idx_users_email; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -920,7 +1079,7 @@ CREATE INDEX idx_users_email ON public.users USING btree (email);
 
 
 --
--- TOC entry 4975 (class 1259 OID 16477)
+-- TOC entry 4969 (class 1259 OID 41596)
 -- Name: idx_users_phone; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -928,7 +1087,7 @@ CREATE INDEX idx_users_phone ON public.users USING btree (phone);
 
 
 --
--- TOC entry 5158 (class 2618 OID 16638)
+-- TOC entry 5158 (class 2618 OID 41597)
 -- Name: active_loans_view protect_loan_delete; Type: RULE; Schema: public; Owner: postgres
 --
 
@@ -938,7 +1097,7 @@ CREATE RULE protect_loan_delete AS
 
 
 --
--- TOC entry 5159 (class 2618 OID 16639)
+-- TOC entry 5159 (class 2618 OID 41598)
 -- Name: user_cards_view update_card_limits; Type: RULE; Schema: public; Owner: postgres
 --
 
@@ -948,7 +1107,7 @@ CREATE RULE update_card_limits AS
 
 
 --
--- TOC entry 5004 (class 2620 OID 16478)
+-- TOC entry 5004 (class 2620 OID 41599)
 -- Name: cards check_card_number_validity; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -956,7 +1115,7 @@ CREATE TRIGGER check_card_number_validity BEFORE INSERT OR UPDATE ON public.card
 
 
 --
--- TOC entry 5005 (class 2620 OID 16479)
+-- TOC entry 5005 (class 2620 OID 41600)
 -- Name: cards trigger_update_cards_timestamp; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -964,7 +1123,7 @@ CREATE TRIGGER trigger_update_cards_timestamp BEFORE UPDATE ON public.cards FOR 
 
 
 --
--- TOC entry 4993 (class 2606 OID 16480)
+-- TOC entry 4993 (class 2606 OID 41601)
 -- Name: accounts accounts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -973,7 +1132,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- TOC entry 4994 (class 2606 OID 16485)
+-- TOC entry 4999 (class 2606 OID 41606)
 -- Name: cards cards_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -982,7 +1141,7 @@ ALTER TABLE ONLY public.cards
 
 
 --
--- TOC entry 5002 (class 2606 OID 16594)
+-- TOC entry 5000 (class 2606 OID 41611)
 -- Name: loan_schedule loan_schedule_loan_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -991,7 +1150,7 @@ ALTER TABLE ONLY public.loan_schedule
 
 
 --
--- TOC entry 5003 (class 2606 OID 16599)
+-- TOC entry 5001 (class 2606 OID 41616)
 -- Name: loan_schedule loan_schedule_transaction_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1000,7 +1159,7 @@ ALTER TABLE ONLY public.loan_schedule
 
 
 --
--- TOC entry 4998 (class 2606 OID 16571)
+-- TOC entry 4994 (class 2606 OID 41621)
 -- Name: loans loans_bank_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1009,7 +1168,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4999 (class 2606 OID 16561)
+-- TOC entry 4995 (class 2606 OID 41626)
 -- Name: loans loans_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1018,7 +1177,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 5000 (class 2606 OID 16566)
+-- TOC entry 4996 (class 2606 OID 41631)
 -- Name: loans loans_target_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1027,7 +1186,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 5001 (class 2606 OID 16556)
+-- TOC entry 4997 (class 2606 OID 41636)
 -- Name: loans loans_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1036,7 +1195,7 @@ ALTER TABLE ONLY public.loans
 
 
 --
--- TOC entry 4995 (class 2606 OID 16490)
+-- TOC entry 5002 (class 2606 OID 41641)
 -- Name: transactions transactions_from_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1045,7 +1204,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 4996 (class 2606 OID 16495)
+-- TOC entry 5003 (class 2606 OID 41646)
 -- Name: transactions transactions_to_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1054,7 +1213,7 @@ ALTER TABLE ONLY public.transactions
 
 
 --
--- TOC entry 4997 (class 2606 OID 16501)
+-- TOC entry 4998 (class 2606 OID 41651)
 -- Name: users users_primary_account_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1062,11 +1221,11 @@ ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_primary_account_id_fkey FOREIGN KEY (primary_account_id) REFERENCES public.accounts(id) ON DELETE SET NULL;
 
 
--- Completed on 2026-03-09 13:39:03
+-- Completed on 2026-05-02 14:16:53
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1J0fEwdrAvdVbj9M4RHcEs5VSCurD4bruRtnPNNbvJzlFsucChmb5i7PeVH6hPM
+\unrestrict 70FRye9tUVwnFNxCm1Szn6tbgvZqBSwWGFFdgil3ejsj7NwBlemW0lpARbl87Bl
 
