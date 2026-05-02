@@ -33,6 +33,9 @@ NetworkClient::~NetworkClient()
 
 bool NetworkClient::connectToServer(const QString& host, quint16 port)
 {
+    m_lastHost = host;        // запоминаем
+    m_lastPort = port;
+
     if (m_socket->state() == QAbstractSocket::ConnectedState)
         return true;
 
@@ -66,6 +69,17 @@ bool NetworkClient::isConnected() const
 // Главный метод: отправка запроса и ожидание ответа 
 QJsonObject NetworkClient::sendRequest(const QString& method, const QJsonObject& params)
 {
+    // Ленивое переподключение, если сокет отвалился
+    if (!isConnected())
+    {
+        if (m_lastPort == 0)
+            return { {"success", false}, {"error", "Адрес сервера не задан"} };
+
+        qDebug() << "Сокет не подключён, пробуем переподключиться...";
+        if (!connectToServer(m_lastHost, m_lastPort))
+            return { {"success", false}, {"error", "Нет подключения к серверу"} };
+    }
+
     if (!isConnected())
     {
         return {{"success", false}, {"error", "Нет подключения к серверу"}};

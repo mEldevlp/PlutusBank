@@ -32,6 +32,7 @@ find_package(Qt6 REQUIRED COMPONENTS
 	Network
 	Quick
 	QuickControls2
+	Svg
 )
 
 # OpenSSL
@@ -89,10 +90,20 @@ set(QML_UI_FILES
 )
 
 # QML Resources - Assets
-set(QML_ASSET_FILES
-	qml/assets/logo.png
-	qml/assets/fonts/Manrope-Bold.ttf
+file(GLOB_RECURSE QML_ASSET_FILES
+    CONFIGURE_DEPENDS
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    "qml/assets/*.svg"
+    "qml/assets/*.png"
+    "qml/assets/*.jpg"
+    "qml/assets/fonts/*.ttf"
+    "qml/assets/fonts/*.otf"
 )
+
+message(STATUS "Found ${CMAKE_CURRENT_SOURCE_DIR}/qml/assets:")
+foreach(asset ${QML_ASSET_FILES})
+    message(STATUS "  ${asset}")
+endforeach()
 
 # Объединяем все исходники
 set(SOURCES
@@ -135,6 +146,11 @@ qt_add_qml_module(${PROJECT_NAME}
     RESOURCE_PREFIX /qt/qml
 )
 
+qt_add_resources(${PROJECT_NAME} "config_files"
+    PREFIX "/"
+    FILES connection.ini
+)
+
 # Версионирование
 execute_process(
     COMMAND git rev-list --count HEAD
@@ -175,6 +191,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Network
     Qt6::Quick
     Qt6::QuickControls2
+	Qt6::Svg
 )
 
 # OpenSSL

@@ -113,4 +113,7 @@ private:
     QTcpSocket*      m_socket  = nullptr;
     QByteArray       m_buffer;
     std::atomic<qint64> m_nextId{1};
+
+    QString m_lastHost;
+    quint16 m_lastPort = 0;
 };

@@ -26,18 +26,21 @@ Item {
     }
 
     Flickable {
+        id: flick
         anchors.fill: parent
+        contentWidth: width                 // <-- ВАЖНО: фиксируем contentWidth, иначе parent.width у детей нестабилен
         contentHeight: mainCol.height + 40
         clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
         Column {
             id: mainCol
-            width: parent.width
+            width: flick.width              // <-- привязываемся к Flickable, а не parent.width
             spacing: 20
 
             // Шапка
             Item {
-                width: parent.width
+                width: mainCol.width
                 height: 56
 
                 Rectangle {
@@ -69,11 +72,12 @@ Item {
                 }
             }
 
-            // Итоговая карточка 
+            // Итоговая карточка
             Rectangle {
-                width: parent.width - 32
+                id: summaryCard
+                width: mainCol.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
-                height: summaryCol.height + 28
+                height: summaryCol.implicitHeight + 28
                 radius: 16
                 gradient: Gradient {
                     GradientStop { position: 0.0; color: Theme.grBlockPosStart }
@@ -83,8 +87,9 @@ Item {
 
                 Column {
                     id: summaryCol
-                    width: parent.width - 28
-                    anchors.centerIn: parent
+                    width: summaryCard.width - 28
+                    x: 14                          // <-- было anchors.centerIn — заменено на x/y чтобы избежать петли биндинга по высоте
+                    y: 14
                     spacing: 8
 
                     Text {
@@ -99,7 +104,7 @@ Item {
                         color: Theme.accent
                     }
 
-                    Rectangle { width: parent.width; height: 1; color: "#374151" }
+                    Rectangle { width: summaryCol.width; height: 1; color: "#374151" }
 
                     Row {
                         spacing: 6
@@ -108,7 +113,7 @@ Item {
                             font.pixelSize: 12; color: "#6B7280"
                         }
                         Text {
-                            text: loanController.closedLoans.length
+                            text: String(loanController.closedLoans.length)   // <-- явно строка, не голое число
                             font { pixelSize: 12; bold: true }
                             color: "#E5E7EB"
                         }
@@ -118,27 +123,47 @@ Item {
 
             // Пусто
             Column {
-                width: parent.width - 32
+                id: emptyBlock
+                width: mainCol.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 12
                 visible: loanController.closedLoans.length === 0
 
                 Rectangle {
-                    width: parent.width; height: 110; radius: 16
+                    id: emptyCard
+                    width: emptyBlock.width
+                    height: 110
+                    radius: 16
                     color: "#111827"
                     border.color: "#374151"; border.width: 1
 
+                    // Внутренняя колонка — даём ЯВНУЮ ширину, иначе anchors.horizontalCenter
+                    // у дочерних Text'ов завязывается на childrenRect.width,
+                    // что на Windows/D3D11 раскачивает ресайз сценграфа -> device removed.
                     Column {
-                        anchors.centerIn: parent; spacing: 10
-                        Text { text: "📭"; font.pixelSize: 40; anchors.horizontalCenter: parent.horizontalCenter }
-                        Text { text: "Нет закрытых кредитов"; font.pixelSize: 14; color: "#9CA3AF"; anchors.horizontalCenter: parent.horizontalCenter }
+                        width: emptyCard.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 10
+
+                        Text {
+                            text: "📭"
+                            font.pixelSize: 40
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+                        Text {
+                            text: "Нет закрытых кредитов"
+                            font.pixelSize: 14
+                            color: "#9CA3AF"
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
                     }
                 }
             }
 
             // Список закрытых кредитов
             Column {
-                width: parent.width - 32
+                id: listBlock
+                width: mainCol.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 12
                 visible: loanController.closedLoans.length > 0
@@ -147,8 +172,9 @@ Item {
                     model: loanController.closedLoans
 
                     delegate: Rectangle {
-                        width: parent.width
-                        height: itemCol.height + 28
+                        id: loanCard
+                        width: listBlock.width
+                        height: itemCol.implicitHeight + 28
                         radius: 16
                         gradient: Gradient {
                             GradientStop { position: 0.0; color: Theme.grBlockPosStart }
@@ -169,42 +195,46 @@ Item {
 
                         Column {
                             id: itemCol
-                            width: parent.width - 28
-                            anchors.centerIn: parent
+                            width: loanCard.width - 28
+                            x: 14
+                            y: 14
                             spacing: 10
 
                             // Заголовок
                             RowLayout {
-                                width: parent.width
+                                width: itemCol.width
                                 spacing: 10
 
                                 Image {
-                                    width: 24; height: 24
-                                    source: iconSource
+                                    Layout.preferredWidth: 24
+                                    Layout.preferredHeight: 24
+                                    source: loanCard.iconSource
                                     sourceSize: Qt.size(24, 24)
                                     Layout.alignment: Qt.AlignVCenter
                                 }
 
                                 Column {
                                     Layout.alignment: Qt.AlignVCenter
+                                    Layout.fillWidth: true
                                     spacing: 2
 
                                     Text {
-                                        text: modelData.product_name ?? ""
+                                        text: loanCard.modelData.product_name ?? ""
                                         font { pixelSize: 15; bold: true; family: manropeFont.name }
                                         color: "#F7F7FB"
+                                        elide: Text.ElideRight
+                                        width: parent.width
                                     }
                                     Text {
-                                        text: "Оформлен " + (modelData.issued_at ?? "")
+                                        text: "Оформлен " + (loanCard.modelData.issued_at ?? "")
                                         font.pixelSize: 11; color: "#6B7280"
                                     }
                                 }
 
-                                Item { Layout.fillWidth: true }
-
                                 Rectangle {
-                                    width: closedLabel.width + 16
-                                    height: 24; radius: 12
+                                    Layout.preferredWidth: closedLabel.implicitWidth + 16
+                                    Layout.preferredHeight: 24
+                                    radius: 12
                                     color: Qt.rgba(0.42, 0.44, 0.50, 0.15)
                                     Layout.alignment: Qt.AlignVCenter
 
@@ -218,34 +248,34 @@ Item {
                                 }
                             }
 
-                            Rectangle { width: parent.width; height: 1; color: "#374151" }
+                            Rectangle { width: itemCol.width; height: 1; color: "#374151" }
 
                             // Инфо
                             Row {
-                                width: parent.width
+                                width: itemCol.width
                                 Column {
-                                    width: parent.width / 3; spacing: 2
+                                    width: itemCol.width / 3; spacing: 2
                                     Text { text: "Сумма"; font.pixelSize: 11; color: "#6B7280" }
                                     Text {
-                                        text: Number(modelData.principal ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                                        text: Number(loanCard.modelData.principal ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                         font { pixelSize: 13; bold: true }
                                         color: "#E5E7EB"
                                     }
                                 }
                                 Column {
-                                    width: parent.width / 3; spacing: 2
+                                    width: itemCol.width / 3; spacing: 2
                                     Text { text: "Выплачено"; font.pixelSize: 11; color: "#6B7280" }
                                     Text {
-                                        text: Number(modelData.total_paid ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
+                                        text: Number(loanCard.modelData.total_paid ?? 0).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                         font { pixelSize: 13; bold: true }
                                         color: "#E5E7EB"
                                     }
                                 }
                                 Column {
-                                    width: parent.width / 3; spacing: 2
+                                    width: itemCol.width / 3; spacing: 2
                                     Text { text: "Закрыт"; font.pixelSize: 11; color: "#6B7280" }
                                     Text {
-                                        text: modelData.closed_at ?? "—"
+                                        text: loanCard.modelData.closed_at ? loanCard.modelData.closed_at : "—"
                                         font { pixelSize: 13; bold: true }
                                         color: "#E5E7EB"
                                     }
@@ -254,11 +284,12 @@ Item {
 
                             // Переплата
                             Row {
-                                width: parent.width
+                                width: itemCol.width
                                 spacing: 4
                                 Text { text: "Переплата:"; font.pixelSize: 12; color: "#6B7280" }
                                 Text {
-                                    property double overpay: Number(modelData.total_paid ?? 0) - Number(modelData.principal ?? 0)
+                                    readonly property double overpay:
+                                        Number(loanCard.modelData.total_paid ?? 0) - Number(loanCard.modelData.principal ?? 0)
                                     text: Number(Math.max(0, overpay)).toLocaleString(Qt.locale("ru_RU"), 'f', 0) + " ₽"
                                     font { pixelSize: 12; bold: true }
                                     color: Theme.textMuted
@@ -267,9 +298,8 @@ Item {
 
                             // Кнопка
                             Rectangle {
-                                width: parent.width; height: 42; radius: 12
+                                width: itemCol.width; height: 42; radius: 12
                                 color: Theme.accent
-                                
 
                                 Text {
                                     anchors.centerIn: parent
@@ -280,7 +310,7 @@ Item {
                                 MouseArea {
                                     anchors.fill: parent
                                     onClicked: {
-                                        var loanData = modelData
+                                        var loanData = loanCard.modelData
                                         loanData["status"] = "closed"
                                         loanData["remaining_balance"] = 0
                                         root.openSchedule(loanData)

@@ -46,10 +46,10 @@
         "ANDROID_PLATFORM": "android-35",
         "ANDROID_SDK_ROOT": "C:/Android/Sdk",
         "ANDROID_NDK": "C:/Android/ndk/27.3.13750724",
-        "CMAKE_PREFIX_PATH": "C:/Qt/6.10.2/android_arm64_v8a",
-        "Qt6_DIR": "C:/Qt/6.10.2/android_arm64_v8a/lib/cmake/Qt6",
-        "QT_HOST_PATH": "C:/Qt/6.10.2/msvc2022_64",
-        "CMAKE_FIND_ROOT_PATH": "C:/Qt/6.10.2/android_arm64_v8a",
+        "CMAKE_PREFIX_PATH": "C:/Qt/6.10.1/android_arm64_v8a",
+        "Qt6_DIR": "C:/Qt/6.10.1/android_arm64_v8a/lib/cmake/Qt6",
+        "QT_HOST_PATH": "C:/Qt/6.10.1/msvc2022_64",
+        "CMAKE_FIND_ROOT_PATH": "C:/Qt/6.10.1/android_arm64_v8a",
         "CMAKE_TOOLCHAIN_FILE": "C:/Android/ndk/27.3.13750724/build/cmake/android.toolchain.cmake"
       }
     }

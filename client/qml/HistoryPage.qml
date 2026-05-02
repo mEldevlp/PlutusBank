@@ -331,13 +331,16 @@ Item {
                 }
             }
         }
+    }
 
-        // Начальная загрузка
-        BusyIndicator {
-            anchors.centerIn: parent
-            running: historyController.isLoading && transactionList.count === 0
-            visible: running
-            palette.dark: "#27D6C5"
-        }
+    // Начальная загрузка — оверлей поверх всей страницы.
+    // Должен быть СОСЕДОМ Column'а (а не его ребёнком), иначе anchors.centerIn
+    // ломает раскладку Column и все дети слипаются в (0,0).
+    BusyIndicator {
+        anchors.centerIn: parent
+        running: historyController.isLoading && transactionList.count === 0
+        visible: running
+        palette.dark: "#27D6C5"
+        z: 1
     }
 }

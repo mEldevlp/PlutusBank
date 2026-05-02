@@ -189,7 +189,7 @@ int DatabaseManager::loginUser(const QString& phone, const QString& password)
         update.clear();
     }
 
-    qDebug() << u"Успешный вход. User ID:" << userId;
+    //qDebug() << u"Успешный вход. User ID:" << userId;
     return userId;
 }
 
@@ -224,7 +224,7 @@ QVariantMap DatabaseManager::getUserData(int userId)
     }
     else
     {
-        qWarning() << u"Ошибка загрузки данных пользователя:" << query.lastError().text();
+        //qWarning() << u"Ошибка загрузки данных пользователя:" << query.lastError().text();
     }
 
     query.clear();
@@ -733,7 +733,7 @@ bool DatabaseManager::transferBetweenAccounts(int fromAccountId, int toAccountId
     if (!m_db.commit())
     {
         m_db.rollback();
-        qWarning() << u"Ошибка коммита:" << m_db.lastError().text();
+        //qWarning() << u"Ошибка коммита:" << m_db.lastError().text();
         return false;
     }
     
@@ -1050,7 +1050,7 @@ bool DatabaseManager::topUpAccount(int accountId, double amount)
     );
     query.bindValue(":to", accountId);
     query.bindValue(":amount", amount);
-    query.bindValue(":desc", QString(u"Пополнение счёта"));
+    query.bindValue(":desc", QStringLiteral("Пополнение счёта"));
 
     if (!query.exec())
     {

@@ -1,3 +1,4 @@
+#include <QQuickWindow>
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -28,20 +29,23 @@ int main(int argc, char* argv[])
     // Устанавливаем обработчик сообщений
     qInstallMessageHandler(windowsMessageHandler);
 #endif
+    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
+
     QQuickStyle::setStyle("Basic");
     QGuiApplication app(argc, argv);
 
-    auto connect_ini = QDir(QCoreApplication::applicationDirPath()).filePath("connection.ini");
-    QSettings connCfg(connect_ini, QSettings::IniFormat);
-    QString serverHost = connCfg.value("Server/host", "127.0.0.1").toString();
+    //auto connect_ini = QDir(QCoreApplication::applicationDirPath()).filePath("connection.ini");
+    QSettings connCfg(":/connection.ini", QSettings::IniFormat);
+    QString serverHost = connCfg.value("Server/host", "80.249.146.54").toString();
     quint16 serverPort = connCfg.value("Server/port", 9500).toUInt();
 
     NetworkClient& net = NetworkClient::instance();
     if (!net.connectToServer(serverHost, serverPort))
     {
-        qCritical() << "Не удалось подключиться к серверу!";
-        return -1;
+        qWarning() << "Не удалось подключиться к серверу при старте:" << serverHost << ":" << serverPort;
+        // НЕ выходим — даём UI отработать, попытаемся переподключиться при логине
     }
+    qDebug() << "Server config used:" << serverHost << ":" << serverPort;
 
     // Создание контроллеров
     AuthController authController;
@@ -65,15 +69,11 @@ int main(int argc, char* argv[])
         .filePath("qml/Main.qml"));
 
     QObject::connect(
-        &engine, &QQmlApplicationEngine::objectCreated,
-        &app, [url](QObject* obj, const QUrl& objUrl)
-        {
-            if (!obj && url == objUrl)
-                QCoreApplication::exit(-1);
-        },
+        &engine, &QQmlApplicationEngine::objectCreationFailed,
+        &app, []() { QCoreApplication::exit(-1); },
         Qt::QueuedConnection);
 
-    engine.load(url);
+    engine.loadFromModule("PlutusBank", "Main");
 
     int result = app.exec();
 
