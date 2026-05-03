@@ -23,6 +23,7 @@ set(SOURCES
     src/ClientSession.cpp
     src/ConsoleHandler.cpp
     src/Logger.cpp
+	src/CryptoEngine.cpp
 )
 
 set(HEADERS
@@ -33,6 +34,7 @@ set(HEADERS
     src/ConsoleHandler.h
     src/Logger.h
     src/ServerConfig.h
+	src/CryptoEngine.h
     ../shared/NetworkProtocol.h
 )
 

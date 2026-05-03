@@ -90,6 +90,21 @@ public:
     bool setPrimaryAccount(int userId, int accountId);
     int  getPrimaryAccountId(int userId);
 
+    // ---- Crypto ----
+    QVariantList getCryptocurrencies();                                  // каталог
+    QVariantList getUserWallets(int userId);                             // кошельки текущего пользователя (auto-create при отсутствии)
+    QVariantMap  ensureWallet(int userId, int currencyId);               // вернуть кошелёк (создав при необходимости)
+
+    struct BuyResult { bool ok; QString error; double coinAmount; double rubAmount; double price; };
+    struct SellResult { bool ok; QString error; double coinAmount; double rubAmount; double price; };
+    struct CryptoTransferResult { bool ok; QString error; double coinAmount; QString recipientName; };
+
+    BuyResult  buyCrypto(int userId, int currencyId, double rubAmount, int cardId);
+    SellResult sellCrypto(int userId, int currencyId, double coinAmount, int cardId);
+    CryptoTransferResult transferCrypto(int userId, int currencyId, double coinAmount, const QString& recipientAddress);
+
+    QVariantList getCryptoHistory(int userId, int limit = 50, int offset = 0);
+
 signals:
     void connected();
     void disconnected();

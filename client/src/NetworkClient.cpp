@@ -482,3 +482,97 @@ NetworkClient::PaymentResult NetworkClient::makeLoanPayment(int userId, int loan
 
     return {true, result["closed"].toBool(), result["paymentAmount"].toDouble(), {}};
 }
+
+// ---- Crypto ----
+
+QVariantList NetworkClient::getCryptocurrencies()
+{
+    auto resp = sendRequest("getCryptocurrencies", {});
+    if (!resp["success"].toBool()) return {};
+    return resp["result"].toObject()["currencies"].toArray().toVariantList();
+}
+
+QVariantList NetworkClient::getUserWallets(int userId)
+{
+    auto resp = sendRequest("getUserWallets", { {"userId", userId} });
+    if (!resp["success"].toBool()) return {};
+    return resp["result"].toObject()["wallets"].toArray().toVariantList();
+}
+
+NetworkClient::CryptoBuyResult NetworkClient::buyCrypto(int userId, int currencyId, double rubAmount, int cardId)
+{
+    QJsonObject params;
+    params["userId"] = userId;
+    params["currencyId"] = currencyId;
+    params["rubAmount"] = rubAmount;
+    params["cardId"] = cardId;
+
+    auto resp = sendRequest("buyCrypto", params);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString(), 0, 0, 0 };
+
+    QJsonObject r = resp["result"].toObject();
+    return {
+        r["ok"].toBool(),
+        r["error"].toString(),
+        r["coinAmount"].toDouble(),
+        r["rubAmount"].toDouble(),
+        r["price"].toDouble()
+    };
+}
+
+NetworkClient::CryptoSellResult NetworkClient::sellCrypto(int userId, int currencyId, double coinAmount, int cardId)
+{
+    QJsonObject params;
+    params["userId"] = userId;
+    params["currencyId"] = currencyId;
+    params["coinAmount"] = coinAmount;
+    params["cardId"] = cardId;
+
+    auto resp = sendRequest("sellCrypto", params);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString(), 0, 0, 0 };
+
+    QJsonObject r = resp["result"].toObject();
+    return {
+        r["ok"].toBool(),
+        r["error"].toString(),
+        r["coinAmount"].toDouble(),
+        r["rubAmount"].toDouble(),
+        r["price"].toDouble()
+    };
+}
+
+NetworkClient::CryptoTransferResult NetworkClient::transferCrypto(
+    int userId, int currencyId, double coinAmount, const QString& recipientAddress)
+{
+    QJsonObject params;
+    params["userId"] = userId;
+    params["currencyId"] = currencyId;
+    params["coinAmount"] = coinAmount;
+    params["recipientAddress"] = recipientAddress;
+
+    auto resp = sendRequest("transferCrypto", params);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString(), 0, "" };
+
+    QJsonObject r = resp["result"].toObject();
+    return {
+        r["ok"].toBool(),
+        r["error"].toString(),
+        r["coinAmount"].toDouble(),
+        r["recipientName"].toString()
+    };
+}
+
+QVariantList NetworkClient::getCryptoHistory(int userId, int limit, int offset)
+{
+    QJsonObject params;
+    params["userId"] = userId;
+    params["limit"] = limit;
+    params["offset"] = offset;
+
+    auto resp = sendRequest("getCryptoHistory", params);
+    if (!resp["success"].toBool()) return {};
+    return resp["result"].toObject()["history"].toArray().toVariantList();
+}

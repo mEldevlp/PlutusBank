@@ -1106,3 +1106,494 @@ int DatabaseManager::getPrimaryAccountId(int userId)
 
     return -1;
 }
+
+// ---- Каталог монет ----
+QVariantList DatabaseManager::getCryptocurrencies()
+{
+    QVariantList list;
+    QSqlQuery q(m_db);
+    q.prepare(
+        "SELECT id, symbol, name, description, icon_color, icon_letter, "
+        "       base_price, current_price, last_updated "
+        "FROM cryptocurrencies WHERE is_active = TRUE ORDER BY id"
+    );
+    if (!q.exec())
+    {
+        Logger::instance().warning("getCryptocurrencies: " + q.lastError().text());
+        return list;
+    }
+    while (q.next())
+    {
+        QVariantMap m;
+        m["id"] = q.value(0).toInt();
+        m["symbol"] = q.value(1).toString();
+        m["name"] = q.value(2).toString();
+        m["description"] = q.value(3).toString();
+        m["icon_color"] = q.value(4).toString();
+        m["icon_letter"] = q.value(5).toString();
+        m["base_price"] = q.value(6).toDouble();
+        m["current_price"] = q.value(7).toDouble();
+        m["last_updated"] = q.value(8).toDateTime().toString("HH:mm:ss");
+        list.append(m);
+    }
+    return list;
+}
+
+// ---- Кошелёк "по требованию": если нет — создаём ----
+QVariantMap DatabaseManager::ensureWallet(int userId, int currencyId)
+{
+    QVariantMap result;
+    QSqlQuery q(m_db);
+    q.prepare("SELECT id, balance, address FROM crypto_wallets "
+        "WHERE user_id = :uid AND currency_id = :cid");
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+
+    if (q.exec() && q.next())
+    {
+        result["id"] = q.value(0).toInt();
+        result["balance"] = q.value(1).toDouble();
+        result["address"] = q.value(2).toString();
+        return result;
+    }
+
+    QSqlQuery ins(m_db);
+    ins.prepare(
+        "INSERT INTO crypto_wallets (user_id, currency_id, balance, address) "
+        "VALUES (:uid, :cid, 0, generate_crypto_address()) "
+        "RETURNING id, balance, address"
+    );
+    ins.bindValue(":uid", userId);
+    ins.bindValue(":cid", currencyId);
+    if (ins.exec() && ins.next())
+    {
+        result["id"] = ins.value(0).toInt();
+        result["balance"] = ins.value(1).toDouble();
+        result["address"] = ins.value(2).toString();
+    }
+    else
+    {
+        Logger::instance().warning("ensureWallet INSERT: " + ins.lastError().text());
+    }
+    return result;
+}
+
+// ---- Список кошельков пользователя (создаём пустые для всех монет) ----
+QVariantList DatabaseManager::getUserWallets(int userId)
+{
+    // 1. Гарантируем по 1 кошельку для каждой активной монеты
+    QSqlQuery cur(m_db);
+    cur.exec("SELECT id FROM cryptocurrencies WHERE is_active = TRUE");
+    while (cur.next())
+        ensureWallet(userId, cur.value(0).toInt());
+
+    // 2. Возвращаем сводный view — там и баланс монет, и рублёвый эквивалент
+    QVariantList list;
+    QSqlQuery q(m_db);
+    q.prepare(
+        "SELECT wallet_id, currency_id, symbol, name, icon_color, icon_letter, "
+        "       current_price, balance, rub_value, address "
+        "FROM user_wallets_view WHERE user_id = :uid "
+        "ORDER BY currency_id"
+    );
+    q.bindValue(":uid", userId);
+    if (!q.exec())
+    {
+        Logger::instance().warning("getUserWallets: " + q.lastError().text());
+        return list;
+    }
+    while (q.next())
+    {
+        QVariantMap m;
+        m["wallet_id"] = q.value(0).toInt();
+        m["currency_id"] = q.value(1).toInt();
+        m["symbol"] = q.value(2).toString();
+        m["name"] = q.value(3).toString();
+        m["icon_color"] = q.value(4).toString();
+        m["icon_letter"] = q.value(5).toString();
+        m["current_price"] = q.value(6).toDouble();
+        m["balance"] = q.value(7).toDouble();
+        m["rub_value"] = q.value(8).toDouble();
+        m["address"] = q.value(9).toString();
+        list.append(m);
+    }
+    return list;
+}
+
+// ---- Покупка крипты на рубли с конкретной банковской карты ----
+DatabaseManager::BuyResult DatabaseManager::buyCrypto(int userId, int currencyId, double rubAmount, int cardId)
+{
+    BuyResult res{ false, "", 0.0, 0.0, 0.0 };
+
+    if (rubAmount <= 0.0)
+    {
+        res.error = "Сумма должна быть положительной";
+        return res;
+    }
+
+    QSqlQuery q(m_db);
+
+    // 1. Проверяем валюту и зафиксируем цену в момент сделки
+    q.prepare("SELECT current_price, symbol FROM cryptocurrencies WHERE id = :id AND is_active = TRUE");
+    q.bindValue(":id", currencyId);
+    if (!q.exec() || !q.next())
+    {
+        res.error = "Криптовалюта не найдена";
+        return res;
+    }
+    double price = q.value(0).toDouble();
+    QString sym = q.value(1).toString();
+    if (price <= 0)
+    {
+        res.error = "Некорректная цена";
+        return res;
+    }
+
+    // 2. Проверяем карту: принадлежит ли пользователю, активна ли, не заблокирована
+    q.prepare(
+        "SELECT c.account_id, c.is_blocked, c.is_active "
+        "FROM cards c INNER JOIN accounts a ON c.account_id = a.id "
+        "WHERE c.id = :cid AND a.user_id = :uid"
+    );
+    q.bindValue(":cid", cardId);
+    q.bindValue(":uid", userId);
+    if (!q.exec() || !q.next())
+    {
+        res.error = "Карта не найдена";
+        return res;
+    }
+    int  accountId = q.value(0).toInt();
+    bool blocked = q.value(1).toBool();
+    bool active = q.value(2).toBool();
+    if (blocked) { res.error = "Карта заблокирована"; return res; }
+    if (!active) { res.error = "Карта заморожена";    return res; }
+
+    // 3. Гарантируем наличие кошелька
+    QVariantMap wallet = ensureWallet(userId, currencyId);
+    if (wallet.isEmpty())
+    {
+        res.error = "Не удалось создать кошелёк";
+        return res;
+    }
+
+    // 4. Считаем количество монет (8 знаков после запятой)
+    double coins = std::round((rubAmount / price) * 1e8) / 1e8;
+    if (coins <= 0)
+    {
+        res.error = "Слишком маленькая сумма";
+        return res;
+    }
+
+    // 5. Транзакционно: списать рубли, увеличить баланс кошелька, записи в обе истории
+    m_db.transaction();
+
+    q.prepare("UPDATE accounts SET balance = balance - :amt WHERE id = :id AND balance >= :amt");
+    q.bindValue(":amt", rubAmount);
+    q.bindValue(":id", accountId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+    {
+        m_db.rollback();
+        res.error = "Недостаточно средств на карте";
+        return res;
+    }
+
+    QString descRub = QString("Покупка %1 %2 по курсу %3 ₽")
+        .arg(coins, 0, 'f', 8).arg(sym).arg(price, 0, 'f', 2);
+
+    q.prepare("INSERT INTO transactions (from_account_id, to_account_id, amount, "
+        "transaction_type, description, status) "
+        "VALUES (:from, NULL, :amt, 'external', :desc, 'completed') RETURNING id");
+    q.bindValue(":from", accountId);
+    q.bindValue(":amt", rubAmount);
+    q.bindValue(":desc", descRub);
+    if (!q.exec() || !q.next())
+    {
+        m_db.rollback();
+        res.error = "Ошибка банковской транзакции";
+        return res;
+    }
+    int bankTxId = q.value(0).toInt();
+
+    q.prepare("UPDATE crypto_wallets SET balance = balance + :amt "
+        "WHERE user_id = :uid AND currency_id = :cid");
+    q.bindValue(":amt", coins);
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+    {
+        m_db.rollback();
+        res.error = "Ошибка зачисления монет";
+        return res;
+    }
+
+    q.prepare("INSERT INTO crypto_transactions "
+        "(operation_type, user_id, currency_id, coin_amount, rub_amount, "
+        " price_per_coin, card_id, related_account_id, bank_transaction_id, description) "
+        "VALUES ('buy', :uid, :cid, :coins, :rub, :price, :card, :acc, :btx, :desc)");
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    q.bindValue(":coins", coins);
+    q.bindValue(":rub", rubAmount);
+    q.bindValue(":price", price);
+    q.bindValue(":card", cardId);
+    q.bindValue(":acc", accountId);
+    q.bindValue(":btx", bankTxId);
+    q.bindValue(":desc", descRub);
+    if (!q.exec())
+    {
+        m_db.rollback();
+        res.error = "Ошибка истории крипто-операций";
+        return res;
+    }
+
+    if (!m_db.commit())
+    {
+        m_db.rollback();
+        res.error = "Не удалось зафиксировать транзакцию";
+        return res;
+    }
+
+    res.ok = true;
+    res.coinAmount = coins;
+    res.rubAmount = rubAmount;
+    res.price = price;
+    return res;
+}
+
+// ---- Продажа криптовалюты с зачислением рублей на карту ----
+DatabaseManager::SellResult DatabaseManager::sellCrypto(int userId, int currencyId, double coinAmount, int cardId)
+{
+    SellResult res{ false, "", 0.0, 0.0, 0.0 };
+
+    if (coinAmount <= 0.0)
+    {
+        res.error = "Количество должно быть положительным";
+        return res;
+    }
+
+    QSqlQuery q(m_db);
+
+    q.prepare("SELECT current_price, symbol FROM cryptocurrencies WHERE id = :id AND is_active = TRUE");
+    q.bindValue(":id", currencyId);
+    if (!q.exec() || !q.next()) { res.error = "Криптовалюта не найдена"; return res; }
+    double price = q.value(0).toDouble();
+    QString sym = q.value(1).toString();
+
+    q.prepare("SELECT balance FROM crypto_wallets WHERE user_id = :uid AND currency_id = :cid");
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || !q.next()) { res.error = "Кошелёк не найден"; return res; }
+    double balance = q.value(0).toDouble();
+    if (balance + 1e-9 < coinAmount)
+    {
+        res.error = QString("Недостаточно монет (есть %1)").arg(balance, 0, 'f', 8);
+        return res;
+    }
+
+    q.prepare(
+        "SELECT c.account_id, c.is_blocked, c.is_active "
+        "FROM cards c INNER JOIN accounts a ON c.account_id = a.id "
+        "WHERE c.id = :cid AND a.user_id = :uid"
+    );
+    q.bindValue(":cid", cardId);
+    q.bindValue(":uid", userId);
+    if (!q.exec() || !q.next()) { res.error = "Карта не найдена"; return res; }
+    int  accountId = q.value(0).toInt();
+    if (q.value(1).toBool()) { res.error = "Карта заблокирована"; return res; }
+    if (!q.value(2).toBool()) { res.error = "Карта заморожена"; return res; }
+
+    double rubAmount = std::round((coinAmount * price) * 100.0) / 100.0;
+    if (rubAmount <= 0) { res.error = "Слишком маленькая сумма"; return res; }
+
+    m_db.transaction();
+
+    q.prepare("UPDATE crypto_wallets SET balance = balance - :amt "
+        "WHERE user_id = :uid AND currency_id = :cid AND balance >= :amt");
+    q.bindValue(":amt", coinAmount);
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+    {
+        m_db.rollback();
+        res.error = "Не удалось списать монеты";
+        return res;
+    }
+
+    QString descRub = QString("Продажа %1 %2 по курсу %3 ₽")
+        .arg(coinAmount, 0, 'f', 8).arg(sym).arg(price, 0, 'f', 2);
+
+    q.prepare("UPDATE accounts SET balance = balance + :amt WHERE id = :id");
+    q.bindValue(":amt", rubAmount);
+    q.bindValue(":id", accountId);
+    if (!q.exec()) { m_db.rollback(); res.error = "Ошибка зачисления рублей"; return res; }
+
+    q.prepare("INSERT INTO transactions (from_account_id, to_account_id, amount, "
+        "transaction_type, description, status) "
+        "VALUES (NULL, :to, :amt, 'external', :desc, 'completed') RETURNING id");
+    q.bindValue(":to", accountId);
+    q.bindValue(":amt", rubAmount);
+    q.bindValue(":desc", descRub);
+    if (!q.exec() || !q.next()) { m_db.rollback(); res.error = "Ошибка банковской транзакции"; return res; }
+    int bankTxId = q.value(0).toInt();
+
+    q.prepare("INSERT INTO crypto_transactions "
+        "(operation_type, user_id, currency_id, coin_amount, rub_amount, "
+        " price_per_coin, card_id, related_account_id, bank_transaction_id, description) "
+        "VALUES ('sell', :uid, :cid, :coins, :rub, :price, :card, :acc, :btx, :desc)");
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    q.bindValue(":coins", coinAmount);
+    q.bindValue(":rub", rubAmount);
+    q.bindValue(":price", price);
+    q.bindValue(":card", cardId);
+    q.bindValue(":acc", accountId);
+    q.bindValue(":btx", bankTxId);
+    q.bindValue(":desc", descRub);
+    if (!q.exec()) { m_db.rollback(); res.error = "Ошибка истории"; return res; }
+
+    if (!m_db.commit()) { m_db.rollback(); res.error = "Не удалось зафиксировать"; return res; }
+
+    res.ok = true;
+    res.coinAmount = coinAmount;
+    res.rubAmount = rubAmount;
+    res.price = price;
+    return res;
+}
+
+// ---- Перевод монет другому пользователю по адресу кошелька ----
+DatabaseManager::CryptoTransferResult DatabaseManager::transferCrypto(
+    int userId, int currencyId, double coinAmount, const QString& recipientAddress)
+{
+    CryptoTransferResult res{ false, "", 0.0, "" };
+
+    if (coinAmount <= 0)
+    {
+        res.error = "Количество должно быть положительным";
+        return res;
+    }
+
+    QSqlQuery q(m_db);
+
+    // Найти получателя по адресу
+    q.prepare("SELECT w.id, w.user_id, u.first_name, u.last_name "
+        "FROM crypto_wallets w INNER JOIN users u ON u.id = w.user_id "
+        "WHERE w.address = :addr AND w.currency_id = :cid");
+    q.bindValue(":addr", recipientAddress);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || !q.next())
+    {
+        res.error = "Кошелёк получателя не найден";
+        return res;
+    }
+    int recipientUserId = q.value(1).toInt();
+    QString recipName = q.value(3).toString() + " " + q.value(2).toString().left(1) + ".";
+
+    if (recipientUserId == userId)
+    {
+        res.error = "Нельзя переводить самому себе";
+        return res;
+    }
+
+    // Гарантируем, что у отправителя есть кошелёк
+    QVariantMap myWallet = ensureWallet(userId, currencyId);
+    if (myWallet.isEmpty()) { res.error = "Кошелёк отправителя не найден"; return res; }
+
+    if (myWallet["balance"].toDouble() + 1e-9 < coinAmount)
+    {
+        res.error = QString("Недостаточно монет (есть %1)").arg(myWallet["balance"].toDouble(), 0, 'f', 8);
+        return res;
+    }
+
+    QString sym;
+    q.prepare("SELECT symbol FROM cryptocurrencies WHERE id = :id");
+    q.bindValue(":id", currencyId);
+    if (q.exec() && q.next()) sym = q.value(0).toString();
+
+    m_db.transaction();
+
+    q.prepare("UPDATE crypto_wallets SET balance = balance - :amt "
+        "WHERE user_id = :uid AND currency_id = :cid AND balance >= :amt");
+    q.bindValue(":amt", coinAmount);
+    q.bindValue(":uid", userId);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+    {
+        m_db.rollback();
+        res.error = "Не удалось списать монеты";
+        return res;
+    }
+
+    q.prepare("UPDATE crypto_wallets SET balance = balance + :amt "
+        "WHERE user_id = :uid AND currency_id = :cid");
+    q.bindValue(":amt", coinAmount);
+    q.bindValue(":uid", recipientUserId);
+    q.bindValue(":cid", currencyId);
+    if (!q.exec() || q.numRowsAffected() == 0)
+    {
+        m_db.rollback();
+        res.error = "Не удалось зачислить монеты получателю";
+        return res;
+    }
+
+    QString descOut = QString("Перевод %1 %2 → %3").arg(coinAmount, 0, 'f', 8).arg(sym).arg(recipientAddress);
+    QString descIn = QString("Получено %1 %2 от пользователя").arg(coinAmount, 0, 'f', 8).arg(sym);
+
+    q.prepare("INSERT INTO crypto_transactions "
+        "(operation_type, user_id, counterparty_user_id, currency_id, coin_amount, description) "
+        "VALUES ('transfer_out', :uid, :ctp, :cid, :coins, :desc)");
+    q.bindValue(":uid", userId); q.bindValue(":ctp", recipientUserId);
+    q.bindValue(":cid", currencyId); q.bindValue(":coins", coinAmount);
+    q.bindValue(":desc", descOut);
+    if (!q.exec()) { m_db.rollback(); res.error = "Ошибка истории"; return res; }
+
+    q.prepare("INSERT INTO crypto_transactions "
+        "(operation_type, user_id, counterparty_user_id, currency_id, coin_amount, description) "
+        "VALUES ('transfer_in', :uid, :ctp, :cid, :coins, :desc)");
+    q.bindValue(":uid", recipientUserId); q.bindValue(":ctp", userId);
+    q.bindValue(":cid", currencyId); q.bindValue(":coins", coinAmount);
+    q.bindValue(":desc", descIn);
+    if (!q.exec()) { m_db.rollback(); res.error = "Ошибка истории получателя"; return res; }
+
+    if (!m_db.commit()) { m_db.rollback(); res.error = "Не удалось зафиксировать"; return res; }
+
+    res.ok = true;
+    res.coinAmount = coinAmount;
+    res.recipientName = recipName;
+    return res;
+}
+
+// ---- История крипто-операций пользователя ----
+QVariantList DatabaseManager::getCryptoHistory(int userId, int limit, int offset)
+{
+    QVariantList list;
+    QSqlQuery q(m_db);
+    q.prepare(
+        "SELECT t.id, t.operation_type, t.coin_amount, t.rub_amount, t.price_per_coin, "
+        "       t.description, t.created_at, c.symbol, c.icon_color, c.icon_letter "
+        "FROM crypto_transactions t "
+        "INNER JOIN cryptocurrencies c ON c.id = t.currency_id "
+        "WHERE t.user_id = :uid "
+        "ORDER BY t.created_at DESC LIMIT :lim OFFSET :off"
+    );
+    q.bindValue(":uid", userId);
+    q.bindValue(":lim", limit);
+    q.bindValue(":off", offset);
+    if (!q.exec()) return list;
+
+    while (q.next())
+    {
+        QVariantMap m;
+        m["id"] = q.value(0).toInt();
+        m["operation_type"] = q.value(1).toString();
+        m["coin_amount"] = q.value(2).toDouble();
+        m["rub_amount"] = q.value(3).toDouble();
+        m["price_per_coin"] = q.value(4).toDouble();
+        m["description"] = q.value(5).toString();
+        m["created_at"] = q.value(6).toDateTime().toString("dd.MM.yyyy HH:mm");
+        m["symbol"] = q.value(7).toString();
+        m["icon_color"] = q.value(8).toString();
+        m["icon_letter"] = q.value(9).toString();
+        list.append(m);
+    }
+    return list;
+}

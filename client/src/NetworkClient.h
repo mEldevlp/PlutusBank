@@ -97,6 +97,20 @@ public:
     struct PaymentResult { bool ok; bool closed; double paymentAmount; QString error; };
     PaymentResult makeLoanPayment(int userId, int loanId);
 
+    // ---- Crypto ----
+    QVariantList getCryptocurrencies();
+    QVariantList getUserWallets(int userId);
+
+    struct CryptoBuyResult { bool ok; QString error; double coinAmount; double rubAmount; double price; };
+    struct CryptoSellResult { bool ok; QString error; double coinAmount; double rubAmount; double price; };
+    struct CryptoTransferResult { bool ok; QString error; double coinAmount; QString recipientName; };
+
+    CryptoBuyResult  buyCrypto(int userId, int currencyId, double rubAmount, int cardId);
+    CryptoSellResult sellCrypto(int userId, int currencyId, double coinAmount, int cardId);
+    CryptoTransferResult transferCrypto(int userId, int currencyId, double coinAmount, const QString& recipientAddress);
+
+    QVariantList getCryptoHistory(int userId, int limit = 50, int offset = 0);
+
 signals:
     void connectionLost();
     void error(const QString& message);

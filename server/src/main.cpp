@@ -7,6 +7,7 @@
 #include "BankServer.h"
 #include "ConsoleHandler.h"
 #include "ClientSession.h"
+#include "CryptoEngine.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -117,6 +118,9 @@ int main(int argc, char* argv[])
     if (!server.startListening(cfg.serverHost, cfg.serverPort))
         return -1;
 
+    CryptoEngine cryptoEngine;
+    cryptoEngine.start();
+
     // Консольный ввод в отдельном потоке
     ConsoleHandler console;
     QObject::connect(&console, &ConsoleHandler::commandReceived,
@@ -133,7 +137,9 @@ int main(int argc, char* argv[])
     // Корректное завершение
     console.stop();
     console.wait(2000);
+    cryptoEngine.stop();
     server.stop();
+
     db.disconnect();
 
     Logger::instance().info("Сервер остановлен.");

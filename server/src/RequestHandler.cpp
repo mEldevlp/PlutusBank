@@ -653,4 +653,97 @@ void RequestHandler::registerHandlers()
 
         return {{"ok", true}, {"closed", isFullyPaid}, {"paymentAmount", paymentAmount}};
     };
+
+    // ---- Crypto ----
+
+    m_handlers["getCryptocurrencies"] = [this](const QJsonObject&, const QString&) -> QJsonObject
+        {
+            QVariantList list = m_db.getCryptocurrencies();
+            return { {"currencies", variantListToJson(list)} };
+        };
+
+    m_handlers["getUserWallets"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
+        {
+            int userId = p["userId"].toInt();
+            Logger::instance().userAction(tag, userId, "Загрузка крипто-кошельков");
+            QVariantList list = m_db.getUserWallets(userId);
+            return { {"wallets", variantListToJson(list)} };
+        };
+
+    m_handlers["buyCrypto"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
+        {
+            int    userId = p["userId"].toInt();
+            int    cryptoId = p["currencyId"].toInt();
+            double rubAmount = p["rubAmount"].toDouble();
+            int    cardId = p["cardId"].toInt();
+
+            auto r = m_db.buyCrypto(userId, cryptoId, rubAmount, cardId);
+            if (r.ok)
+            {
+                Logger::instance().userAction(tag, userId,
+                    QString("Покупка крипты: %1 монет за %2 ₽")
+                    .arg(r.coinAmount, 0, 'f', 8).arg(r.rubAmount, 0, 'f', 2));
+            }
+            return {
+                {"ok",         r.ok},
+                {"error",      r.error},
+                {"coinAmount", r.coinAmount},
+                {"rubAmount",  r.rubAmount},
+                {"price",      r.price}
+            };
+        };
+
+    m_handlers["sellCrypto"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
+        {
+            int    userId = p["userId"].toInt();
+            int    cryptoId = p["currencyId"].toInt();
+            double coinAmount = p["coinAmount"].toDouble();
+            int    cardId = p["cardId"].toInt();
+
+            auto r = m_db.sellCrypto(userId, cryptoId, coinAmount, cardId);
+            if (r.ok)
+            {
+                Logger::instance().userAction(tag, userId,
+                    QString("Продажа крипты: %1 монет за %2 ₽")
+                    .arg(r.coinAmount, 0, 'f', 8).arg(r.rubAmount, 0, 'f', 2));
+            }
+            return {
+                {"ok",         r.ok},
+                {"error",      r.error},
+                {"coinAmount", r.coinAmount},
+                {"rubAmount",  r.rubAmount},
+                {"price",      r.price}
+            };
+        };
+
+    m_handlers["transferCrypto"] = [this](const QJsonObject& p, const QString& tag) -> QJsonObject
+        {
+            int     userId = p["userId"].toInt();
+            int     cryptoId = p["currencyId"].toInt();
+            double  coinAmount = p["coinAmount"].toDouble();
+            QString recipient = p["recipientAddress"].toString();
+
+            auto r = m_db.transferCrypto(userId, cryptoId, coinAmount, recipient);
+            if (r.ok)
+            {
+                Logger::instance().userAction(tag, userId,
+                    QString("Крипто-перевод %1 → %2").arg(r.coinAmount, 0, 'f', 8).arg(recipient));
+            }
+            return {
+                {"ok",            r.ok},
+                {"error",         r.error},
+                {"coinAmount",    r.coinAmount},
+                {"recipientName", r.recipientName}
+            };
+        };
+
+    m_handlers["getCryptoHistory"] = [this](const QJsonObject& p, const QString&) -> QJsonObject
+        {
+            int userId = p["userId"].toInt();
+            int limit = p.contains("limit") ? p["limit"].toInt() : 50;
+            int offset = p.contains("offset") ? p["offset"].toInt() : 0;
+            QVariantList list = m_db.getCryptoHistory(userId, limit, offset);
+            return { {"history", variantListToJson(list)} };
+        };
+
 }

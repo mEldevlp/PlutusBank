@@ -55,6 +55,7 @@ set(SOURCE_FILES
 	src/TransferController.cpp
 	src/HistoryController.cpp
 	src/LoanController.cpp
+	src/CryptoController.cpp
 )
 
 # Header Files
@@ -66,27 +67,36 @@ set(HEADER_FILES
 	src/TransferController.h
 	src/HistoryController.h
 	src/LoanController.h
+	src/CryptoController.h
+	
 	../shared/NetworkProtocol.h
 )
 
 # QML Files - UI
 set(QML_UI_FILES
-	qml/Main.qml
 	qml/Auth.qml
-	qml/Register.qml
-	qml/MainPage.qml
-	qml/CreateCardDialog.qml
-	qml/TransferPage.qml
-	qml/HistoryPage.qml
+	qml/BottomTabBar.qml
 	qml/CardDetailPage.qml
-	qml/TopUpPage.qml
-	qml/SettingsPage.qml
+	qml/CreateCardDialog.qml
+	qml/CryptoBuyPage.qml
+	qml/CryptoHistoryPage.qml
+	qml/CryptoMainPage.qml
+	qml/CryptoSellPage.qml
+	qml/CryptoTransferPage.qml
+	qml/HistoryPage.qml
 	qml/LoanCatalogPage.qml
 	qml/LoanCalculatorPage.qml
-	qml/MyLoansPage.qml
 	qml/LoanSchedulePage.qml
 	qml/LoanHistoryPage.qml
+	qml/Main.qml
+	qml/MainPage.qml
+	qml/MainShell.qml
+	qml/MyLoansPage.qml
+	qml/Register.qml
+	qml/SettingsPage.qml
 	qml/Theme.qml  
+	qml/TransferPage.qml
+	qml/TopUpPage.qml
 )
 
 # QML Resources - Assets

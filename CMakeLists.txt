@@ -20,7 +20,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "_Infrastructure/CMake")
 
 set(CMAKE_AUTOGEN_TARGETS_FOLDER "_Infrastructure/Generated")
+
 option(BUILD_CLIENT "Build PlutusBank Client" ON)
+option(BUILD_SERVER "Build PlutusBank Server" ON)
 
 set(SHARED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/shared")
 
@@ -29,6 +31,9 @@ if(BUILD_CLIENT)
     add_subdirectory(client)
 endif()
 
+if(BUILD_SERVER)
+    add_subdirectory(server)
+endif()
 
 # Чтобы Client стартовал по F5 без выбора через ПКМ
 if(BUILD_CLIENT)
@@ -74,5 +79,6 @@ endfunction()
 message(STATUS "")
 message(STATUS "=== PlutusBank Root ===")
 message(STATUS "Client : ${BUILD_CLIENT}")
+message(STATUS "Server : ${BUILD_SERVER}")
 message(STATUS "========================")
 message(STATUS "")
