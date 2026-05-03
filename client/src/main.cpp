@@ -44,7 +44,7 @@ int main(int argc, char* argv[])
     if (!net.connectToServer(serverHost, serverPort))
     {
         qWarning() << "Не удалось подключиться к серверу при старте:" << serverHost << ":" << serverPort;
-        // НЕ выходим — даём UI отработать, попытаемся переподключиться при логине
+        // НЕ выходим - даём UI отработать, попытаемся переподключиться при логине
     }
     qDebug() << "Server config used:" << serverHost << ":" << serverPort;
 

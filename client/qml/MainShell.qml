@@ -6,9 +6,9 @@ import "."
 
 Item {
     id: shell
-    anchors.fill: parent
+    //anchors.fill: parent
 
-    property int activeTab: 0  // 0 — банк, 1 — крипто [cite: 60]
+    property int activeTab: 0  // 0 — банк, 1 — крипто
 
     // Сигналы наверх (Main.qml)
     signal loggedOut()

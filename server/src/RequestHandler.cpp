@@ -471,7 +471,7 @@ void RequestHandler::registerHandlers()
         q.prepare(
             "SELECT l.id, lp.name, lp.category, l.principal, l.annual_rate, "
             "l.term_months, l.monthly_payment, l.remaining_balance, l.total_paid, "
-            "l.next_payment_date, l.issued_at "
+            "l.next_payment_date, l.issued_at, l.status"
             "FROM loans l INNER JOIN loan_products lp ON l.product_id = lp.id "
             "WHERE l.user_id = :uid AND l.status = 'active' ORDER BY l.issued_at DESC"
         );
@@ -494,6 +494,7 @@ void RequestHandler::registerHandlers()
                 loan["total_paid"]        = q.value(8).toDouble();
                 loan["next_payment_date"] = q.value(9).toDate().toString("dd.MM.yyyy");
                 loan["issued_at"]         = q.value(10).toDateTime().toString("dd.MM.yyyy");
+                loan["status"]            = q.value(11).toString();
                 arr.append(loan);
             }
         }

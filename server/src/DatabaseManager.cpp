@@ -204,7 +204,8 @@ QVariantMap DatabaseManager::getUserData(int userId)
 
     query.prepare(
         "SELECT first_name, last_name, middle_name, email, phone, "
-        "passport_series, passport_number, date_of_birth "
+        "passport_series, passport_number, date_of_birth, "
+        "address, primary_account_id "
         "FROM users WHERE id = :userId"
     );
     query.bindValue(":userId", userId);
