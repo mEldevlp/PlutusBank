@@ -79,6 +79,7 @@ set(QML_UI_FILES
 	qml/CardDetailPage.qml
 	qml/CreateCardDialog.qml
 	qml/CryptoBuyPage.qml
+	qml/CryptoCoinDetailPage.qml
 	qml/CryptoHistoryPage.qml
 	qml/CryptoMainPage.qml
 	qml/CryptoSellPage.qml

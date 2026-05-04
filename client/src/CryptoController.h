@@ -21,14 +21,15 @@ class CryptoController : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY(QVariantList currencies   READ currencies   NOTIFY currenciesChanged)
-    Q_PROPERTY(QVariantList wallets      READ wallets      NOTIFY walletsChanged)
-    Q_PROPERTY(QVariantList history      READ history      NOTIFY historyChanged)
-    Q_PROPERTY(double totalRubValue      READ totalRubValue NOTIFY walletsChanged)
-    Q_PROPERTY(bool isLoading            READ isLoading    NOTIFY loadingChanged)
-    Q_PROPERTY(bool autoRefreshEnabled   READ autoRefreshEnabled
-                                         WRITE setAutoRefreshEnabled
-                                         NOTIFY autoRefreshChanged)
+        Q_PROPERTY(QVariantList currencies   READ currencies   NOTIFY currenciesChanged)
+        Q_PROPERTY(QVariantList wallets      READ wallets      NOTIFY walletsChanged)
+        Q_PROPERTY(QVariantList history      READ history      NOTIFY historyChanged)
+        Q_PROPERTY(double totalRubValue      READ totalRubValue NOTIFY walletsChanged)
+        Q_PROPERTY(bool isLoading            READ isLoading    NOTIFY loadingChanged)
+        Q_PROPERTY(bool autoRefreshEnabled   READ autoRefreshEnabled
+            WRITE setAutoRefreshEnabled
+            NOTIFY autoRefreshChanged)
+        Q_PROPERTY(QVariantMap coinDetail    READ coinDetail   NOTIFY coinDetailChanged)
 
 public:
     explicit CryptoController(QObject* parent = nullptr);
@@ -36,6 +37,7 @@ public:
     QVariantList currencies()  const { return m_currencies; }
     QVariantList wallets()     const { return m_wallets; }
     QVariantList history()     const { return m_history; }
+    QVariantMap  coinDetail()  const { return m_coinDetail; }
     double totalRubValue()     const { return m_totalRubValue; }
     bool isLoading()           const { return m_isLoading; }
     bool autoRefreshEnabled()  const { return m_autoRefresh.isActive(); }
@@ -47,8 +49,11 @@ public:
     Q_INVOKABLE void loadHistory();             // история операций
     Q_INVOKABLE void refreshAll();              // всё сразу
 
-    Q_INVOKABLE void buy   (int currencyId, double rubAmount, int cardId);
-    Q_INVOKABLE void sell  (int currencyId, double coinAmount, int cardId);
+    Q_INVOKABLE void startCoinDetail(int currencyId);   // начать подтягивать детали монеты
+    Q_INVOKABLE void stopCoinDetail();                   // прекратить
+
+    Q_INVOKABLE void buy(int currencyId, double rubAmount, int cardId);
+    Q_INVOKABLE void sell(int currencyId, double coinAmount, int cardId);
     Q_INVOKABLE void transfer(int currencyId, double coinAmount, const QString& recipientAddress);
 
     // Мгновенный пересчёт цены сделки на клиенте без обращения к серверу
@@ -61,6 +66,7 @@ signals:
     void historyChanged();
     void loadingChanged();
     void autoRefreshChanged();
+    void coinDetailChanged();
 
     void buySuccess(const QString& message);
     void buyFailed(const QString& error);
@@ -79,8 +85,10 @@ private:
     QVariantList   m_currencies;
     QVariantList   m_wallets;
     QVariantList   m_history;
+    QVariantMap    m_coinDetail;
+    int            m_coinDetailCurrencyId = -1;   // -1 = не отслеживаем
     double         m_totalRubValue = 0.0;
-    bool           m_isLoading     = false;
+    bool           m_isLoading = false;
 
     QTimer m_autoRefresh;
 };

@@ -22,6 +22,10 @@
 
     Цена не может уйти ниже 1% от base_price (жёсткий пол) и выше 50× — иначе
     случайный гигантский скачок мог бы сломать симуляцию навсегда.
+
+    Каждые SNAPSHOT_EVERY_TICKS тиков движок пишет цену каждой монеты в
+    crypto_price_history — это даёт точки для графика на CryptoCoinDetailPage.
+    Раз в CLEANUP_EVERY_TICKS — чистит записи старше 7 суток.
 */
 
 class CryptoEngine : public QObject
@@ -38,13 +42,27 @@ public:
     // и для глаз пользователя, и для нагрузки на БД.
     static constexpr int TICK_INTERVAL_MS = 3000;
 
+    // Раз в столько тиков снимаем срез цен в crypto_price_history.
+    // 10 тиков × 3 сек = 30 сек между точками → 2880 точек/сутки на монету.
+    static constexpr int SNAPSHOT_EVERY_TICKS = 10;
+
+    // Раз в столько тиков чистим записи старше 7 суток (примерно раз в час).
+    static constexpr int CLEANUP_EVERY_TICKS = 1200;
+
 private slots:
     void onTick();
 
 private:
     QTimer m_timer;
     QRandomGenerator m_rng;
+    quint64 m_tickCount = 0;
 
     // Box-Muller — стандартное нормальное распределение
     double sampleNormal();
+
+    // Записать срез текущих цен в crypto_price_history
+    void writePriceSnapshot();
+
+    // Удалить старые записи из crypto_price_history (>7 суток)
+    void cleanupOldPriceHistory();
 };

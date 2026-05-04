@@ -8,11 +8,14 @@ import "."
     CryptoMainPage — корневая страница криптомодуля.
 
     - сверху: общий рублёвый баланс всех кошельков
-    - блок "Мои кошельки": кошельки, где есть монеты — карточкой
-      с балансом монет и эквивалентом в ₽
-    - блок "Каталог": все 4 монеты с актуальной ценой
-      (тап — переход к покупке)
-    - кнопка "История крипто-операций"
+    - блок "Криптовалюты": единый список всех монет каталога.
+        * если у пользователя есть баланс по монете — карточка
+          с количеством монет, рублёвой стоимостью и ценой за монету
+          (как раньше выглядел блок "Мои кошельки");
+        * если баланса нет — компактная карточка: тикер + текущая цена.
+      Тап по любой монете — переход на детальную страницу (CryptoCoinDetailPage),
+      откуда уже можно купить/продать/перевести.
+    - кнопка "История крипто-операций" — в шапке.
 */
 Item {
     id: root
@@ -21,6 +24,7 @@ Item {
     signal openSell(var currency, real currentBalance)
     signal openTransfer(var currency, real currentBalance)
     signal openHistory()
+    signal openCoinDetail(var currency)
 
     FontLoader {
         id: manropeFont
@@ -157,35 +161,56 @@ Item {
                 }
             }
 
-            // --- Мои кошельки (только с ненулевым балансом) ---
+            // --- Криптовалюты (единый список: каталог + текущие балансы) ---
             Column {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
 
-                property var ownedWallets: {
-                    var arr = []
-                    for (var i = 0; i < cryptoController.wallets.length; i++) {
-                        if (cryptoController.wallets[i].balance > 0)
-                            arr.push(cryptoController.wallets[i])
+                // Объединяем каталог валют с кошельками пользователя.
+                // Для каждой валюты добавляем поля balance / rub_value (0, если не куплена).
+                property var mergedCurrencies: {
+                    var result = []
+                    var wallets = cryptoController.wallets
+                    for (var i = 0; i < cryptoController.currencies.length; i++) {
+                        var cur = cryptoController.currencies[i]
+                        var entry = {
+                            "id":            cur.id,
+                            "symbol":        cur.symbol,
+                            "name":          cur.name,
+                            "current_price": cur.current_price,
+                            "icon_color":    cur.icon_color,
+                            "icon_letter":   cur.icon_letter,
+                            "balance":       0,
+                            "rub_value":     0
+                        }
+                        for (var j = 0; j < wallets.length; j++) {
+                            if (wallets[j].currency_id === cur.id && wallets[j].balance > 0) {
+                                entry.balance   = wallets[j].balance
+                                entry.rub_value = wallets[j].rub_value
+                                break
+                            }
+                        }
+                        result.push(entry)
                     }
-                    return arr
+                    return result
                 }
 
                 Text {
-                    text: "Мои кошельки"
+                    text: "Криптовалюты"
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
-                    visible: parent.ownedWallets.length > 0
                 }
 
                 Repeater {
-                    model: parent.ownedWallets
+                    model: parent.mergedCurrencies
 
                     delegate: Rectangle {
                         required property var modelData
+                        readonly property bool isOwned: modelData.balance > 0
+
                         width: parent.width
-                        height: 88
+                        height: isOwned ? 88 : 76
                         radius: 16
                         gradient: Gradient {
                             GradientStop { position: 0.0; color: Theme.grBlockPosStart }
@@ -198,38 +223,65 @@ Item {
                             anchors.margins: 14
                             spacing: 14
 
-                            // Цветной "значок" монеты
+                            // Цветной "значок" монеты — крупнее, если монета куплена
                             Rectangle {
-                                width: 48; height: 48; radius: 24
+                                width: isOwned ? 48 : 44
+                                height: width
+                                radius: width / 2
                                 color: modelData.icon_color
                                 anchors.verticalCenter: parent.verticalCenter
                                 Text {
                                     anchors.centerIn: parent
                                     text: modelData.icon_letter
-                                    font { pixelSize: 22; bold: true; family: manropeFont.name }
+                                    font { pixelSize: isOwned ? 22 : 20; bold: true; family: manropeFont.name }
                                     color: "#FFFFFF"
                                 }
                             }
 
+                            // Левая текстовая колонка: тикер (+ количество монет, если куплена)
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
                                 Text {
                                     text: modelData.symbol
-                                    font { pixelSize: 16; bold: true; family: manropeFont.name }
+                                    font { pixelSize: isOwned ? 16 : 14; bold: true; family: manropeFont.name }
                                     color: "#FFFFFF"
                                 }
                                 Text {
+                                    visible: isOwned
                                     text: fmtCoins(modelData.balance) + " " + modelData.symbol
                                     font.pixelSize: 12
                                     color: "#9CA3AF"
                                 }
                             }
 
+                            // Правая часть: цена / стоимость портфеля по этой монете
                             Item {
                                 width: parent.width - parent.children[0].width - parent.children[1].width - parent.spacing * 2
                                 height: parent.height
+
+                                // ── Не куплена: одна цифра — текущая цена за монету
+                                Text {
+                                    visible: !isOwned
+                                    anchors.right: parent.right
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: Number(modelData.current_price).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                    font { pixelSize: 15; bold: true; family: manropeFont.name }
+                                    color: "#FFFFFF"
+
+                                    // Тонкая анимация смены цены
+                                    Behavior on text {
+                                        SequentialAnimation {
+                                            NumberAnimation { target: parent; property: "opacity"; to: 0.4; duration: 100 }
+                                            PropertyAction  { }
+                                            NumberAnimation { target: parent; property: "opacity"; to: 1.0; duration: 200 }
+                                        }
+                                    }
+                                }
+
+                                // ── Куплена: рублёвая стоимость портфеля + цена за монету
                                 Column {
+                                    visible: isOwned
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 4
@@ -249,193 +301,10 @@ Item {
                             }
                         }
 
-                        // Кнопочный ряд (Купить / Продать / Перевести) на длительный тап? Нет, просто меню снизу через диалог:
+                        // Тап по любой монете — открыть детальную страницу
                         MouseArea {
                             anchors.fill: parent
-                            onClicked: walletActionDialog.show(modelData)
-                        }
-                    }
-                }
-            }
-
-            // --- Каталог монет ---
-            Column {
-                width: parent.width - 32
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 14
-
-                Text {
-                    text: "Купить криптовалюту"
-                    font { pixelSize: 18; bold: true; family: manropeFont.name }
-                    color: "#F7F7FB"
-                }
-
-                Repeater {
-                    model: cryptoController.currencies
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        width: parent.width
-                        height: 76
-                        radius: 16
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
-                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
-                        }
-                        border.color: Theme.card
-
-                        Row {
-                            anchors.fill: parent
-                            anchors.margins: 14
-                            spacing: 14
-
-                            Rectangle {
-                                width: 44; height: 44; radius: 22
-                                color: modelData.icon_color
-                                anchors.verticalCenter: parent.verticalCenter
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.icon_letter
-                                    font { pixelSize: 20; bold: true; family: manropeFont.name }
-                                    color: "#FFFFFF"
-                                }
-                            }
-
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: 4
-                                Text {
-                                    text: modelData.name
-                                    font { pixelSize: 14; bold: true; family: manropeFont.name }
-                                    color: "#FFFFFF"
-                                }
-                                Text {
-                                    text: modelData.symbol
-                                    font.pixelSize: 11
-                                    color: "#9CA3AF"
-                                }
-                            }
-
-                            Item {
-                                width: parent.width - parent.children[0].width - parent.children[1].width - parent.spacing * 2
-                                height: parent.height
-                                Text {
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: Number(modelData.current_price).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
-                                    font { pixelSize: 15; bold: true; family: manropeFont.name }
-                                    color: "#FFFFFF"
-
-                                    // Тонкая анимация смены цены
-                                    Behavior on text {
-                                        SequentialAnimation {
-                                            NumberAnimation { target: parent; property: "opacity"; to: 0.4; duration: 100 }
-                                            PropertyAction  { }
-                                            NumberAnimation { target: parent; property: "opacity"; to: 1.0; duration: 200 }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: root.openBuy(modelData)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // ============================================================
-    //   Диалог "что сделать с этим кошельком"
-    // ============================================================
-    Rectangle {
-        id: walletActionDialog
-        anchors.fill: parent
-        color: "#CC000000"
-        visible: false
-        z: 100
-
-        property var wallet: ({})
-
-        function show(w) {
-            wallet = w
-            visible = true
-        }
-        function hide() { visible = false }
-
-        MouseArea { anchors.fill: parent; onClicked: walletActionDialog.hide() }
-
-        Rectangle {
-            width: parent.width - 48
-            anchors.centerIn: parent
-            radius: 20
-            color: "#1F2937"
-            height: dlgCol.height + 40
-
-            MouseArea { anchors.fill: parent }  // блокировать клик-сквозь
-
-            Column {
-                id: dlgCol
-                width: parent.width - 32
-                anchors.centerIn: parent
-                spacing: 14
-
-                Text {
-                    width: parent.width
-                    text: walletActionDialog.wallet.symbol ? walletActionDialog.wallet.symbol + " · " + fmtCoins(walletActionDialog.wallet.balance) : ""
-                    font { pixelSize: 16; bold: true; family: manropeFont.name }
-                    color: "#FFFFFF"
-                    horizontalAlignment: Text.AlignHCenter
-                }
-
-                Repeater {
-                    model: [
-                        { label: "Докупить", action: "buy" },
-                        { label: "Продать",  action: "sell" },
-                        { label: "Перевести другому", action: "transfer" }
-                    ]
-
-                    delegate: Rectangle {
-                        required property var modelData
-                        width: parent.width
-                        height: 50
-                        radius: 14
-                        color: actMouse.pressed ? "#374151" : "#111827"
-                        border.color: Theme.card
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData.label
-                            font { pixelSize: 14; bold: true; family: manropeFont.name }
-                            color: "#E5E7EB"
-                        }
-
-                        MouseArea {
-                            id: actMouse
-                            anchors.fill: parent
-                            onClicked: {
-                                var w = walletActionDialog.wallet
-                                walletActionDialog.hide()
-                                // Конструируем "currency"-объект (без поля balance)
-                                var currency = {
-                                    "id": w.currency_id,
-                                    "symbol": w.symbol,
-                                    "name": w.name,
-                                    "current_price": w.current_price,
-                                    "icon_color": w.icon_color,
-                                    "icon_letter": w.icon_letter
-                                }
-                                if (modelData.action === "buy") {
-                                    root.openBuy(currency)
-                                } else if (modelData.action === "sell") {
-                                    root.openSell(currency, w.balance)
-                                } else if (modelData.action === "transfer") {
-                                    root.openTransfer(currency, w.balance)
-                                }
-                            }
+                            onClicked: root.openCoinDetail(modelData)
                         }
                     }
                 }

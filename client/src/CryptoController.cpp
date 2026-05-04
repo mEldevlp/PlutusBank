@@ -54,6 +54,36 @@ void CryptoController::onAutoRefreshTick()
         recalcTotal();
         emit walletsChanged();
     }
+
+    // Если открыта страница детализации монеты — обновляем и её
+    if (m_coinDetailCurrencyId > 0)
+    {
+        int userId = UserSession::instance().userId();
+        if (userId > 0)
+        {
+            m_coinDetail = m_net.getCoinDetail(userId, m_coinDetailCurrencyId);
+            emit coinDetailChanged();
+        }
+    }
+}
+
+void CryptoController::startCoinDetail(int currencyId)
+{
+    m_coinDetailCurrencyId = currencyId;
+    int userId = UserSession::instance().userId();
+    if (userId <= 0) return;
+
+    m_isLoading = true; emit loadingChanged();
+    m_coinDetail = m_net.getCoinDetail(userId, currencyId);
+    m_isLoading = false; emit loadingChanged();
+    emit coinDetailChanged();
+}
+
+void CryptoController::stopCoinDetail()
+{
+    m_coinDetailCurrencyId = -1;
+    m_coinDetail.clear();
+    emit coinDetailChanged();
 }
 
 void CryptoController::loadCurrencies()
@@ -148,11 +178,13 @@ void CryptoController::buy(int currencyId, double rubAmount, int cardId)
     // Обновляем всё после успеха: и крипто-данные, и банковский баланс
     loadWallets();
     loadHistory();
+    if (m_coinDetailCurrencyId > 0)
+        startCoinDetail(m_coinDetailCurrencyId);
     UserSession::instance().refreshAll();
 
     emit buySuccess(QString("Куплено %1 монет за %2 ₽")
-                    .arg(r.coinAmount, 0, 'f', 8)
-                    .arg(r.rubAmount, 0, 'f', 2));
+        .arg(r.coinAmount, 0, 'f', 8)
+        .arg(r.rubAmount, 0, 'f', 2));
 }
 
 void CryptoController::sell(int currencyId, double coinAmount, int cardId)
@@ -172,11 +204,13 @@ void CryptoController::sell(int currencyId, double coinAmount, int cardId)
 
     loadWallets();
     loadHistory();
+    if (m_coinDetailCurrencyId > 0)
+        startCoinDetail(m_coinDetailCurrencyId);
     UserSession::instance().refreshAll();
 
     emit sellSuccess(QString("Продано %1 монет за %2 ₽")
-                     .arg(r.coinAmount, 0, 'f', 8)
-                     .arg(r.rubAmount, 0, 'f', 2));
+        .arg(r.coinAmount, 0, 'f', 8)
+        .arg(r.rubAmount, 0, 'f', 2));
 }
 
 void CryptoController::transfer(int currencyId, double coinAmount, const QString& recipientAddress)
@@ -196,8 +230,10 @@ void CryptoController::transfer(int currencyId, double coinAmount, const QString
 
     loadWallets();
     loadHistory();
+    if (m_coinDetailCurrencyId > 0)
+        startCoinDetail(m_coinDetailCurrencyId);
 
     emit transferSuccess(QString("%1 монет отправлены: %2")
-                         .arg(r.coinAmount, 0, 'f', 8)
-                         .arg(r.recipientName));
+        .arg(r.coinAmount, 0, 'f', 8)
+        .arg(r.recipientName));
 }

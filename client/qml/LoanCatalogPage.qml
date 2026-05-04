@@ -87,12 +87,7 @@ Item {
                 }
                 border.color: Theme.card
 
-                visible: {
-                    for (var i = 0; i < loanController.userLoans.length; i++) {
-                        if (loanController.userLoans[i].status === "active") return true
-                    }
-                    return false
-                }
+                visible: loanController.userLoans.length > 0
 
                 Column {
                     id: myLoansCol
@@ -129,13 +124,7 @@ Item {
                             Text {
                                 id: activeCountText
                                 anchors.centerIn: parent
-                                text: {
-                                    var count = 0
-                                    for (var i = 0; i < loanController.userLoans.length; i++) {
-                                        if (loanController.userLoans[i].status === "active") count++
-                                    }
-                                    return count
-                                }
+                                text: loanController.userLoans.length
                                 font { pixelSize: 12; bold: true }
                                 color: "#0A1229"
                             }
@@ -145,12 +134,11 @@ Item {
                     // Превью активных кредитов (макс 2)
                     Repeater {
                         model: {
-                            var active = []
-                            for (var i = 0; i < loanController.userLoans.length && active.length < 2; i++) {
-                                if (loanController.userLoans[i].status === "active")
-                                    active.push(loanController.userLoans[i])
+                            var result = []
+                            for (var i = 0; i < loanController.userLoans.length && result.length < 2; i++) {
+                                result.push(loanController.userLoans[i])
                             }
-                            return active
+                            return result
                         }
 
                         delegate: Rectangle {

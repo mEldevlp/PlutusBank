@@ -22,7 +22,7 @@ public:
 
     // Установить параметры из settings.ini (вызвать до connect)
     void setConnectionParams(const QString& driver, const QString& host, int port,
-                             const QString& dbName, const QString& user, const QString& password);
+        const QString& dbName, const QString& user, const QString& password);
 
     bool connect();
     void disconnect();
@@ -105,6 +105,9 @@ public:
 
     QVariantList getCryptoHistory(int userId, int limit = 50, int offset = 0);
 
+    // Полная информация по одной монете: currency, wallet, stats24h, portfolio, history, priceHistory
+    QVariantMap getCoinDetail(int userId, int currencyId);
+
 signals:
     void connected();
     void disconnected();
@@ -123,10 +126,10 @@ private:
     bool m_connected = false;
 
     // Параметры подключения (настраиваются из конфига)
-    QString m_driver   = "QPSQL";
-    QString m_host     = "127.0.0.1";
-    int     m_port     = 5433;
-    QString m_dbName   = "plutusbank";
-    QString m_user     = "postgres";
+    QString m_driver = "QPSQL";
+    QString m_host = "127.0.0.1";
+    int     m_port = 5433;
+    QString m_dbName = "plutusbank";
+    QString m_user = "postgres";
     QString m_password = "root";
 };

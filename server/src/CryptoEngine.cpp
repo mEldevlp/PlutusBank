@@ -20,6 +20,12 @@ void CryptoEngine::start()
 {
     Logger::instance().info(
         QString("CryptoEngine: запуск симуляции (интервал %1 мс)").arg(TICK_INTERVAL_MS));
+
+    // При старте сразу запишем точку в историю — иначе график будет пустым
+    // первые SNAPSHOT_EVERY_TICKS тиков (≈30 сек), пока не накопится снимок.
+    if (DatabaseManager::instance().isConnected())
+        writePriceSnapshot();
+
     m_timer.start();
 }
 
@@ -64,20 +70,20 @@ void CryptoEngine::onTick()
 
     QSqlQuery upd(db);
     upd.prepare("UPDATE cryptocurrencies SET current_price = :p, "
-                "last_updated = CURRENT_TIMESTAMP WHERE id = :id");
+        "last_updated = CURRENT_TIMESTAMP WHERE id = :id");
 
     int updatedCount = 0;
     while (sel.next())
     {
-        int     id          = sel.value(0).toInt();
-        QString symbol      = sel.value(1).toString();
-        double  basePrice   = sel.value(2).toDouble();
-        double  price       = sel.value(3).toDouble();
-        double  sigma       = sel.value(4).toDouble();
-        double  lambda      = sel.value(5).toDouble();
-        double  sigmaJump   = sel.value(6).toDouble();
-        double  drift       = sel.value(7).toDouble();
-        double  meanRev     = sel.value(8).toDouble();
+        int     id = sel.value(0).toInt();
+        QString symbol = sel.value(1).toString();
+        double  basePrice = sel.value(2).toDouble();
+        double  price = sel.value(3).toDouble();
+        double  sigma = sel.value(4).toDouble();
+        double  lambda = sel.value(5).toDouble();
+        double  sigmaJump = sel.value(6).toDouble();
+        double  drift = sel.value(7).toDouble();
+        double  meanRev = sel.value(8).toDouble();
 
         // ---- 1. Диффузионная компонента ----
         double diffusion = sigma * sampleNormal();
@@ -95,21 +101,21 @@ void CryptoEngine::onTick()
 
         // Ограничим экстремум одного тика, чтобы случайный гигантский
         // скачок не привёл к выходу за пол/потолок за один шаг.
-        if (r >  0.40) r =  0.40;
+        if (r > 0.40) r = 0.40;
         if (r < -0.30) r = -0.30;
 
         double newPrice = price * (1.0 + r);
 
         // Жёсткие границы — мягкая страховка от вырождения симуляции
         const double floorPrice = basePrice * 0.01;
-        const double ceilPrice  = basePrice * 50.0;
+        const double ceilPrice = basePrice * 50.0;
         if (newPrice < floorPrice) newPrice = floorPrice;
         if (newPrice > ceilPrice)  newPrice = ceilPrice;
 
         // Округлим до 8 знаков (NUMERIC(20,8) в БД)
         newPrice = std::round(newPrice * 1e8) / 1e8;
 
-        upd.bindValue(":p",  newPrice);
+        upd.bindValue(":p", newPrice);
         upd.bindValue(":id", id);
         if (!upd.exec())
         {
@@ -129,6 +135,16 @@ void CryptoEngine::onTick()
         return;
     }
 
+    ++m_tickCount;
+
+    // --- Срез цен в историю (раз в SNAPSHOT_EVERY_TICKS тиков) ---
+    if (m_tickCount % SNAPSHOT_EVERY_TICKS == 0)
+        writePriceSnapshot();
+
+    // --- Очистка старой истории (раз в час) ---
+    if (m_tickCount % CLEANUP_EVERY_TICKS == 0)
+        cleanupOldPriceHistory();
+
     // Логгировать каждый тик было бы шумно — раз в ~30 сек хватит.
     static qint64 lastLog = 0;
     qint64 now = QDateTime::currentMSecsSinceEpoch();
@@ -136,5 +152,49 @@ void CryptoEngine::onTick()
     {
         Logger::instance().debug(QString("CryptoEngine: тик, обновлено %1 монет").arg(updatedCount));
         lastLog = now;
+    }
+}
+
+void CryptoEngine::writePriceSnapshot()
+{
+    auto& dbMgr = DatabaseManager::instance();
+    if (!dbMgr.isConnected()) return;
+
+    QSqlDatabase db = dbMgr.database();
+
+    // Один INSERT для всех монет: SELECT-INTO стиль, чтобы не делать N запросов.
+    QSqlQuery q(db);
+    q.prepare(
+        "INSERT INTO crypto_price_history (currency_id, price) "
+        "  SELECT id, current_price FROM cryptocurrencies WHERE is_active = TRUE"
+    );
+    if (!q.exec())
+    {
+        Logger::instance().warning(
+            "CryptoEngine: не записан срез цен: " + q.lastError().text());
+    }
+}
+
+void CryptoEngine::cleanupOldPriceHistory()
+{
+    auto& dbMgr = DatabaseManager::instance();
+    if (!dbMgr.isConnected()) return;
+
+    QSqlDatabase db = dbMgr.database();
+    QSqlQuery q(db);
+    q.prepare(
+        "DELETE FROM crypto_price_history "
+        " WHERE recorded_at < NOW() - INTERVAL '7 days'"
+    );
+    if (!q.exec())
+    {
+        Logger::instance().warning(
+            "CryptoEngine: не очищена старая история цен: " + q.lastError().text());
+    }
+    else if (q.numRowsAffected() > 0)
+    {
+        Logger::instance().info(
+            QString("CryptoEngine: удалено %1 устаревших записей истории цен")
+            .arg(q.numRowsAffected()));
     }
 }

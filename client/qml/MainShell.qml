@@ -179,6 +179,9 @@ Item {
                         onOpenSell: (currency, balance) => cryptoStack.push(cryptoSellComponent, { "currency": currency, "currentBalance": balance })
                         onOpenTransfer: (currency, balance) => cryptoStack.push(cryptoTransferComponent, { "currency": currency, "currentBalance": balance })
                         onOpenHistory: cryptoStack.push(cryptoHistoryComponent) 
+                        onOpenCoinDetail: (currency) => {
+                            cryptoStack.push(cryptoCoinDetailComponent, { "currency": currency })
+                        }
                     }
                 }
 
@@ -200,6 +203,25 @@ Item {
                 Component { 
                     id: cryptoHistoryComponent
                     CryptoHistoryPage { onBackToMain: cryptoStack.pop() } 
+                }
+
+                Component { 
+                    id: cryptoCoinDetailComponent
+                    CryptoCoinDetailPage { 
+                        // Обработка кнопки "Назад" на странице деталей
+                        onBackToMain: cryptoStack.pop() 
+
+                        // Кнопки Купить / Продать / Перевести с этой страницы
+                        // используют те же компоненты, что и с главной крипто-страницы.
+                        onOpenBuy: (currency) => cryptoStack.push(cryptoBuyComponent, { "currency": currency })
+                        onOpenSell: (currency, balance) => cryptoStack.push(cryptoSellComponent, { "currency": currency, "currentBalance": balance })
+                        onOpenTransfer: (currency, balance) => cryptoStack.push(cryptoTransferComponent, { "currency": currency, "currentBalance": balance })
+
+                        // "Показать все" в блоке истории — открываем полную историю крипто-операций.
+                        // (Параметр currencyId сейчас не используется — общая история показывает всё,
+                        //  это задел на будущее, если захочется фильтровать по монете.)
+                        onOpenHistory: (cid) => cryptoStack.push(cryptoHistoryComponent)
+                    } 
                 }
             }
         }

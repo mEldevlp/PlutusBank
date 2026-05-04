@@ -56,9 +56,9 @@ public:
     int     createAccount(int userId, const QString& accountType);
     QString generateCardNumber(const QString& brand);
     bool    createCard(int accountId, const QString& cardNumber,
-                       const QString& cardHolderName, const QDate& expiryDate,
-                       const QString& cvcHash, const QString& pinHash,
-                       const QString& cardType, const QString& cardBrand);
+        const QString& cardHolderName, const QDate& expiryDate,
+        const QString& cvcHash, const QString& pinHash,
+        const QString& cardType, const QString& cardBrand);
 
     bool         blockCard(int cardId);
     bool         freezeCard(int cardId);
@@ -111,6 +111,9 @@ public:
 
     QVariantList getCryptoHistory(int userId, int limit = 50, int offset = 0);
 
+    // Полная информация по одной монете (для CryptoCoinDetailPage)
+    QVariantMap getCoinDetail(int userId, int currencyId);
+
 signals:
     void connectionLost();
     void error(const QString& message);
@@ -124,9 +127,9 @@ private:
     // Отправить запрос и дождаться ответа (синхронно, через QEventLoop)
     QJsonObject sendRequest(const QString& method, const QJsonObject& params);
 
-    QTcpSocket*      m_socket  = nullptr;
+    QTcpSocket* m_socket = nullptr;
     QByteArray       m_buffer;
-    std::atomic<qint64> m_nextId{1};
+    std::atomic<qint64> m_nextId{ 1 };
 
     QString m_lastHost;
     quint16 m_lastPort = 0;
