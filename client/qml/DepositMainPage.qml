@@ -100,7 +100,7 @@ Item {
                     // «Иконка»
                     Rectangle {
                         width: 96; height: 96; radius: 16
-                        color: "#F7F7FB"
+                        color: "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
                         Text {
@@ -167,7 +167,7 @@ Item {
 
                     Rectangle {
                         width: 96; height: 96; radius: 16
-                        color: "#F7F7FB"
+                        color: "transparent"
                         anchors.verticalCenter: parent.verticalCenter
 
                         Text {

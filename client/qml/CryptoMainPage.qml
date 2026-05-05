@@ -169,6 +169,7 @@ Item {
 
                 // Объединяем каталог валют с кошельками пользователя.
                 // Для каждой валюты добавляем поля balance / rub_value (0, если не куплена).
+                // Поля change_pct / is_up приходят прямо из getCryptocurrencies (24-часовая дельта).
                 property var mergedCurrencies: {
                     var result = []
                     var wallets = cryptoController.wallets
@@ -181,6 +182,8 @@ Item {
                             "current_price": cur.current_price,
                             "icon_color":    cur.icon_color,
                             "icon_letter":   cur.icon_letter,
+                            "change_pct":    cur.change_pct || 0,
+                            "is_up":         cur.is_up === true,
                             "balance":       0,
                             "rub_value":     0
                         }
@@ -208,9 +211,11 @@ Item {
                     delegate: Rectangle {
                         required property var modelData
                         readonly property bool isOwned: modelData.balance > 0
+                        readonly property bool isUp:   modelData.is_up === true
+                        readonly property color trendColor: isUp ? Theme.success : Theme.error
 
                         width: parent.width
-                        height: isOwned ? 88 : 76
+                        height: 76
                         radius: 16
                         gradient: Gradient {
                             GradientStop { position: 0.0; color: Theme.grBlockPosStart }
@@ -223,78 +228,72 @@ Item {
                             anchors.margins: 14
                             spacing: 14
 
-                            // Цветной "значок" монеты — крупнее, если монета куплена
+                            // Иконка монеты
                             Rectangle {
-                                width: isOwned ? 48 : 44
-                                height: width
-                                radius: width / 2
+                                width: 44; height: 44; radius: 22
                                 color: modelData.icon_color
                                 anchors.verticalCenter: parent.verticalCenter
                                 Text {
                                     anchors.centerIn: parent
                                     text: modelData.icon_letter
-                                    font { pixelSize: isOwned ? 22 : 20; bold: true; family: manropeFont.name }
+                                    font { pixelSize: 20; bold: true; family: manropeFont.name }
                                     color: "#FFFFFF"
                                 }
                             }
 
-                            // Левая текстовая колонка: тикер (+ количество монет, если куплена)
+                            // Левая колонка: тикер + цена с процентом изменения за 24ч
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
+
                                 Text {
                                     text: modelData.symbol
-                                    font { pixelSize: isOwned ? 16 : 14; bold: true; family: manropeFont.name }
+                                    font { pixelSize: 18; bold: true; family: manropeFont.name }
                                     color: "#FFFFFF"
                                 }
-                                Text {
-                                    visible: isOwned
-                                    text: fmtCoins(modelData.balance) + " " + modelData.symbol
-                                    font.pixelSize: 12
-                                    color: "#9CA3AF"
+
+                                Row {
+                                    spacing: 6
+                                    Text {
+                                        text: "₽" + Number(modelData.current_price)
+                                                    .toLocaleString(Qt.locale("ru_RU"), 'f', 2)
+                                        font.pixelSize: 12
+                                        color: "#9CA3AF"
+                                    }
+                                    Text {
+                                        text: (isUp ? "+" : "")
+                                              + Number(modelData.change_pct || 0)
+                                                  .toLocaleString(Qt.locale("ru_RU"), 'f', 2)
+                                              + "%"
+                                        font { pixelSize: 12; bold: true; family: manropeFont.name }
+                                        color: trendColor
+                                    }
                                 }
                             }
 
-                            // Правая часть: цена / стоимость портфеля по этой монете
+                            // Правая часть: баланс + рублёвый эквивалент
+                            // Если кошелёк пустой — серые "0.00" / "₽0.00".
                             Item {
-                                width: parent.width - parent.children[0].width - parent.children[1].width - parent.spacing * 2
+                                width: parent.width - parent.children[0].width
+                                       - parent.children[1].width - parent.spacing * 2
                                 height: parent.height
 
-                                // ── Не куплена: одна цифра — текущая цена за монету
-                                Text {
-                                    visible: !isOwned
-                                    anchors.right: parent.right
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    text: Number(modelData.current_price).toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
-                                    font { pixelSize: 15; bold: true; family: manropeFont.name }
-                                    color: "#FFFFFF"
-
-                                    // Тонкая анимация смены цены
-                                    Behavior on text {
-                                        SequentialAnimation {
-                                            NumberAnimation { target: parent; property: "opacity"; to: 0.4; duration: 100 }
-                                            PropertyAction  { }
-                                            NumberAnimation { target: parent; property: "opacity"; to: 1.0; duration: 200 }
-                                        }
-                                    }
-                                }
-
-                                // ── Куплена: рублёвая стоимость портфеля + цена за монету
                                 Column {
-                                    visible: isOwned
                                     anchors.right: parent.right
                                     anchors.verticalCenter: parent.verticalCenter
                                     spacing: 4
+
                                     Text {
                                         anchors.right: parent.right
-                                        text: modelData.rub_value.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽"
+                                        text: isOwned ? fmtCoins(modelData.balance) : "0.00"
                                         font { pixelSize: 16; bold: true; family: manropeFont.name }
-                                        color: "#FFFFFF"
+                                        color: isOwned ? "#FFFFFF" : "#6B7280"
                                     }
                                     Text {
                                         anchors.right: parent.right
-                                        text: modelData.current_price.toLocaleString(Qt.locale("ru_RU"), 'f', 2) + " ₽/" + modelData.symbol
-                                        font.pixelSize: 11
+                                        text: "₽" + Number(modelData.rub_value || 0)
+                                                    .toLocaleString(Qt.locale("ru_RU"), 'f', 2)
+                                        font.pixelSize: 12
                                         color: "#9CA3AF"
                                     }
                                 }

@@ -1179,6 +1179,13 @@ QVariantMap DatabaseManager::ensureWallet(int userId, int currencyId)
 }
 
 // --- Каталог криптовалют (только активные) ---
+// Дополнительно считаем 24-часовую дельту цены для каждой монеты:
+//   change_pct, change_abs, is_up. Это нужно списку на CryptoMainPage,
+//   чтобы рядом с ценой показывать движение за сутки (как на бирже).
+//   Логика выбора цены сутки назад идентична getCoinDetail.stats24h:
+//   1) последняя запись в crypto_price_history старше 24ч,
+//   2) если суточной истории нет — самая старая запись,
+//   3) fallback на base_price.
 QVariantList DatabaseManager::getCryptocurrencies()
 {
     QVariantList out;
@@ -1186,7 +1193,17 @@ QVariantList DatabaseManager::getCryptocurrencies()
     q.prepare(
         "SELECT id, symbol, name, description, icon_color, icon_letter, "
         "       base_price, current_price, volatility, jump_intensity, jump_sigma, "
-        "       drift, mean_reversion, last_updated, is_active "
+        "       drift, mean_reversion, last_updated, is_active, "
+        "       COALESCE( "
+        "         (SELECT price FROM crypto_price_history h "
+        "           WHERE h.currency_id = cryptocurrencies.id "
+        "             AND h.recorded_at <= NOW() - INTERVAL '24 hours' "
+        "           ORDER BY h.recorded_at DESC LIMIT 1), "
+        "         (SELECT price FROM crypto_price_history h "
+        "           WHERE h.currency_id = cryptocurrencies.id "
+        "           ORDER BY h.recorded_at ASC LIMIT 1), "
+        "         base_price "
+        "       ) AS price_24h_ago "
         "  FROM cryptocurrencies WHERE is_active = TRUE "
         " ORDER BY id"
     );
@@ -1213,6 +1230,17 @@ QVariantList DatabaseManager::getCryptocurrencies()
         m["mean_reversion"] = q.value(12).toDouble();
         m["last_updated"] = q.value(13).toDateTime().toString("dd.MM.yyyy HH:mm:ss");
         m["is_active"] = q.value(14).toBool();
+
+        // 24-часовая дельта
+        const double currentPrice = q.value(7).toDouble();
+        const double price24h = q.value(15).toDouble();
+        const double absDelta = currentPrice - price24h;
+        const double pctDelta = (price24h > 0) ? (absDelta / price24h) * 100.0 : 0.0;
+        m["price_24h_ago"] = price24h;
+        m["change_abs"] = std::round(absDelta * 1e8) / 1e8;
+        m["change_pct"] = std::round(pctDelta * 100.0) / 100.0;
+        m["is_up"] = (absDelta >= 0);
+
         out.append(m);
     }
     return out;

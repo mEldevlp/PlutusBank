@@ -21,10 +21,14 @@ void CryptoEngine::start()
     Logger::instance().info(
         QString("CryptoEngine: запуск симуляции (интервал %1 мс)").arg(TICK_INTERVAL_MS));
 
-    // При старте сразу запишем точку в историю — иначе график будет пустым
-    // первые SNAPSHOT_EVERY_TICKS тиков (≈30 сек), пока не накопится снимок.
+    // При старте проверяем, не было ли длительного простоя сервера.
+    // Если был — стираем старую историю цен, чтобы график не показывал
+    // уродливую вертикальную полосу от последней точки до новой цены.
     if (DatabaseManager::instance().isConnected())
+    {
+        purgeHistoryIfGap();
         writePriceSnapshot();
+    }
 
     m_timer.start();
 }
@@ -196,5 +200,59 @@ void CryptoEngine::cleanupOldPriceHistory()
         Logger::instance().info(
             QString("CryptoEngine: удалено %1 устаревших записей истории цен")
             .arg(q.numRowsAffected()));
+    }
+}
+
+void CryptoEngine::purgeHistoryIfGap()
+{
+    auto& dbMgr = DatabaseManager::instance();
+    if (!dbMgr.isConnected()) return;
+
+    QSqlDatabase db = dbMgr.database();
+
+    // Узнаём, когда был последний снимок цен.
+    QSqlQuery q(db);
+    q.prepare(
+        "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(recorded_at)))::int "
+        "  FROM crypto_price_history"
+    );
+
+    if (!q.exec() || !q.next())
+        return;
+
+    // Если таблица пуста, MAX вернёт NULL → isNull() == true — разрыва нет,
+    // просто первый запуск (история начнётся с нуля).
+    if (q.value(0).isNull())
+        return;
+
+    int gapSeconds = q.value(0).toInt();
+
+    if (gapSeconds > GAP_THRESHOLD_SEC)
+    {
+        Logger::instance().info(
+            QString("CryptoEngine: обнаружен простой %1 сек (порог %2 сек) — "
+                "очищаю историю цен, чтобы график стартовал с чистого листа")
+            .arg(gapSeconds)
+            .arg(GAP_THRESHOLD_SEC));
+
+        QSqlQuery del(db);
+        del.prepare("DELETE FROM crypto_price_history");
+        if (!del.exec())
+        {
+            Logger::instance().warning(
+                "CryptoEngine: не удалось очистить историю цен: " + del.lastError().text());
+        }
+        else
+        {
+            Logger::instance().info(
+                QString("CryptoEngine: удалено %1 записей истории цен после простоя")
+                .arg(del.numRowsAffected()));
+        }
+    }
+    else
+    {
+        Logger::instance().debug(
+            QString("CryptoEngine: разрыв %1 сек — в пределах нормы, история сохранена")
+            .arg(gapSeconds));
     }
 }

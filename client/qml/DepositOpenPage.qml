@@ -74,19 +74,6 @@ Item {
         }
     }
 
-    // Зелёный градиент-сияние сверху-справа (как на скрине)
-    Rectangle {
-        anchors.top: parent.top
-        anchors.right: parent.right
-        width: 320; height: 320
-        radius: 160
-        opacity: 0.35
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Theme.success }
-            GradientStop { position: 1.0; color: "transparent" }
-        }
-    }
-
     Flickable {
         id: flick
         anchors.fill: parent
@@ -120,29 +107,13 @@ Item {
                 }
             }
 
-            // Большой заголовок «Вклад» с пометкой PRO
-            Row {
+            // Большой заголовок «Вклад»
+            Text {
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
-                spacing: 12
-
-                Text {
-                    text: "Вклад"
-                    font { pixelSize: 34; bold: true; family: manropeFont.name }
-                    color: "#FFFFFF"
-                }
-                Rectangle {
-                    width: proLbl.width + 16; height: 26; radius: 13
-                    color: Theme.success
-                    anchors.verticalCenter: parent.verticalCenter
-                    Text {
-                        id: proLbl
-                        anchors.centerIn: parent
-                        text: "PRO"
-                        font { pixelSize: 12; bold: true; family: manropeFont.name }
-                        color: "#0A1229"
-                    }
-                }
+                text: "Вклад"
+                font { pixelSize: 34; bold: true; family: manropeFont.name }
+                color: "#FFFFFF"
             }
 
             // ===== Подберите условия =====

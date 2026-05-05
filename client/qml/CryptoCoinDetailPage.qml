@@ -622,6 +622,9 @@ Item {
 
             // ============================================================
             //  Кнопки действий: Купить / Продать / Перевести
+            //  Стиль — как у быстрых действий на главной (MainPage):
+            //  градиент Theme.grBlockPosStart→grBlockPosEnd, рамка Theme.card,
+            //  светлый текст #E5E7EB.
             // ============================================================
             Row {
                 width: parent.width - 32
@@ -633,14 +636,18 @@ Item {
                     width: (parent.width - parent.spacing * 2) / 3
                     height: 44
                     radius: 14
-                    color: buyMa.pressed ? Qt.darker(Theme.success, 1.4)
-                                         : Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.18)
-                    border.color: Qt.rgba(Theme.success.r, Theme.success.g, Theme.success.b, 0.55)
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
+                    opacity: buyMa.pressed ? 0.7 : 1.0
+
                     Text {
                         anchors.centerIn: parent
                         text: "Купить"
                         font { pixelSize: 13; bold: true; family: manropeFont.name }
-                        color: Theme.success
+                        color: "#E5E7EB"
                     }
                     MouseArea { id: buyMa; anchors.fill: parent; onClicked: root.openBuy(detailCur) }
                 }
@@ -650,15 +657,18 @@ Item {
                     width: (parent.width - parent.spacing * 2) / 3
                     height: 44
                     radius: 14
-                    opacity: root.hasBalance ? 1.0 : 0.4
-                    color: sellMa.pressed ? Qt.darker(Theme.warning, 1.4)
-                                          : Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.18)
-                    border.color: Qt.rgba(Theme.warning.r, Theme.warning.g, Theme.warning.b, 0.55)
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
+                    opacity: (root.hasBalance ? 1.0 : 0.4) * (sellMa.pressed ? 0.7 : 1.0)
+
                     Text {
                         anchors.centerIn: parent
                         text: "Продать"
                         font { pixelSize: 13; bold: true; family: manropeFont.name }
-                        color: Theme.warning
+                        color: "#E5E7EB"
                     }
                     MouseArea {
                         id: sellMa
@@ -673,15 +683,18 @@ Item {
                     width: (parent.width - parent.spacing * 2) / 3
                     height: 44
                     radius: 14
-                    opacity: root.hasBalance ? 1.0 : 0.4
-                    color: trMa.pressed ? Qt.darker(Theme.purpleLight, 1.4)
-                                        : Qt.rgba(Theme.purpleLight.r, Theme.purpleLight.g, Theme.purpleLight.b, 0.18)
-                    border.color: Qt.rgba(Theme.purpleLight.r, Theme.purpleLight.g, Theme.purpleLight.b, 0.55)
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                        GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                    }
+                    border.color: Theme.card
+                    opacity: (root.hasBalance ? 1.0 : 0.4) * (trMa.pressed ? 0.7 : 1.0)
+
                     Text {
                         anchors.centerIn: parent
                         text: "Перевести"
                         font { pixelSize: 13; bold: true; family: manropeFont.name }
-                        color: Theme.purpleLight
+                        color: "#E5E7EB"
                     }
                     MouseArea {
                         id: trMa
