@@ -75,6 +75,7 @@ Item {
                         onOpenTopUp:      bankStack.push(topUpComponent)
                         onOpenSettings:   bankStack.push(settingsComponent)
                         onOpenLoan:       bankStack.push(loanCatalogComponent) 
+                        onOpenDeposits:   bankStack.push(depositMainComponent)
                     }
                 }
 
@@ -158,6 +159,40 @@ Item {
                 Component { 
                     id: loanScheduleComponent
                     LoanSchedulePage { onBackToLoans: bankStack.pop() } 
+                }
+
+                Component {
+                    id: depositMainComponent
+                    DepositMainPage {
+                        onBackToMain:        bankStack.pop()
+                        onOpenSavings:       bankStack.push(savingsComponent)
+                        onOpenNewDeposit:    bankStack.push(depositOpenComponent)
+                        onOpenDepositDetail: (d) => bankStack.push(depositDetailComponent, { "depositData": d })
+                        onOpenHistory:       bankStack.push(depositHistoryComponent)
+                    }
+                }
+ 
+                Component {
+                    id: savingsComponent
+                    SavingsAccountPage { onBackToMain: bankStack.pop() }
+                }
+ 
+                Component {
+                    id: depositOpenComponent
+                    DepositOpenPage {
+                        onBackToCatalog:  bankStack.pop()
+                        onGoToMyDeposits: bankStack.pop()
+                    }
+                }
+ 
+                Component {
+                    id: depositDetailComponent
+                    DepositDetailPage { onBackToList: bankStack.pop() }
+                }
+ 
+                Component {
+                    id: depositHistoryComponent
+                    DepositHistoryPage { onBackToMain: bankStack.pop() }
                 }
             }
 

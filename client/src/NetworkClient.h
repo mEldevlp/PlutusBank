@@ -97,6 +97,26 @@ public:
     struct PaymentResult { bool ok; bool closed; double paymentAmount; QString error; };
     PaymentResult makeLoanPayment(int userId, int loanId);
 
+    // Накопительный счёт
+    QVariantMap getSavingsAccount(int userId);
+
+    struct DepositOpResult { bool ok; QString error; };
+    DepositOpResult openSavingsAccount(int userId, int fromAccountId, double amount);
+    DepositOpResult savingsTopUp(int userId, int fromAccountId, double amount);
+    DepositOpResult savingsWithdraw(int userId, int toAccountId, double amount);
+
+    // Срочные вклады
+    QVariantList getUserDeposits(int userId);
+    QVariantList getClosedDeposits(int userId);
+
+    DepositOpResult openDeposit(int userId, int fromAccountId, double amount,
+        int months, bool replenishable);
+    DepositOpResult depositTopUp(int userId, int depositId, int fromAccountId, double amount);
+
+    struct DepositClaimResult { bool ok; QString error; double payoutAmount; };
+    DepositClaimResult claimDeposit(int userId, int depositId, int toAccountId);
+
+
     // ---- Crypto ----
     QVariantList getCryptocurrencies();
     QVariantList getUserWallets(int userId);

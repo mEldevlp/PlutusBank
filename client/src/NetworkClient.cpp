@@ -598,3 +598,132 @@ QVariantMap NetworkClient::getCoinDetail(int userId, int currencyId)
 
     return detail;
 }
+
+// =====================================================================
+//  ДОБАВИТЬ В КОНЕЦ NetworkClient.cpp (перед последней закрывающей скобкой
+//  файла нет — методы пишутся на верхнем уровне)
+// =====================================================================
+
+// ---- Deposits / Savings ----
+
+QVariantMap NetworkClient::getSavingsAccount(int userId)
+{
+    auto resp = sendRequest("getSavingsAccount", { {"userId", userId} });
+    if (!resp["success"].toBool()) return {};
+    QJsonObject r = resp["result"].toObject();
+    if (!r["exists"].toBool()) return {};
+    return r["savings"].toObject().toVariantMap();
+}
+
+NetworkClient::DepositOpResult NetworkClient::openSavingsAccount(
+    int userId, int fromAccountId, double amount)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["fromAccountId"] = fromAccountId;
+    p["amount"] = amount;
+
+    auto resp = sendRequest("openSavingsAccount", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString() };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString() };
+}
+
+NetworkClient::DepositOpResult NetworkClient::savingsTopUp(
+    int userId, int fromAccountId, double amount)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["fromAccountId"] = fromAccountId;
+    p["amount"] = amount;
+
+    auto resp = sendRequest("savingsTopUp", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString() };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString() };
+}
+
+NetworkClient::DepositOpResult NetworkClient::savingsWithdraw(
+    int userId, int toAccountId, double amount)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["toAccountId"] = toAccountId;
+    p["amount"] = amount;
+
+    auto resp = sendRequest("savingsWithdraw", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString() };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString() };
+}
+
+QVariantList NetworkClient::getUserDeposits(int userId)
+{
+    auto resp = sendRequest("getUserDeposits", { {"userId", userId} });
+    if (!resp["success"].toBool()) return {};
+    return resp["result"].toObject()["deposits"].toArray().toVariantList();
+}
+
+QVariantList NetworkClient::getClosedDeposits(int userId)
+{
+    auto resp = sendRequest("getClosedDeposits", { {"userId", userId} });
+    if (!resp["success"].toBool()) return {};
+    return resp["result"].toObject()["deposits"].toArray().toVariantList();
+}
+
+NetworkClient::DepositOpResult NetworkClient::openDeposit(
+    int userId, int fromAccountId, double amount, int months, bool replenishable)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["fromAccountId"] = fromAccountId;
+    p["amount"] = amount;
+    p["months"] = months;
+    p["replenishable"] = replenishable;
+
+    auto resp = sendRequest("openDeposit", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString() };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString() };
+}
+
+NetworkClient::DepositOpResult NetworkClient::depositTopUp(
+    int userId, int depositId, int fromAccountId, double amount)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["depositId"] = depositId;
+    p["fromAccountId"] = fromAccountId;
+    p["amount"] = amount;
+
+    auto resp = sendRequest("depositTopUp", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString() };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString() };
+}
+
+NetworkClient::DepositClaimResult NetworkClient::claimDeposit(
+    int userId, int depositId, int toAccountId)
+{
+    QJsonObject p;
+    p["userId"] = userId;
+    p["depositId"] = depositId;
+    p["toAccountId"] = toAccountId;
+
+    auto resp = sendRequest("claimDeposit", p);
+    if (!resp["success"].toBool())
+        return { false, resp["error"].toString(), 0 };
+
+    QJsonObject r = resp["result"].toObject();
+    return { r["ok"].toBool(), r["error"].toString(), r["payoutAmount"].toDouble() };
+}

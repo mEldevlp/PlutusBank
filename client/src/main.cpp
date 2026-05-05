@@ -14,6 +14,8 @@
 #include "HistoryController.h"
 #include "LoanController.h"
 #include "CryptoController.h"
+#include "DepositController.h"
+
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -56,6 +58,7 @@ int main(int argc, char* argv[])
     TransferController transferController;
     LoanController loanController;
     CryptoController cryptoController;
+    DepositController depositController;
 
     QQmlApplicationEngine engine;
 
@@ -66,6 +69,7 @@ int main(int argc, char* argv[])
     engine.rootContext()->setContextProperty("transferController", &transferController);
     engine.rootContext()->setContextProperty("loanController", &loanController);
     engine.rootContext()->setContextProperty("cryptoController", &cryptoController);
+    engine.rootContext()->setContextProperty("depositController", &depositController);
 
     const QUrl url = QUrl::fromLocalFile(
         QDir(QCoreApplication::applicationDirPath())

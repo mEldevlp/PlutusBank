@@ -14,6 +14,7 @@ Item {
     signal openTopUp()
     signal openSettings()
     signal openLoan()
+    signal openDeposits()   
 
     Component.onCompleted: {
         userSession.loadCards()
@@ -710,6 +711,44 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: root.openLoan()
+                        }
+                    }
+
+                    // Вклады
+                    Rectangle {
+                        width: (parent.width - 12) / 2
+                        height: 90
+                        radius: 16
+                        gradient: Gradient {
+                            GradientStop { position: 0.0; color: Theme.grBlockPosStart }
+                            GradientStop { position: 1.0; color: Theme.grBlockPosEnd }
+                        }
+                        border.color: Theme.card
+ 
+                        Column {
+                            anchors.centerIn: parent
+                            spacing: 8
+ 
+                            // Используется существующий ассет money-recive.svg.
+                            // Если хочется отдельную иконку — добавьте, например, assets/savings.svg
+                            // и поменяйте source ниже.
+                            Image {
+                                width: 28; height: 28
+                                source: "assets/money-recive.svg"
+                                sourceSize: Qt.size(28, 28)
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+ 
+                            Text {
+                                text: "Вклады"
+                                font.pixelSize: 13
+                                color: Theme.textSubtle
+                                anchors.horizontalCenter: parent.horizontalCenter
+                            }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: root.openDeposits()
                         }
                     }
                 }

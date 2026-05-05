@@ -56,6 +56,7 @@ set(SOURCE_FILES
 	src/HistoryController.cpp
 	src/LoanController.cpp
 	src/CryptoController.cpp
+    src/DepositController.cpp
 )
 
 # Header Files
@@ -68,6 +69,7 @@ set(HEADER_FILES
 	src/HistoryController.h
 	src/LoanController.h
 	src/CryptoController.h
+	src/DepositController.h
 	
 	../shared/NetworkProtocol.h
 )
@@ -98,6 +100,11 @@ set(QML_UI_FILES
 	qml/Theme.qml  
 	qml/TransferPage.qml
 	qml/TopUpPage.qml
+	qml/DepositMainPage.qml
+    qml/DepositOpenPage.qml
+    qml/SavingsAccountPage.qml
+    qml/DepositDetailPage.qml
+    qml/DepositHistoryPage.qml
 )
 
 # QML Resources - Assets
