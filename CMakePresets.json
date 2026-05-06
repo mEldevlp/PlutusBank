@@ -52,7 +52,19 @@
         "CMAKE_FIND_ROOT_PATH": "C:/Qt/6.10.1/android_arm64_v8a",
         "CMAKE_TOOLCHAIN_FILE": "C:/Android/ndk/27.3.13750724/build/cmake/android.toolchain.cmake"
       }
+    },
+	{
+	  "name": "linux",
+	  "displayName": "Linux — Client + Server",
+	  "generator": "Ninja",
+	  "binaryDir": "${sourceDir}/build/linux",
+	  "cacheVariables": {
+		"CMAKE_BUILD_TYPE": "Debug",
+		"CMAKE_CXX_COMPILER": "/usr/bin/g++-14",
+		"BUILD_CLIENT": "ON",
+		"BUILD_SERVER": "ON"
     }
+}
   ],
   "buildPresets": [
     {
@@ -70,6 +82,10 @@
     {
       "name": "android",
       "configurePreset": "android"
-    }
+    },
+	{ 
+	   "name": "linux", 
+	   "configurePreset": "linux" 
+	}
   ]
 }
