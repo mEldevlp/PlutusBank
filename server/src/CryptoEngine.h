@@ -55,7 +55,7 @@ public:
     // вертикальная полоса от последней «доаварийной» точки к новой цене.
     // 5 минут — комфортный порог: нормальный интервал снимков ~30 сек,
     // а любая содержательная перезагрузка длится дольше 5 минут.
-    static constexpr int GAP_THRESHOLD_SEC = 18000;
+    static constexpr int GAP_THRESHOLD_SEC = 10;
 
 private slots:
     void onTick();

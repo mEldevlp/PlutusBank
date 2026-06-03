@@ -89,18 +89,18 @@ void CryptoEngine::onTick()
         double  drift = sel.value(7).toDouble();
         double  meanRev = sel.value(8).toDouble();
 
-        // ---- 1. Диффузионная компонента ----
+        //  1. Диффузионная компонента
         double diffusion = sigma * sampleNormal();
 
-        // ---- 2. Пуассоновский скачок (Bernoulli-приближение на тике) ----
+        //  2. Пуассоновский скачок (Bernoulli-приближение на тике) 
         double jump = 0.0;
         if (m_rng.generateDouble() < lambda)
             jump = sigmaJump * sampleNormal();
 
-        // ---- 3. Mean-reversion: −k · ln(P/P_base) ----
+        //  3. Mean-reversion: −k · ln(P/P_base) 
         double reversion = -meanRev * std::log(price / basePrice);
 
-        // ---- Итоговая относительная доходность ----
+        //  Итоговая относительная доходность 
         double r = drift + diffusion + jump + reversion;
 
         // Ограничим экстремум одного тика, чтобы случайный гигантский
@@ -141,15 +141,14 @@ void CryptoEngine::onTick()
 
     ++m_tickCount;
 
-    // --- Срез цен в историю (раз в SNAPSHOT_EVERY_TICKS тиков) ---
+    //  Срез цен в историю (раз в SNAPSHOT_EVERY_TICKS тиков) 
     if (m_tickCount % SNAPSHOT_EVERY_TICKS == 0)
         writePriceSnapshot();
 
-    // --- Очистка старой истории (раз в час) ---
+    //  Очистка старой истории (раз в час) 
     if (m_tickCount % CLEANUP_EVERY_TICKS == 0)
         cleanupOldPriceHistory();
 
-    // Логгировать каждый тик было бы шумно — раз в ~30 сек хватит.
     static qint64 lastLog = 0;
     qint64 now = QDateTime::currentMSecsSinceEpoch();
     if (now - lastLog > 30000)
@@ -166,7 +165,6 @@ void CryptoEngine::writePriceSnapshot()
 
     QSqlDatabase db = dbMgr.database();
 
-    // Один INSERT для всех монет: SELECT-INTO стиль, чтобы не делать N запросов.
     QSqlQuery q(db);
     q.prepare(
         "INSERT INTO crypto_price_history (currency_id, price) "

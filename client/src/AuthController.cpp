@@ -86,8 +86,35 @@ bool AuthController::registerUser(
         passportSeries, passportNumber, email, formattedPhone, password)) 
     {
         qDebug() << u"Регистрация успешна:" << firstName << lastName;
-        emit registrationSuccess();
-        return true;
+
+        // Автоматический вход сразу после регистрации, чтобы UserSession
+        // была заполнена (иначе UI показывает "Пользователь" / гостя и
+        // контроллеры отказываются грузить данные). Креды уже на руках.
+        QVariantMap userData;
+        int userId = m_net.loginUser(formattedPhone, password, userData);
+
+        if (userId > 0)
+        {
+            UserSession::instance().setUserData(
+                userId,
+                userData["first_name"].toString(),
+                userData["last_name"].toString(),
+                userData["middle_name"].toString(),
+                userData["email"].toString(),
+                userData["phone"].toString()
+            );
+
+            // Догружаем паспорт, адрес, дату рождения, основной счёт
+            UserSession::instance().loadUserData();
+
+            qDebug() << u"Автовход после регистрации выполнен. User ID:" << userId;
+            emit registrationSuccess();
+            return true;
+        }
+
+        qWarning() << u"Не удалось выполнить автовход после регистрации";
+        emit registrationFailed("Не удалось войти в систему. Попробуйте войти вручную.");
+        return false;
     }
     else 
     {
