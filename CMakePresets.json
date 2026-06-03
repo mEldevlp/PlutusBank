@@ -54,16 +54,15 @@
       }
     },
 	{
-	  "name": "linux",
-	  "displayName": "Linux — Client + Server",
+	  "name": "linux-server",
+	  "displayName": "Linux — Server only",
 	  "generator": "Ninja",
 	  "binaryDir": "${sourceDir}/build/linux",
 	  "cacheVariables": {
-		"CMAKE_BUILD_TYPE": "Debug",
-		"CMAKE_CXX_COMPILER": "/usr/bin/g++-14",
-		"BUILD_CLIENT": "ON",
+		"CMAKE_BUILD_TYPE": "Release",
+		"BUILD_CLIENT": "OFF",
 		"BUILD_SERVER": "ON"
-    }
+   }
 }
   ],
   "buildPresets": [
@@ -84,8 +83,8 @@
       "configurePreset": "android"
     },
 	{ 
-	   "name": "linux", 
-	   "configurePreset": "linux" 
+	   "name": "linux-server", 
+	   "configurePreset": "linux-server" 
 	}
   ]
 }
