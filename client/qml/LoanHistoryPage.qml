@@ -70,6 +70,12 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Итоговая карточка
@@ -324,5 +330,16 @@ Item {
 
             Item { width: 1; height: 20 }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "loanHistory"
+        steps: [
+            { target: summaryCard, flickable: flick, title: "Итоги",
+              text: "Сколько всего выплачено по кредитам и сколько кредитов закрыто." },
+            { target: listBlock, flickable: flick, title: "Закрытые кредиты",
+              text: "По каждому — сумма, переплата и даты. Кнопка «История платежей» откроет полный график выплат." }
+        ]
     }
 }

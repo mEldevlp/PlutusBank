@@ -103,6 +103,7 @@ Item {
     }
 
     Flickable {
+        id: pageFlick
         anchors.fill: parent
         contentHeight: mainCol.height + 40
         clip: true
@@ -144,10 +145,17 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Сводка кредита
             Rectangle {
+                id: summaryBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: summaryCol.height + 28
@@ -230,6 +238,7 @@ Item {
 
             // Мини-блок банковской карты
             Rectangle {
+                id: cardBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 64
@@ -327,6 +336,7 @@ Item {
 
             // Кнопка оплаты
             Rectangle {
+                id: payBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 52; radius: 16
@@ -366,6 +376,7 @@ Item {
 
             // График платежей
             Column {
+                id: scheduleBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -535,5 +546,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "loanSchedule"
+        steps: [
+            { target: summaryBlock, flickable: pageFlick, title: "Сводка по кредиту",
+              text: "Остаток долга, ставка и параметры кредита — всё самое важное в одном месте." },
+            { target: cardBlock, flickable: pageFlick, title: "Карта списания",
+              text: "Платёж спишется с этой карты. Убедитесь, что на ней достаточно средств." },
+            { target: payBtn, flickable: pageFlick, title: "Внести платёж",
+              text: "Оплачивает ближайший платёж по графику. Последний платёж полностью закрывает кредит." },
+            { target: scheduleBlock, flickable: pageFlick, title: "График платежей",
+              text: "Все платежи по месяцам: оплаченные отмечены, ближайший — следующий к оплате." }
+        ]
     }
 }

@@ -108,6 +108,13 @@ Item {
                 onClicked: cryptoController.loadHistory()
             }
         }
+        GuideButton {
+            width: 36; height: 36; radius: 18
+            anchors.right: parent.right
+            anchors.rightMargin: 62
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
     }
 
     // ------ Пустой стейт ------
@@ -326,5 +333,18 @@ Item {
         }
 
         ScrollBar.vertical: ScrollBar { active: true }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoHistory"
+        steps: [
+            { title: "История крипто-операций",
+              text: "Все ваши покупки, продажи и переводы криптовалюты, сгруппированные по датам." },
+            { target: list, padding: 0, radius: 0, title: "Список операций",
+              text: "У каждой операции — тип, количество монет, курс сделки и сумма в рублях. Зелёным — поступления, красным — списания." },
+            { title: "Обновление",
+              text: "Кнопка «⟳» в шапке перезагрузит историю с сервера." }
+        ]
     }
 }

@@ -76,9 +76,16 @@ Item {
             font { pixelSize: 17; bold: true; family: manropeFont.name }
             color: "#FFFFFF"
         }
+        GuideButton {
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
     }
 
     Flickable {
+        id: pageFlick
         anchors {
             top: header.bottom; left: parent.left
             right: parent.right; bottom: parent.bottom
@@ -95,6 +102,7 @@ Item {
 
             // --- Карточка с балансом и ценой ---
             Rectangle {
+                id: balanceCard
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 110
@@ -146,6 +154,7 @@ Item {
 
             // --- Сколько продать ---
             Column {
+                id: amountBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -229,6 +238,7 @@ Item {
 
             // --- Превью результата ---
             Rectangle {
+                id: previewBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 80
@@ -262,6 +272,7 @@ Item {
 
             // --- Карта зачисления ---
             Column {
+                id: cardPick
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -345,6 +356,7 @@ Item {
 
             // --- Кнопка "Продать" ---
             Rectangle {
+                id: sellBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 56
@@ -462,5 +474,22 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoSell"
+        steps: [
+            { target: balanceCard, flickable: pageFlick, title: "Ваш баланс",
+              text: "Сколько монет у вас есть и сколько это стоит в рублях по текущему курсу." },
+            { target: amountBlock, flickable: pageFlick, title: "Сколько продать",
+              text: "Введите количество монет или выберите долю от баланса: 25%, 50% или всё сразу." },
+            { target: previewBlock, flickable: pageFlick, title: "Что вы получите",
+              text: "Сумма в рублях по живому курсу на момент продажи." },
+            { target: cardPick, flickable: pageFlick, title: "Карта зачисления",
+              text: "Рубли поступят на выбранную карту сразу после продажи." },
+            { target: sellBtn, flickable: pageFlick, title: "Продажа",
+              text: "Подтвердите сделку — монеты спишутся, рубли зачислятся мгновенно." }
+        ]
     }
 }

@@ -67,6 +67,12 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Большой заголовок (как на референсе)
@@ -82,6 +88,7 @@ Item {
 
             // ----- Вклад -----
             Rectangle {
+                id: depositBanner
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 130
@@ -150,6 +157,7 @@ Item {
 
             // ----- Накопительный счёт -----
             Rectangle {
+                id: savingsBanner
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 130
@@ -218,6 +226,7 @@ Item {
 
             // ----- История операций -----
             Rectangle {
+                id: historyBanner
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 56
@@ -251,6 +260,7 @@ Item {
 
             // Активные вклады (превью списком)
             Column {
+                id: activeDeposits
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -341,5 +351,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "depositMain"
+        steps: [
+            { target: depositBanner, flickable: flick, title: "Срочный вклад",
+              text: "Откройте вклад на срок от 1 до 12 месяцев — чем дольше срок, тем выше ставка. Нажмите на карточку, чтобы подобрать условия." },
+            { target: savingsBanner, flickable: flick, title: "Накопительный счёт",
+              text: "Гибкая альтернатива вкладу: ставка до 10%, пополнение и снятие в любой момент без потери процентов." },
+            { target: activeDeposits, flickable: flick, title: "Мои вклады",
+              text: "Список ваших активных вкладов. Нажмите на вклад, чтобы посмотреть детали, пополнить его или забрать деньги по окончании срока." },
+            { target: historyBanner, flickable: flick, title: "История",
+              text: "Архив закрытых вкладов: сколько внесли, сколько получили и какая вышла прибыль." }
+        ]
     }
 }

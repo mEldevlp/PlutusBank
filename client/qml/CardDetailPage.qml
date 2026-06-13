@@ -102,10 +102,17 @@ Item {
                     font.family: manropeFont.name
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Визуализация карты 
             Rectangle {
+                id: cardVisual
                 width: parent.width - 32
                 height: 180
                 radius: 20
@@ -230,6 +237,7 @@ Item {
 
             // Кнопки Блокировать / Заморозить
             Rectangle {
+                id: securityActions
                 width: parent.width - 32
                 height: 56
                 radius: 16
@@ -319,6 +327,7 @@ Item {
 
             // Пополнить / Оплатить или перевести
             Row {
+                id: moneyActions
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 12
@@ -407,6 +416,7 @@ Item {
 
             // Операции по карте
             Rectangle {
+                id: transactionsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 16
@@ -596,6 +606,7 @@ Item {
 
             // Реквизиты
             Rectangle {
+                id: requisitesBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 16
@@ -710,6 +721,7 @@ Item {
 
             // Перевыпустить карту
             Rectangle {
+                id: reissueBlock
                 width: parent.width - 32
                 height: 62
                 radius: 16
@@ -1047,5 +1059,24 @@ Item {
         if (clean.length < 16) return clean
         return clean.substring(0, 4) + " " + clean.substring(4, 8) + " " +
                clean.substring(8, 12) + " " + clean.substring(12, 16)
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cardDetail"
+        steps: [
+            { target: cardVisual, flickable: mainFlickable, title: "Ваша карта",
+              text: "Баланс, номер и срок действия карты. Если карта заморожена или заблокирована — статус отобразится прямо на ней." },
+            { target: securityActions, flickable: mainFlickable, title: "Безопасность",
+              text: "«Заморозить» — временно приостановить операции (можно отменить). «Блокировать» — навсегда, например при утере карты." },
+            { target: moneyActions, flickable: mainFlickable, title: "Операции с деньгами",
+              text: "Пополните карту с другого своего счёта или переведите деньги другому человеку." },
+            { target: transactionsBlock, flickable: mainFlickable, title: "Операции по карте",
+              text: "Последние транзакции именно по этой карте. Нажмите на заголовок, чтобы развернуть список, и «Загрузить ещё» — для более ранних операций." },
+            { target: requisitesBlock, flickable: mainFlickable, title: "Реквизиты",
+              text: "Полный номер карты и номер счёта. По умолчанию они скрыты — нажмите «Показать», а затем коснитесь значения, чтобы скопировать его." },
+            { target: reissueBlock, flickable: mainFlickable, title: "Перевыпуск",
+              text: "Если карта утрачена или скомпрометирована — выпустите новую взамен этой." }
+        ]
     }
 }

@@ -66,6 +66,7 @@ Item {
     }
 
     Flickable {
+        id: pageFlick
         anchors.fill: parent
         contentHeight: mainCol.height + 60
         clip: true
@@ -108,10 +109,17 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Карточка вклада
             Rectangle {
+                id: depositCard
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 22
@@ -248,6 +256,7 @@ Item {
 
             // Кнопки действий (view-mode)
             Column {
+                id: actionsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -316,6 +325,7 @@ Item {
 
             // ============ Topup mode ============
             Column {
+                id: topupBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -446,6 +456,7 @@ Item {
 
             // ============ Claim mode ============
             Column {
+                id: claimBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -555,5 +566,22 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "depositDetail"
+        steps: mode === "topup" ? [
+            { target: topupBlock, flickable: pageFlick, title: "Пополнение вклада",
+              text: "Укажите сумму и карту списания — деньги добавятся к телу вклада и тоже начнут приносить проценты." }
+        ] : mode === "claim" ? [
+            { target: claimBlock, flickable: pageFlick, title: "Забрать вклад",
+              text: "Выберите карту — на неё поступит вся сумма вклада вместе с начисленными процентами." }
+        ] : [
+            { target: depositCard, flickable: pageFlick, title: "Ваш вклад",
+              text: "Текущий баланс, начисленные проценты, срок и ставка. Когда срок истечёт, появится отметка «Срок истёк»." },
+            { target: actionsBlock, flickable: pageFlick, title: "Действия",
+              text: "«Забрать» станет активной по окончании срока. «Пополнить» доступно, если вклад пополняемый и срок ещё идёт." }
+        ]
     }
 }

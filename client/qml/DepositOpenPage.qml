@@ -105,6 +105,12 @@ Item {
                     }
                     MouseArea { anchors.fill: parent; onClicked: root.backToCatalog() }
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Большой заголовок «Вклад»
@@ -118,6 +124,7 @@ Item {
 
             // ===== Подберите условия =====
             Rectangle {
+                id: conditionsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 24
@@ -265,6 +272,7 @@ Item {
 
             // ===== Калькулятор =====
             Rectangle {
+                id: calcBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 24
@@ -408,6 +416,7 @@ Item {
 
             // ===== Выбор счёта списания =====
             Rectangle {
+                id: accountPick
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 16
@@ -495,6 +504,7 @@ Item {
 
             // Кнопка «Открыть вклад»
             Rectangle {
+                id: openBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 56; radius: 28
@@ -608,5 +618,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "depositOpen"
+        steps: [
+            { target: conditionsBlock, flickable: flick, title: "Подберите условия",
+              text: "Выберите срок вклада — от него зависит ставка: чем дольше, тем выгоднее. Переключатель «Пополняемый» разрешит довносить деньги, но слегка снизит ставку." },
+            { target: calcBlock, flickable: flick, title: "Калькулятор",
+              text: "Введите сумму — калькулятор сразу покажет доходность, итог в конце срока и сколько вы заработаете." },
+            { target: accountPick, flickable: flick, title: "Откуда списать",
+              text: "Выберите карту, с которой спишется сумма вклада." },
+            { target: openBtn, flickable: flick, title: "Открытие",
+              text: "Проверьте условия и нажмите «Открыть вклад». Деньги вернутся с процентами в день окончания срока." }
+        ]
     }
 }

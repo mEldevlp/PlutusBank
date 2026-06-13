@@ -90,6 +90,7 @@ Item {
     }
 
     Flickable {
+        id: pageFlick
         anchors.fill: parent
         contentHeight: mainCol.height + 40
         clip: true
@@ -131,10 +132,17 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Сумма
             Column {
+                id: amountBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 8
@@ -268,6 +276,7 @@ Item {
 
             // ═══════ Срок ═══════
             Column {
+                id: termBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 8
@@ -416,6 +425,7 @@ Item {
 
             // Результат расчёта
             Rectangle {
+                id: resultBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: resultCol.height + 28
@@ -489,6 +499,7 @@ Item {
 
             // Выбор счёта
             Rectangle {
+                id: accountPick
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: accountsCol.height + 32
@@ -678,6 +689,7 @@ Item {
 
             // Кнопка Оформить
             Rectangle {
+                id: applyBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 52
@@ -993,5 +1005,22 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "loanCalc"
+        steps: [
+            { target: amountBlock, flickable: pageFlick, title: "Сумма кредита",
+              text: "Введите желаемую сумму в пределах лимитов продукта — они указаны под полем." },
+            { target: termBlock, flickable: pageFlick, title: "Срок",
+              text: "Укажите срок в месяцах. Чем дольше срок — тем меньше ежемесячный платёж, но больше переплата." },
+            { target: resultBlock, flickable: pageFlick, title: "Расчёт",
+              text: "Калькулятор сразу показывает аннуитетный ежемесячный платёж и итоговую переплату — меняйте сумму и срок, чтобы подобрать комфортные условия." },
+            { target: accountPick, flickable: pageFlick, title: "Куда зачислить",
+              text: "Выберите дебетовую карту — на неё поступят деньги сразу после одобрения." },
+            { target: applyBtn, flickable: pageFlick, title: "Оформление",
+              text: "Нажмите, когда всё готово. Кредит оформляется мгновенно, график платежей появится в разделе «Мои кредиты»." }
+        ]
     }
 }

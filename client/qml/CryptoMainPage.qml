@@ -88,6 +88,7 @@ Item {
                 }
 
                 Rectangle {
+                    id: historyBtn
                     width: 36; height: 36; radius: 18
                     anchors.right: parent.right
                     anchors.verticalCenter: parent.verticalCenter
@@ -102,10 +103,18 @@ Item {
 
                     MouseArea { anchors.fill: parent; onClicked: root.openHistory() }
                 }
+                GuideButton {
+                    width: 36; height: 36; radius: 18
+                    anchors.right: historyBtn.left
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // --- Общий баланс портфеля ---
             Rectangle {
+                id: portfolioBlock
                 width: parent.width - 32
                 height: 124
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -163,6 +172,7 @@ Item {
 
             // --- Криптовалюты (единый список: каталог + текущие балансы) ---
             Column {
+                id: coinsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -309,5 +319,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoMain"
+        steps: [
+            { title: "Крипто-кошелёк",
+              text: "Это биржа-симулятор: покупайте и продавайте криптовалюту за рубли, переводите её другим пользователям. Котировки двигаются в реальном времени." },
+            { target: portfolioBlock, flickable: flick, title: "Стоимость портфеля",
+              text: "Суммарная стоимость всех ваших монет в рублях. Обновляется автоматически вместе с котировками." },
+            { target: coinsBlock, flickable: flick, title: "Криптовалюты",
+              text: "Каталог монет с текущей ценой и изменением за 24 часа. Справа — ваш баланс по каждой монете. Нажмите на монету, чтобы открыть график и торговать." },
+            { target: historyBtn, padding: 6, title: "История",
+              text: "Все ваши крипто-операции: покупки, продажи и переводы." }
+        ]
     }
 }

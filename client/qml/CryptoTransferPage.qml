@@ -77,9 +77,16 @@ Item {
             font { pixelSize: 17; bold: true; family: manropeFont.name }
             color: "#FFFFFF"
         }
+        GuideButton {
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
     }
 
     Flickable {
+        id: pageFlick
         anchors {
             top: header.bottom; left: parent.left
             right: parent.right; bottom: parent.bottom
@@ -96,6 +103,7 @@ Item {
 
             // --- Карточка с балансом и ценой ---
             Rectangle {
+                id: balanceCard
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 110
@@ -147,6 +155,7 @@ Item {
 
             // --- Адрес получателя ---
             Column {
+                id: addressBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -241,6 +250,7 @@ Item {
 
             // --- Сколько перевести ---
             Column {
+                id: amountBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -359,6 +369,7 @@ Item {
 
             // --- Кнопка "Перевести" ---
             Rectangle {
+                id: transferBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 56
@@ -485,5 +496,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoTransfer"
+        steps: [
+            { target: balanceCard, flickable: pageFlick, title: "Доступно для перевода",
+              text: "Ваш баланс этой монеты и его рублёвый эквивалент." },
+            { target: addressBlock, flickable: pageFlick, title: "Адрес получателя",
+              text: "Адрес криптокошелька: начинается с 0x и содержит 40 символов. Кнопка «Вставить» возьмёт адрес из буфера обмена." },
+            { target: amountBlock, flickable: pageFlick, title: "Сколько перевести",
+              text: "Введите количество монет или выберите долю от баланса пресетами." },
+            { target: transferBtn, flickable: pageFlick, title: "Отправка",
+              text: "Перевод бесплатный и мгновенный — рубли при этом не списываются, только монеты." }
+        ]
     }
 }

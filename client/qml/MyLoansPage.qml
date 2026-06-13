@@ -26,6 +26,7 @@ Item {
     }
 
     Flickable {
+        id: pageFlick
         anchors.fill: parent
         contentHeight: mainCol.height + 40
         clip: true
@@ -67,6 +68,12 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Пусто
@@ -91,6 +98,7 @@ Item {
 
             // Список
             Column {
+                id: loansList
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 12
@@ -282,5 +290,16 @@ Item {
 
             Item { width: 1; height: 20 }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "myLoans"
+        steps: [
+            { target: loansList, flickable: pageFlick, title: "Ваши кредиты",
+              text: "По каждому кредиту видно остаток долга, ежемесячный платёж и прогресс погашения." },
+            { title: "Подробнее и оплата",
+              text: "Нажмите «Подробнее» на карточке кредита — откроется график платежей, где можно внести очередной платёж." }
+        ]
     }
 }

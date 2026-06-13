@@ -52,6 +52,7 @@ Item {
     }
 
     Flickable {
+        id: pageFlick
         anchors.fill: parent
         contentHeight: mainCol.height + 32
         clip: true
@@ -93,10 +94,17 @@ Item {
                     color: Theme.textPrimary
                     anchors.centerIn: parent
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // ---- Сводка ----
             Rectangle {
+                id: summaryBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 96
@@ -167,6 +175,7 @@ Item {
 
             // ---- Список ----
             Repeater {
+                id: closedList
                 model: depositController.closedDeposits
 
                 delegate: Rectangle {
@@ -333,5 +342,16 @@ Item {
 
             Item { width: 1; height: 12 }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "depositHistory"
+        steps: [
+            { target: summaryBlock, flickable: pageFlick, title: "Сводка",
+              text: "Сколько вкладов вы уже закрыли и сколько всего заработали на процентах." },
+            { target: closedList, flickable: pageFlick, title: "Закрытые вклады",
+              text: "По каждому вкладу — сколько внесли, сколько получили, прибыль и даты открытия и закрытия." }
+        ]
     }
 }

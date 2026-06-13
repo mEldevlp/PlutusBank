@@ -136,6 +136,13 @@ Item {
             color: "#FFFFFF"
         }
 
+        GuideButton {
+            anchors.right: parent.right
+            anchors.rightMargin: 38
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
+
         // Индикатор live-обновления
         Rectangle {
             width: 8; height: 8; radius: 4
@@ -284,6 +291,7 @@ Item {
             //  Мини-график за 1 день
             // ============================================================
             Rectangle {
+                id: chartBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 radius: 20
@@ -627,6 +635,7 @@ Item {
             //  светлый текст #E5E7EB.
             // ============================================================
             Row {
+                id: actionsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 8
@@ -709,6 +718,7 @@ Item {
             //  История транзакций по этой монете
             // ============================================================
             Column {
+                id: coinHistoryBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -1051,5 +1061,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoCoin"
+        steps: [
+            { target: priceCard, flickable: flick, title: "Текущая цена",
+              text: "Живая котировка монеты и её изменение за 24 часа — зелёным рост, красным падение." },
+            { target: chartBlock, flickable: flick, title: "График за день",
+              text: "Движение цены за последние сутки. График обновляется автоматически каждые несколько секунд." },
+            { target: actionsBlock, flickable: flick, title: "Торговля",
+              text: "«Купить» — за рубли с карты, «Продать» — с зачислением на карту, «Перевести» — отправить монеты на кошелёк другого пользователя." },
+            { target: coinHistoryBlock, flickable: flick, title: "Операции по монете",
+              text: "История ваших сделок именно с этой криптовалютой." }
+        ]
     }
 }

@@ -255,6 +255,7 @@ Item {
 
                     // Между своими счетами
                     Rectangle {
+                        id: optInternal
                         width: parent.width
                         height: 100
                         radius: 16
@@ -315,6 +316,7 @@ Item {
 
                     // Другому человеку
                     Rectangle {
+                        id: optExternal
                         width: parent.width
                         height: 100
                         radius: 16
@@ -444,6 +446,7 @@ Item {
                     }
 
                     Column {
+                        id: fromListInternal
                         width: parent.width
                         spacing: 8
 
@@ -590,6 +593,7 @@ Item {
                     }
 
                     Column {
+                        id: toListInternal
                         width: parent.width
                         spacing: 8
 
@@ -717,6 +721,7 @@ Item {
 
                     // Поле суммы
                     Column {
+                        id: internalAmountBlock
                         width: parent.width
                         spacing: 8
 
@@ -779,6 +784,7 @@ Item {
 
                     // Кнопка перевода
                     Rectangle {
+                        id: internalTransferBtn
                         width: parent.width
                         height: 54
                         radius: 16
@@ -884,6 +890,7 @@ Item {
                     }
 
                     Column {
+                        id: fromListExternal
                         width: parent.width
                         spacing: 8
 
@@ -1017,6 +1024,7 @@ Item {
 
                     // Номер телефона получателя
                     Column {
+                        id: phoneBlock
                         width: parent.width
                         spacing: 8
 
@@ -1127,6 +1135,7 @@ Item {
 
                     // Сумма
                     Column {
+                        id: externalAmountBlock
                         width: parent.width
                         spacing: 8
 
@@ -1189,6 +1198,7 @@ Item {
 
                     // Кнопка перевода
                     Rectangle {
+                        id: externalTransferBtn
                         width: parent.width
                         height: 54
                         radius: 16
@@ -1428,5 +1438,46 @@ Item {
         isLoading = false
         resetError()
         transferController.loadAccounts()
+    }
+    GuideButton {
+        anchors.top: parent.top
+        anchors.topMargin: 25
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        z: 11
+        visible: currentStep <= 2
+        onClicked: guide.open()
+    }
+
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "transfer"
+        steps: currentStep === 1 ? [
+            { target: fromListInternal, flickable: step1, title: "Откуда списать",
+              text: "Выберите счёт, с которого спишутся деньги. Замороженные и заблокированные счета недоступны." },
+            { target: toListInternal, flickable: step1, title: "Куда зачислить",
+              text: "А здесь — счёт получения. Перевести можно только между двумя разными счетами." },
+            { target: internalAmountBlock, flickable: step1, title: "Сумма",
+              text: "Введите сумму перевода. Она не может превышать остаток на счёте списания." },
+            { target: internalTransferBtn, flickable: step1, title: "Подтверждение",
+              text: "Кнопка станет активной, когда выбраны оба счёта и указана сумма. Перевод выполняется мгновенно и без комиссии." }
+        ] : currentStep === 2 ? [
+            { target: fromListExternal, flickable: step2, title: "Счёт списания",
+              text: "Выберите, с какого из ваших счетов отправить деньги." },
+            { target: phoneBlock, flickable: step2, title: "Получатель",
+              text: "Введите номер телефона получателя — приложение само найдёт его и покажет имя для проверки." },
+            { target: externalAmountBlock, flickable: step2, title: "Сумма",
+              text: "Укажите сумму перевода другому человеку." },
+            { target: externalTransferBtn, flickable: step2, title: "Отправка",
+              text: "Когда получатель найден и сумма введена — нажмите «Перевести». Деньги придут на основной счёт получателя." }
+        ] : [
+            { title: "Переводы",
+              text: "Здесь можно перемещать деньги между своими счетами или отправлять их другим людям. Выберите тип перевода — и подсказка продолжится на следующем шаге." },
+            { target: optInternal, flickable: step0, title: "Между своими счетами",
+              text: "Мгновенный перевод между вашими картами и счетами. Без комиссии." },
+            { target: optExternal, flickable: step0, title: "Другому человеку",
+              text: "Перевод по номеру телефона: получатель должен быть клиентом PlutusBank. Кнопка «?» подскажет и на следующих шагах." }
+        ]
     }
 }

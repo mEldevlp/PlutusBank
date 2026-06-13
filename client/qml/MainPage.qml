@@ -124,6 +124,7 @@ Item {
                 }
 
                 Rectangle {
+                    id: avatarCircle
                     width: 44; height: 44; radius: 22
                     color: Theme.accent
                     anchors.right: parent.right
@@ -138,10 +139,17 @@ Item {
                         color: "#050B1A"
                     }
                 }
+                GuideButton {
+                    anchors.right: avatarCircle.left
+                    anchors.rightMargin: 10
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             //  Общий баланс
             Rectangle {
+                id: balanceBlock
                 width: parent.width - 32
                 height: 140
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -226,6 +234,7 @@ Item {
 
             // Мои карты
             Column {
+                id: cardsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -523,6 +532,7 @@ Item {
 
             // Быстрые действия
             Column {
+                id: quickActionsBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -754,5 +764,23 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "mainPage"
+        autoShow: true
+        steps: [
+            { title: "Добро пожаловать в PlutusBank!",
+              text: "Это главный экран приложения. Давайте быстро пройдёмся по основным элементам — это займёт меньше минуты. Нажимайте «Далее» или просто тапайте по экрану." },
+            { target: balanceBlock, flickable: flick, title: "Общий баланс",
+              text: "Сумма по всем вашим дебетовым счетам. Справа — доход и расход за сегодня. Потяните экран вниз, чтобы обновить данные." },
+            { target: cardsBlock, flickable: flick, title: "Мои карты",
+              text: "Здесь находятся ваши карты. Нажмите на карту, чтобы открыть реквизиты и управление, или выпустите новую — кнопкой ниже списка." },
+            { target: quickActionsBlock, flickable: flick, title: "Быстрые действия",
+              text: "Переводы, пополнение, история операций, настройки, кредиты и вклады — всё в один тап." },
+            { title: "И ещё кое-что",
+              text: "Внизу экрана — вкладки: переключайтесь между банком и криптовалютным портфелем. Кнопка «?» в шапке снова откроет эту подсказку." }
+        ]
     }
 }

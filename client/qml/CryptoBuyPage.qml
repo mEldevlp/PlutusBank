@@ -103,9 +103,16 @@ Item {
             font { pixelSize: 17; bold: true; family: manropeFont.name }
             color: "#FFFFFF"
         }
+        GuideButton {
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
     }
 
     Flickable {
+        id: pageFlick
         anchors {
             top: header.bottom; left: parent.left
             right: parent.right; bottom: parent.bottom
@@ -122,6 +129,7 @@ Item {
 
             // ----- Карточка с ценой -----
             Rectangle {
+                id: priceCard
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 100
@@ -173,6 +181,7 @@ Item {
 
             // ----- Сумма в рублях -----
             Column {
+                id: amountBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -259,6 +268,7 @@ Item {
 
             // ----- Превью результата -----
             Rectangle {
+                id: previewBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 80
@@ -293,6 +303,7 @@ Item {
 
             // ----- Выбор банковской карты -----
             Column {
+                id: cardPick
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 10
@@ -406,6 +417,7 @@ Item {
 
             // ----- Кнопка "Купить" -----
             Rectangle {
+                id: buyBtn
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: 56
@@ -550,5 +562,22 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "cryptoBuy"
+        steps: [
+            { target: priceCard, flickable: pageFlick, title: "Текущий курс",
+              text: "Живая цена монеты — именно по ней пройдёт покупка в момент подтверждения." },
+            { target: amountBlock, flickable: pageFlick, title: "Сумма покупки",
+              text: "Введите сумму в рублях или используйте быстрые пресеты «+1000», «+5000» и другие." },
+            { target: previewBlock, flickable: pageFlick, title: "Что вы получите",
+              text: "Количество монет рассчитывается автоматически по текущему курсу." },
+            { target: cardPick, flickable: pageFlick, title: "Карта списания",
+              text: "Выберите дебетовую карту — с неё спишутся рубли." },
+            { target: buyBtn, flickable: pageFlick, title: "Покупка",
+              text: "Подтвердите сделку — монеты сразу появятся в вашем портфеле." }
+        ]
     }
 }

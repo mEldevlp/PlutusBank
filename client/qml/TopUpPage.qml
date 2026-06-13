@@ -109,10 +109,17 @@ Item {
                     font.family: manropeFont.name
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Сумма
             Rectangle {
+                id: amountBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: amountCol.height + 32
@@ -194,6 +201,7 @@ Item {
 
                     // Быстрые суммы
                     Row {
+                        id: quickAmountsRow
                         width: parent.width
                         spacing: 8
 
@@ -232,6 +240,7 @@ Item {
 
             // Выбор карты (радиокнопки)
             Rectangle {
+                id: cardPickBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: cardsCol.height + 32
@@ -603,5 +612,20 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "topUp"
+        steps: [
+            { target: amountBlock, flickable: flickable, title: "Сумма пополнения",
+              text: "Введите сумму вручную — это симуляция внешнего пополнения, деньги зачислятся на выбранную карту." },
+            { target: quickAmountsRow, flickable: flickable, title: "Быстрые суммы",
+              text: "Частые суммы в один тап — не нужно набирать вручную." },
+            { target: cardPickBlock, flickable: flickable, title: "Куда зачислить",
+              text: "Выберите карту для пополнения. Замороженные и заблокированные карты пополнить нельзя." },
+            { target: topUpBtn, flickable: flickable, title: "Подтверждение",
+              text: "Кнопка активируется, когда указана сумма и выбрана карта. После успеха появится экран с результатом." }
+        ]
     }
 }

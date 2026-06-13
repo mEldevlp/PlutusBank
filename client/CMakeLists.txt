@@ -105,6 +105,8 @@ set(QML_UI_FILES
     qml/SavingsAccountPage.qml
     qml/DepositDetailPage.qml
     qml/DepositHistoryPage.qml
+	qml/GuideOverlay.qml
+	qml/GuideButton.qml
 )
 
 # QML Resources - Assets

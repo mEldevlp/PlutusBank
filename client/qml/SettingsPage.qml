@@ -56,9 +56,16 @@ Item {
             font { pixelSize: 18; bold: true; family: manropeFont.name }
             color: "#F7F7FB"
         }
+        GuideButton {
+            anchors.right: parent.right
+            anchors.rightMargin: 16
+            anchors.verticalCenter: parent.verticalCenter
+            onClicked: guide.open()
+        }
     }
 
     Flickable {
+        id: settingsFlick
         anchors.top: header.bottom
         anchors.left: parent.left
         anchors.right: parent.right
@@ -76,6 +83,7 @@ Item {
 
             // Ваши данные
             Rectangle {
+                id: personalBlock
                 width: parent.width
                 radius: 16
                     
@@ -110,6 +118,7 @@ Item {
 
             // Основной счёт
             Column {
+                id: primaryBlock
                 width: parent.width
                 spacing: 2
 
@@ -238,6 +247,7 @@ Item {
 
             // Кнопка «Выйти»
             Rectangle {
+                id: logoutBtn
                 width: parent.width
                 height: 50
                 radius: 16
@@ -563,5 +573,18 @@ Item {
         width: parent.width
         height: 1
         color: "#374151"
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "settings"
+        steps: [
+            { target: personalBlock, flickable: settingsFlick, title: "Ваши данные",
+              text: "Личные данные профиля: ФИО, телефон, почта, паспорт и адрес. Коснитесь значения, чтобы скопировать его." },
+            { target: primaryBlock, flickable: settingsFlick, title: "Основной счёт",
+              text: "Именно на этот счёт приходят входящие переводы по номеру телефона. Нажмите «Назначить» у другой карты, чтобы сменить его." },
+            { target: logoutBtn, flickable: settingsFlick, title: "Выход",
+              text: "Завершает сеанс. Для повторного входа понадобятся логин и пароль." }
+        ]
     }
 }

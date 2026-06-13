@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import "."
@@ -274,6 +274,7 @@ Item {
 
                 // Кнопка «Далее»
                 Rectangle {
+                    id: step1NextBtn
                     Layout.fillWidth: true
                     Layout.preferredHeight: 52
                     radius: 14
@@ -300,6 +301,7 @@ Item {
 
             //  ШАГ 2 — Платёжная система
             ColumnLayout {
+                id: brandsStep
                 Layout.fillWidth: true
                 spacing: 12
                 visible: step === 2
@@ -470,6 +472,7 @@ Item {
 
                 // Превью банковской карты
                 Rectangle {
+                    id: cardPreview
                     Layout.fillWidth: true
                     Layout.preferredHeight: 200
                     radius: 20
@@ -546,6 +549,7 @@ Item {
 
                 // ── Сводка (текстом) ──
                 Rectangle {
+                    id: summaryBlock
                     Layout.fillWidth: true
                     Layout.preferredHeight: infoCol.height + 28
                     radius: 14; color: "#111827"
@@ -652,6 +656,7 @@ Item {
 
                 // Блок данных
                 ColumnLayout {
+                    id: credsBlock
                     Layout.fillWidth: true
                     spacing: 10
 
@@ -864,6 +869,7 @@ Item {
 
                     // PIN-код (акцентный блок)
                     Rectangle {
+                        id: pinBlock
                         Layout.fillWidth: true
                         Layout.preferredHeight: 76; radius: 12
                         gradient: Gradient {
@@ -945,6 +951,7 @@ Item {
 
                 // Предупреждение
                 Rectangle {
+                    id: warningBlock
                     Layout.fillWidth: true
                     Layout.preferredHeight: warningRow.height + 24
                     radius: 12; color: "#450A0A"
@@ -1015,5 +1022,42 @@ Item {
         function onCreationProgress(message) {
             console.log("wait..", message)
         }
+    }
+    GuideButton {
+        anchors.top: parent.top
+        anchors.topMargin: 20
+        anchors.right: parent.right
+        anchors.rightMargin: 16
+        z: 11
+        onClicked: guide.open()
+    }
+
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "createCard"
+        steps: step === 2 ? [
+            { target: brandsStep, flickable: flick, title: "Платёжная система",
+              text: "Visa, Mastercard или МИР — выберите, какой системой будет ваша карта. На условия обслуживания это не влияет." }
+        ] : step === 3 ? [
+            { target: cardPreview, flickable: flick, title: "Превью карты",
+              text: "Так будет выглядеть ваша карта. Номер сгенерируется автоматически при выпуске." },
+            { target: summaryBlock, flickable: flick, title: "Проверьте данные",
+              text: "Сводка по выбранным параметрам. Если что-то не так — вернитесь назад и поменяйте." }
+        ] : step === 4 ? [
+            { target: credsBlock, flickable: flick, title: "Реквизиты карты",
+              text: "Номер карты, срок действия, CVC и PIN. Коснитесь значка копирования, чтобы сохранить значение." },
+            { target: warningBlock, flickable: flick, title: "Важно!",
+              text: "PIN-код показывается только один раз — после закрытия этого экрана восстановить его будет нельзя. Сохраните его в надёжном месте." }
+        ] : [
+            { title: "Выпуск новой карты",
+              text: "Мастер из нескольких шагов: тип карты, платёжная система, подтверждение — и карта готова. Индикатор сверху показывает прогресс." },
+            { target: debitCard, flickable: flick, title: "Дебетовая карта",
+              text: "Для повседневных трат: храните свои деньги и расплачивайтесь ими." },
+            { target: creditCard, flickable: flick, title: "Кредитная карта",
+              text: "Карта с кредитным лимитом банка." },
+            { target: step1NextBtn, flickable: flick, title: "Дальше",
+              text: "Выберите тип карты — и кнопка станет активной. Подсказка «?» доступна и на следующих шагах." }
+        ]
     }
 }

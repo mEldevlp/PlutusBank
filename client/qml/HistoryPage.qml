@@ -73,6 +73,12 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
+            GuideButton {
+                anchors.right: parent.right
+                anchors.rightMargin: 16
+                anchors.verticalCenter: parent.verticalCenter
+                onClicked: guide.open()
+            }
         }
 
         // ========== Пустое состояние ==========
@@ -342,5 +348,18 @@ Item {
         visible: running
         palette.dark: "#27D6C5"
         z: 1
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "history"
+        steps: [
+            { title: "История операций",
+              text: "Здесь собраны все ваши операции: переводы, пополнения, платежи по кредитам и операции по вкладам. Они сгруппированы по датам." },
+            { target: transactionList, padding: 0, radius: 0, title: "Список операций",
+              text: "Зелёная сумма — поступление, красная — списание. У каждой операции видно описание, счёт и время." },
+            { title: "Прокрутка и обновление",
+              text: "Листайте вниз — более ранние операции подгрузятся автоматически. Потяните список вниз от начала, чтобы обновить данные." }
+        ]
     }
 }

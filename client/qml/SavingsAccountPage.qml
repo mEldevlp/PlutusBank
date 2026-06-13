@@ -105,6 +105,12 @@ Item {
                         }
                     }
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Заголовок
@@ -120,6 +126,7 @@ Item {
             // ============ View mode ============
             // Если счёт ещё не открыт
             Column {
+                id: promoBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -183,6 +190,7 @@ Item {
 
                 // Карточка баланса
                 Rectangle {
+                    id: balanceCard
                     width: parent.width
                     height: 170; radius: 20
                     gradient: Gradient {
@@ -248,6 +256,7 @@ Item {
 
                 // Кнопки действий
                 Row {
+                    id: actionsRow
                     width: parent.width
                     spacing: 12
 
@@ -303,6 +312,7 @@ Item {
 
                 // Информация
                 Rectangle {
+                    id: infoBlock
                     width: parent.width
                     radius: 14
                     color: "#111827"
@@ -351,6 +361,7 @@ Item {
 
                 // Поле суммы
                 Rectangle {
+                    id: amountBlock
                     width: parent.width
                     height: 64; radius: 16
                     color: "#1F2937"
@@ -401,6 +412,7 @@ Item {
 
                 // Выбор счёта
                 Text {
+                    id: accountPick
                     text: mode === "withdraw" ? "Зачислить на карту" : "Списать с карты"
                     font { pixelSize: 14; bold: true }
                     color: "#9CA3AF"
@@ -456,6 +468,7 @@ Item {
 
                 // Подтвердить
                 Rectangle {
+                    id: confirmBtn
                     width: parent.width
                     height: 56; radius: 28
                     color: enabled_ ? Theme.warning : "#374151"
@@ -507,5 +520,28 @@ Item {
                 }
             }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "savings"
+        steps: mode !== "view" ? [
+            { target: amountBlock, flickable: flick, title: "Сумма",
+              text: "Введите сумму операции. Для снятия доступный остаток показан под полем." },
+            { target: accountPick, flickable: flick, title: "Счёт",
+              text: "Выберите карту: с неё спишутся деньги при пополнении или на неё вернутся при снятии." },
+            { target: confirmBtn, flickable: flick, title: "Подтверждение",
+              text: "Проверьте данные и подтвердите операцию — она выполняется мгновенно." }
+        ] : depositController.hasSavings ? [
+            { target: balanceCard, flickable: flick, title: "Ваш накопительный счёт",
+              text: "Текущий баланс, ставка и сумма уже заработанных процентов. Проценты начисляются ежедневно." },
+            { target: actionsRow, flickable: flick, title: "Пополнение и снятие",
+              text: "Пополняйте счёт на любую сумму и снимайте деньги в любой момент — проценты при этом не сгорают." },
+            { target: infoBlock, flickable: flick, title: "Как это работает",
+              text: "Краткая памятка об условиях накопительного счёта." }
+        ] : [
+            { target: promoBlock, flickable: flick, title: "Накопительный счёт",
+              text: "10% годовых с ежедневным начислением. Снимайте деньги в любой момент без потери процентов. Нажмите «Открыть счёт», чтобы начать копить." }
+        ]
     }
 }

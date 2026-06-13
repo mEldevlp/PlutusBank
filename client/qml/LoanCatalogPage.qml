@@ -73,10 +73,17 @@ Item {
                     font { pixelSize: 18; bold: true; family: manropeFont.name }
                     color: "#F7F7FB"
                 }
+                GuideButton {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 16
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: guide.open()
+                }
             }
 
             // Мои кредиты
             Rectangle {
+                id: myLoansBanner
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: myLoansCol.height + 28
@@ -197,6 +204,7 @@ Item {
 
             // История кредитов
             Rectangle {
+                id: historyBanner
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 height: historyRow.height + 28
@@ -244,6 +252,7 @@ Item {
 
             // Каталог продуктов
             Column {
+                id: catalogBlock
                 width: parent.width - 32
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 14
@@ -402,5 +411,18 @@ Item {
 
             Item { width: 1; height: 20 }
         }
+    }
+    // ---------- Гид по экрану ----------
+    GuideOverlay {
+        id: guide
+        guideId: "loanCatalog"
+        steps: [
+            { target: myLoansBanner, flickable: flickable, title: "Мои кредиты",
+              text: "Сводка по вашим активным кредитам и быстрый переход к списку. Здесь видно остаток долга по каждому из них." },
+            { target: catalogBlock, flickable: flickable, title: "Каталог продуктов",
+              text: "Ипотека, авто, техника и кредит на любые цели. У каждого продукта — ставка, доступная сумма и срок. Нажмите «Рассчитать», чтобы открыть калькулятор." },
+            { target: historyBanner, flickable: flickable, title: "История кредитов",
+              text: "Закрытые кредиты и статистика по выплатам." }
+        ]
     }
 }
